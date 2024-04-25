@@ -8,7 +8,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Topdata\TopdataConnectorSW6\Component\Webservice;
+use Topdata\TopdataConnectorSW6\Component\TopdataWebserviceClient;
 use Monolog\Logger;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -76,7 +76,7 @@ class TopdataConnectorController extends AbstractController
         }
         
         try {
-            $webservice  = new Webservice($this->logger, $config['apiUsername'], $config['apiKey'], $config['apiSalt'], $config['apiLanguage']);
+            $webservice  = new TopdataWebserviceClient($this->logger, $config['apiUsername'], $config['apiKey'], $config['apiSalt'], $config['apiLanguage']);
             $info = $webservice->getUserInfo();
 
             if (isset($info->error)) {

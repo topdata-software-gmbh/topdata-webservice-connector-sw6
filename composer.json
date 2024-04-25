@@ -12,7 +12,8 @@
         }
     ],
     "require": {
-        "shopware/core": "6.4.* || 6.5.* || 6.6.*"
+        "shopware/core": "6.4.* || 6.5.* || 6.6.*",
+        "ext-curl":      "*"
     },
     "extra": {
         "shopware-plugin-class": "Topdata\\TopdataConnectorSW6\\TopdataConnectorSW6",
@@ -23,8 +24,8 @@
             "en-GB": "Topdata Webservice Connector"
         },
         "description": {
-            "de-DE": "Der TopdataWebserviceConnector verbindet Ihren Shopware6 Store mit dem Topdata Webservice. Der TopdataWebserviceConnector wird benoetigt um anderer unserer Plugins zu verwenden.",
-            "en-GB": "The TopdataWebserviceConnector connects your Shopware6 store with the Topdata webservice. The TopdataWebserviceConnector is required to use other of our plugins."
+            "de-DE": "Der TopdataWebserviceConnector verbindet Ihren Shopware6 Store mit dem TopData Webservice. Der TopdataWebserviceConnector wird benoetigt um anderer unserer Plugins zu verwenden.",
+            "en-GB": "The TopdataWebserviceConnector connects your Shopware6 store with the TopData Webservice. The TopdataWebserviceConnector is required to use other of our plugins."
         },
         "manufacturerLink": {
             "de-DE": "https://www.topdata.de",

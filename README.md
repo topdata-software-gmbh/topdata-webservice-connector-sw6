@@ -16,7 +16,7 @@ bin/console plugin:install --activate --clearCache TopdataConnectorSW6
 ```
 
 ## Configuration
-After installing plugin, you need to feel in API credentials to connect to TopData Webservice.
+After installing plugin, you need to fill in API credentials to connect to TopData Webservice.
 
 ### Webservice Credentials
 Settings - System - Plugins - TopdataConnector menu (... on the right) - Config

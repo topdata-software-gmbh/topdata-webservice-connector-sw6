@@ -8,7 +8,7 @@
 
 namespace Topdata\TopdataConnectorSW6\Component\Helper;
 
-use Topdata\TopdataConnectorSW6\Component\Webservice;
+use Topdata\TopdataConnectorSW6\Component\TopdataWebserviceClient;
 use Psr\Log\LoggerInterface;
 use Doctrine\DBAL\Connection;
 
@@ -121,7 +121,7 @@ class MappingHelper
     private $topidProducts = null;
 
     /**
-     * @var  Webservice
+     * @var  TopdataWebserviceClient
      */
     private $topDataApi;
 
@@ -263,7 +263,7 @@ class MappingHelper
             );
     }
 
-    public function setApi(Webservice $topDataApi): void
+    public function setApi(TopdataWebserviceClient $topDataApi): void
     {
         $this->topDataApi = $topDataApi;
     }

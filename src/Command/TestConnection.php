@@ -5,7 +5,7 @@ namespace Topdata\TopdataConnectorSW6\Command;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Topdata\TopdataConnectorSW6\Component\Webservice;
+use Topdata\TopdataConnectorSW6\Component\TopdataWebserviceClient;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Psr\Log\LoggerInterface;
@@ -61,7 +61,7 @@ class TestConnection extends Command
         
         $output->writeln('Connecting to TopData api server...');
         try {
-            $webservice  = new Webservice($this->logger, $config['apiUsername'], $config['apiKey'], $config['apiSalt'], $config['apiLanguage']);
+            $webservice  = new TopdataWebserviceClient($this->logger, $config['apiUsername'], $config['apiKey'], $config['apiSalt'], $config['apiLanguage']);
             $info = $webservice->getUserInfo();
 
             if (isset($info->error)) {

@@ -7,7 +7,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Topdata\TopdataConnectorSW6\Component\Webservice;
+use Topdata\TopdataConnectorSW6\Component\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Component\Helper\MappingHelper;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
@@ -102,7 +102,7 @@ class Import extends Command
 //            return ['success' => true];
 //        }
         
-        $webservice  = new Webservice(
+        $webservice  = new TopdataWebserviceClient(
             $this->logger, 
             $config['apiUsername'],
             $config['apiKey'], 
