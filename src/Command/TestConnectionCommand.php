@@ -12,33 +12,29 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Topdata\TopdataConnectorSW6\Component\TopdataWebserviceClient;
 
-class TestConnection extends Command
+class TestConnectionCommand extends Command
 {
-    /**
-     * @var SystemConfigService
-     */
-    private $systemConfigService;
+    const ERROR_CODE_TOPDATA_WEBSERVICE_CONNECTOR_PLUGIN_INACTIVE = 1;
+    const ERROR_CODE_MISSING_CONFIG                               = 2;
+    const ERROR_CODE_CONNECTION_ERROR                             = 3;
+    const ERROR_CODE_EXCEPTION                                    = 4;
 
-    /**
-     * @var ContainerBagInterface
-     */
-    private $containerBag;
 
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
+    private SystemConfigService $systemConfigService;
+    private ContainerBagInterface $containerBag;
+    private LoggerInterface $logger;
 
     protected static $defaultName = 'topdata:connector:test-connection';
 
     public function __construct(
-        SystemConfigService $systemConfigService,
+        SystemConfigService   $systemConfigService,
         ContainerBagInterface $ContainerBag,
-        LoggerInterface $logger
-    ) {
+        LoggerInterface       $logger
+    )
+    {
         $this->systemConfigService = $systemConfigService;
-        $this->containerBag        = $ContainerBag;
-        $this->logger              = $logger;
+        $this->containerBag = $ContainerBag;
+        $this->logger = $logger;
         parent::__construct();
     }
 
@@ -47,10 +43,11 @@ class TestConnection extends Command
         $output->writeln('Check plugin is active...');
         $activePlugins = $this->containerBag->get('kernel.active_plugins');
         if (!isset($activePlugins['Topdata\TopdataConnectorSW6\TopdataConnectorSW6'])) {
-            $output->writeln('Plugin is inactive!');
-            $output->writeln('Activate plugin first. Abort.');
+            // a bit silly check, as this command is part of the TopdataConnectorSW6 plugin
+            $output->writeln('The TopdataConnectorSW6 plugin is inactive!');
+            $output->writeln('Activate the TopdataConnectorSW6 plugin first. Abort.');
 
-            return 1;
+            return self::ERROR_CODE_TOPDATA_WEBSERVICE_CONNECTOR_PLUGIN_INACTIVE;
         }
         $output->writeln('Getting connection params...');
         $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
@@ -58,24 +55,24 @@ class TestConnection extends Command
             $output->writeln('Fill in connection parameters in admin -> Settings -> System -> Plugins -> TopdataConnector config');
             $output->writeln('Abort.');
 
-            return 2;
+            return self::ERROR_CODE_MISSING_CONFIG;
         }
 
         $output->writeln('Connecting to TopData api server...');
         try {
             $webservice = new TopdataWebserviceClient($this->logger, $config['apiUsername'], $config['apiKey'], $config['apiSalt'], $config['apiLanguage']);
-            $info       = $webservice->getUserInfo();
+            $info = $webservice->getUserInfo();
 
             if (isset($info->error)) {
                 $output->writeln('Connection error:');
                 $output->writeln($info->error[0]->error_message);
                 $output->writeln('Abort.');
 
-                return 3;
+                return self::ERROR_CODE_CONNECTION_ERROR;
             } else {
                 $output->writeln('Connection success!');
 
-                return 0;
+                return Command::SUCCESS;
             }
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
@@ -84,9 +81,9 @@ class TestConnection extends Command
             $output->writeln($errorMessage);
             $output->writeln('Abort.');
 
-            return 4;
+            return self::ERROR_CODE_EXCEPTION;
         }
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

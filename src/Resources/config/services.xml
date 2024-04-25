@@ -71,22 +71,24 @@
         </service>
         
         <!-- CONSOLE COMMANDS -->
-        <service id="Topdata\TopdataConnectorSW6\Command\TestConnection" autowire="true">
-            <!--argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
-            <argument type="service" id="parameter_bag" />
-            <argument type="service" id="logger" /-->
+        <service id="Topdata\TopdataConnectorSW6\Command\TestConnectionCommand" autowire="true">
             <tag name="console.command"/>
         </service>
-        <service id="Topdata\TopdataConnectorSW6\Command\Import">
+        <service id="Topdata\TopdataConnectorSW6\Command\ImportCommand">
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
             <argument type="service" id="parameter_bag" />
             <argument type="service" id="logger" />
             <argument type="service" id="Topdata\TopdataConnectorSW6\Component\Helper\MappingHelper" />
-            <!--argument type="service" id="kernel" /-->
-            <!--argument>"%kernel.project_dir%"</argument-->
             <tag name="console.command"/>
         </service>
-        
+        <!-- test feature form import products from csv -->
+        <service id="Topdata\TopdataConnectorSW6\Command\ProductsCommand">
+            <argument type="service" id="product_manufacturer.repository" />
+            <argument type="service" id="product.repository" />
+            <argument type="service" id="Doctrine\DBAL\Connection" />
+            <tag name="console.command"/>
+        </service>
+
         <!-- SERVICES -->
         <service id="Topdata\TopdataConnectorSW6\Component\Helper\EntitiesHelper">
             <argument type="service" id="Doctrine\DBAL\Connection" />
@@ -138,12 +140,5 @@
             <tag name="messenger.message_handler" />
         </service>
         
-        <!-- test feature form import products from csv -->
-        <service id="Topdata\TopdataConnectorSW6\Command\ProductsCommand">
-            <argument type="service" id="product_manufacturer.repository" />
-            <argument type="service" id="product.repository" />
-            <argument type="service" id="Doctrine\DBAL\Connection" />
-            <tag name="console.command"/>
-        </service>
     </services>
 </container>

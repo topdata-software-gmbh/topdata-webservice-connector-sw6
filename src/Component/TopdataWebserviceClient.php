@@ -9,6 +9,9 @@ namespace Topdata\TopdataConnectorSW6\Component;
 
 use Monolog\Logger;
 
+/**
+ * A simple http client for the topdata webservice.
+ */
 class TopdataWebserviceClient
 {
     const API_VERSION                 = '108';

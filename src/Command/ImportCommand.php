@@ -14,12 +14,15 @@ use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Topdata\TopdataConnectorSW6\Component\Helper\MappingHelper;
 use Topdata\TopdataConnectorSW6\Component\TopdataWebserviceClient;
 
-class Import extends Command
+/**
+ * This command imports data from TopData.
+ */
+class ImportCommand extends Command
 {
     /**
      * @var bool
      */
-    private $verbose = true;
+    private bool $verbose = true;
 
     /**
      * @var SystemConfigService
@@ -43,8 +46,6 @@ class Import extends Command
 
     protected static $defaultName = 'topdata:connector:import';
 
-    private $path;
-
     public function __construct(
         SystemConfigService $systemConfigService,
         ContainerBagInterface $ContainerBag,
@@ -56,7 +57,6 @@ class Import extends Command
         $this->containerBag        = $ContainerBag;
         $this->logger              = $logger;
         $this->mappingHelper       = $mappingHelper;
-        $this->path                = $this->containerBag->get('kernel.project_dir');
     }
 
     public function execute(InputInterface $input, OutputInterface $output): int
