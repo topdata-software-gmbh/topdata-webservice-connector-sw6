@@ -135,7 +135,7 @@ class ImportCommand extends AbstractCommand
             }
             if (!$mappingHelper->mapProducts()) {
                 if ($this->verbose) {
-                    $this->cliStyle->writeln('Mapping failed!');
+                    $this->cliStyle->error('Mapping failed!');
                 }
 
                 return 3;
@@ -151,7 +151,7 @@ class ImportCommand extends AbstractCommand
                 || !$mappingHelper->setDevices()
             ) {
                 if ($this->verbose) {
-                    $this->cliStyle->writeln('Device import failed!');
+                    $this->cliStyle->error('Device import failed!');
                 }
 
                 return 4;
@@ -159,7 +159,7 @@ class ImportCommand extends AbstractCommand
         } elseif ($option['isServiceDeviceOnly']) {
             if (!$mappingHelper->setDevices()) {
                 if ($this->verbose) {
-                    $this->cliStyle->writeln('Device import failed!');
+                    $this->cliStyle->error('Device import failed!');
                 }
 
                 return 4;
@@ -170,7 +170,7 @@ class ImportCommand extends AbstractCommand
         if ($option['isServiceAll'] || $option['isServiceProduct']) {
             if (!$mappingHelper->setProducts()) {
                 if ($this->verbose) {
-                    $this->cliStyle->writeln('Set products to devices failed!');
+                    $this->cliStyle->error('Set products to devices failed!');
                 }
 
                 return 5;
@@ -181,7 +181,7 @@ class ImportCommand extends AbstractCommand
         if ($option['isServiceAll'] || $option['isServiceDeviceMedia']) {
             if (!$mappingHelper->setDeviceMedia()) {
                 if ($this->verbose) {
-                    $this->cliStyle->writeln('Load device media failed!');
+                    $this->cliStyle->error('Load device media failed!');
                 }
 
                 return 6;
@@ -195,7 +195,7 @@ class ImportCommand extends AbstractCommand
                 $this->loadTopFeedConfig($mappingHelper);
                 if (!$mappingHelper->setProductInformation()) {
                     if ($this->verbose) {
-                        $this->cliStyle->writeln('Load product information failed!');
+                        $this->cliStyle->error('Load product information failed!');
                     }
 
                     return 7;
@@ -209,7 +209,7 @@ class ImportCommand extends AbstractCommand
                 $this->loadTopFeedConfig($mappingHelper);
                 if (!$mappingHelper->setProductInformation(true)) {
                     if ($this->verbose) {
-                        $this->cliStyle->writeln('Load product information failed!');
+                        $this->cliStyle->error('Load product information failed!');
                     }
 
                     return 7;
@@ -223,7 +223,7 @@ class ImportCommand extends AbstractCommand
         if ($option['isServiceAll'] || $option['isServiceDeviceSynonyms']) {
             if (!$mappingHelper->setDeviceSynonyms()) {
                 if ($this->verbose) {
-                    $this->cliStyle->writeln('Set device synonyms failed!');
+                    $this->cliStyle->error('Set device synonyms failed!');
                 }
 
                 return 8;
@@ -235,7 +235,7 @@ class ImportCommand extends AbstractCommand
             if (isset($activePlugins['Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6'])) {
                 if (!$mappingHelper->setProductColorCapacityVariants()) {
                     if ($this->verbose) {
-                        $this->cliStyle->writeln('Set device synonyms failed!');
+                        $this->cliStyle->error('Set device synonyms failed!');
                     }
 
                     return 9;
