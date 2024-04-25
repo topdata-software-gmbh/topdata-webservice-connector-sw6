@@ -40,5 +40,13 @@
         "psr-4": {
             "Topdata\\TopdataConnectorSW6\\": "src/"
         }
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.54"
+    },
+    "config": {
+        "allow-plugins": {
+            "symfony/runtime": true
+        }
     }
 }

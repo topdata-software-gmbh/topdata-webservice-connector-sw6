@@ -14,6 +14,7 @@ class TopdataWebserviceClient
 {
     const API_VERSION                 = '108';
     const TOPDATA_WEBSERVICE_BASE_URL = 'https://ws.topdata.de';
+    const CURL_TIMEOUT                = 30;  // seconds
 
     private $url;
     private $uid;
@@ -62,12 +63,9 @@ class TopdataWebserviceClient
         try {
             $this->lastURL = $url;
             $ch = curl_init($url);
-            //curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-            //curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-            //curl_setopt($ch, CURLOPT_POST, 1);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30); //timeout in seconds
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, self::CURL_TIMEOUT);
+            curl_setopt($ch, CURLOPT_TIMEOUT, self::CURL_TIMEOUT);
             $output = curl_exec($ch);
 
 
