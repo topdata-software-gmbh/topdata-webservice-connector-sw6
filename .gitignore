@@ -3,3 +3,7 @@ vendor
 composer.lock
 var
 
+# +----------------------------+
+# |    Keep .gitkeep files     |
+# +----------------------------+
+!/**/.gitkeep
