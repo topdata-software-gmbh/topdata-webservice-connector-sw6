@@ -85,7 +85,7 @@ After saving credentials you can test connection, just select TopData Plugins me
 
 Command order is important, for example --device-media (4) downloads images only for enabled devices, those devices are enabled by --product (3)
 
-### Additional options
+#### Additional options
 `-v` key for verbose output, it shows memmory usage, data chunk numbers, time and other information
 
 `--no-debug` keys for faster work and less memmory usage
@@ -93,7 +93,7 @@ Command order is important, for example --device-media (4) downloads images only
 `--start` and `--end` keys, depending on command it use chunk numbers or element counts (you can see this numbers if verbose output is enabled)
 
 
-## topdata:connector:products
+### topdata:connector:products
 - a console command for import products from csv file
 - example usage:
  
