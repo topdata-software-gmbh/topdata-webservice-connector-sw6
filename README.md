@@ -1,12 +1,13 @@
-# TopData Webservice Connector Plugin for Shopware 6
+# TopData Webservice Connector for Shopware 6
 
 ## About
 This plugin is the base for most of the functionality in other TopData plugins for Shopware 6.3
 It gives possibility to import devices from TopData Webservice.
 
-## Configurating
+## Configuration
 After installing plugin, you need to feel in API credentials to connect to TopData Webservice.
 
+### Webservice Credentials
 Settings - System - Plugins - TopdataConnector menu (... on the right) - Config
 
 TopData will give you:
@@ -15,7 +16,18 @@ TopData will give you:
 - API Key
 - API Salt
 
+#### Demo Credentials
+
+If you want to test the plugin with demo credentials, you can use the following:
+ 
+- API User-ID: 6
+- API Key: nTI9kbsniVWT13Ns
+- API Salt: oateouq974fpby5t6ldf8glzo85mr9t6aebozrox
+
+
+#### Testing the connection
 After saving credentials you can test connection, just select TopData Plugins menu item in main menu and press "Test" button in TopData Connector block.
+
 
 ---
 
