@@ -1,25 +1,27 @@
-<?php declare(strict_types = 1);
+<?php
+
+declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Component\Helper;
 
 use Doctrine\DBAL\Connection;
+use Shopware\Core\Content\Media\MediaService;
+use Shopware\Core\Content\Product\ProductEntity;
+use Shopware\Core\Content\Property\PropertyGroupDefinition;
 use Shopware\Core\Defaults;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Content\Media\MediaService;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\Content\Property\PropertyGroupDefinition;
-use Shopware\Core\Content\Product\ProductEntity;
 
 class EntitiesHelper
 {
     const LANGUAGE_NAME = 'English';
     const DEFAULT_MAIN_FOLDER = 'product';
     const UPLOAD_FOLDER_NAME = 'TopData';
-    
+
     private $propertyGroups = null;
     private $categoryTree = null;
     private $manufacturers = null;
@@ -30,27 +32,27 @@ class EntitiesHelper
     private $uploadFolderId = null;
     private $enLangID = null;
     private $deLangID = null;
-    
-    /** 
-     * @var  Connection 
+
+    /**
+     * @var Connection
      */
     private $connection;
-    
+
     /**
      * @var MediaService
      */
     private $mediaService;
-    
+
     /**
      * @var EntityRepositoryInterface
      */
     private $mediaRepository;
-    
+
     /**
      * @param Context
      */
     private $context;
-    
+
     /**
      * @var EntityRepositoryInterface
      */
@@ -60,13 +62,12 @@ class EntitiesHelper
      * @var EntityRepositoryInterface
      */
     private $propertyGroupOptionRepository;
-    
+
     /**
      * @var EntityRepositoryInterface
      */
     private $categoryRepository;
-    
-    
+
     /**
      * @var EntityRepositoryInterface
      */
@@ -81,7 +82,7 @@ class EntitiesHelper
     private $systemDefaultLocaleCode;
 
     public function __construct(
-        Connection $connection, 
+        Connection $connection,
         EntityRepository $mediaRepository,
         MediaService $mediaService,
         EntityRepository $propertyGroupRepository,
@@ -89,8 +90,7 @@ class EntitiesHelper
         EntityRepository $manufacturerRepository,
         EntityRepository $mediaFolderRepository,
         EntityRepository $propertyGroupOptionRepository
-    )
-    {
+    ) {
         $this->connection = $connection;
         $this->mediaRepository = $mediaRepository;
         $this->mediaService = $mediaService;
@@ -98,13 +98,12 @@ class EntitiesHelper
         $this->categoryRepository = $categoryRepository;
         $this->manufacturerRepository = $manufacturerRepository;
         $this->mediaFolderRepository = $mediaFolderRepository;
-        
+
         $this->propertyGroupOptionRepository = $propertyGroupOptionRepository;
 
         $this->systemDefaultLocaleCode = $this->getLocaleCodeOfSystemLanguage();
         $this->context = Context::createDefaultContext();
     }
-
 
     private function getLocaleCodeOfSystemLanguage(): string
     {
@@ -114,155 +113,156 @@ class EntitiesHelper
                 ['systemLanguageId' => Defaults::LANGUAGE_SYSTEM]
             );
     }
-    
-    protected function loadPropertyGroups() : void
+
+    protected function loadPropertyGroups(): void
     {
         $this->propertyGroups = $this->propertyGroupRepository->search(
-                (new Criteria())
-                ->addAssociation('options'), 
-                $this->context)->getEntities();
+            (new Criteria())
+            ->addAssociation('options'),
+            $this->context
+        )->getEntities();
     }
 
+    //    public function getPropertyId(string $propGroupName, string $propValue) : string
+    //    {
+    //        if($this->propertyGroups === null) {
+    //            $this->loadPropertyGroups();
+    //        }
+    //
+    //        $currentGroup = null;
+    //        $currentOptionId = Uuid::randomHex();
+    //
+    //        foreach ($this->propertyGroups as $propertyGroup) {
+    //            if($propertyGroup->getName() == $propGroupName) {
+    //                $currentGroup = $propertyGroup;
+    //                break;
+    //            }
+    //        }
+    //
+    //        if($currentGroup === null) {
+    //            $this->propertyGroupRepository->create([
+    //                    [
+    //                        'id' => Uuid::randomHex(),
+    //                        'sortingType' => PropertyGroupDefinition::SORTING_TYPE_ALPHANUMERIC,
+    //                        'displayType' => PropertyGroupDefinition::DISPLAY_TYPE_TEXT,
+    //                        'name' => [
+    //                            $this->systemDefaultLocaleCode => $propGroupName
+    //                        ],
+    //                        'options' => [
+    //                            [
+    //                                'id' => $currentOptionId,
+    //                                'name' => [
+    //                                    $this->systemDefaultLocaleCode => $propValue
+    //                                ],
+    //                            ]
+    //                        ]
+    //
+    //                    ]
+    //                ], $this->context);
+    //            $this->loadPropertyGroups();
+    //            return $currentOptionId;
+    //        }
+    //
+    //        foreach ($currentGroup->getOptions() as $propertyGroupOption) {
+    //            if($propertyGroupOption->getName() == $propValue) {
+    //                return $propertyGroupOption->getId();
+    //            }
+    //        }
+    //
+    //        $this->propertyGroupRepository->update([
+    //                [
+    //                    'id' => $currentGroup->getId(),
+    //                    'options' => [
+    //                        [
+    //                            'id' => $currentOptionId,
+    //                            'name' => [
+    //                                $this->systemDefaultLocaleCode => $propValue
+    //                            ],
+    //                        ]
+    //                    ]
+    //
+    //                ]
+    //            ], $this->context);
+    //
+    //        $this->loadPropertyGroups();
+    //        return $currentOptionId;
+    //    }
 
-//    public function getPropertyId(string $propGroupName, string $propValue) : string
-//    {
-//        if($this->propertyGroups === null) {
-//            $this->loadPropertyGroups();
-//        }
-//        
-//        $currentGroup = null;
-//        $currentOptionId = Uuid::randomHex();
-//        
-//        foreach ($this->propertyGroups as $propertyGroup) {
-//            if($propertyGroup->getName() == $propGroupName) {
-//                $currentGroup = $propertyGroup;
-//                break;
-//            }
-//        }
-//        
-//        if($currentGroup === null) {
-//            $this->propertyGroupRepository->create([
-//                    [
-//                        'id' => Uuid::randomHex(),
-//                        'sortingType' => PropertyGroupDefinition::SORTING_TYPE_ALPHANUMERIC,
-//                        'displayType' => PropertyGroupDefinition::DISPLAY_TYPE_TEXT,
-//                        'name' => [
-//                            $this->systemDefaultLocaleCode => $propGroupName
-//                        ],
-//                        'options' => [
-//                            [
-//                                'id' => $currentOptionId,
-//                                'name' => [
-//                                    $this->systemDefaultLocaleCode => $propValue
-//                                ],
-//                            ]
-//                        ]
-//
-//                    ]
-//                ], $this->context);
-//            $this->loadPropertyGroups();
-//            return $currentOptionId;
-//        }
-//        
-//        foreach ($currentGroup->getOptions() as $propertyGroupOption) {
-//            if($propertyGroupOption->getName() == $propValue) {
-//                return $propertyGroupOption->getId();
-//            }
-//        }
-//        
-//        $this->propertyGroupRepository->update([
-//                [
-//                    'id' => $currentGroup->getId(),
-//                    'options' => [
-//                        [
-//                            'id' => $currentOptionId,
-//                            'name' => [
-//                                $this->systemDefaultLocaleCode => $propValue
-//                            ],
-//                        ]
-//                    ]
-//
-//                ]
-//            ], $this->context);
-//        
-//        $this->loadPropertyGroups();
-//        return $currentOptionId;
-//    }
-    
-    public function getPropertyId(string $propGroupName, string $propValue) : string
+    public function getPropertyId(string $propGroupName, string $propValue): string
     {
         $propGroups = $this->getPropertyGroupsOptionsArray();
-        
+
         $currentGroup = null;
         $currentGroupId = null;
         $currentOptionId = Uuid::randomHex();
-        
+
         foreach ($propGroups as $id=>$propertyGroup) {
-            if($propertyGroup['name'] == $propGroupName) {
+            if ($propertyGroup['name'] == $propGroupName) {
                 $currentGroupId = $id;
                 $currentGroup = $propertyGroup;
                 break;
             }
         }
-        
-        if($currentGroup === null) {
-            $currentGroupId = Uuid::randomHex();
-//            echo '1';
-            $this->propertyGroupRepository->create([
-                    [
-                        'id' => $currentGroupId,
-                        'sortingType' => PropertyGroupDefinition::SORTING_TYPE_ALPHANUMERIC,
-                        'displayType' => PropertyGroupDefinition::DISPLAY_TYPE_TEXT,
-                        'filterable' => false,
-                        'name' => [
-                            $this->systemDefaultLocaleCode => $propGroupName
-                        ],
-                        'options' => [
-                            [
-                                'id' => $currentOptionId,
-                                'name' => [
-                                    $this->systemDefaultLocaleCode => $propValue
-                                ],
-                            ]
-                        ]
 
-                    ]
-                ], $this->context);
-//            echo '2';
+        if ($currentGroup === null) {
+            $currentGroupId = Uuid::randomHex();
+            //            echo '1';
+            $this->propertyGroupRepository->create([
+                [
+                    'id' => $currentGroupId,
+                    'sortingType' => PropertyGroupDefinition::SORTING_TYPE_ALPHANUMERIC,
+                    'displayType' => PropertyGroupDefinition::DISPLAY_TYPE_TEXT,
+                    'filterable' => false,
+                    'name' => [
+                        $this->systemDefaultLocaleCode => $propGroupName,
+                    ],
+                    'options' => [
+                        [
+                            'id' => $currentOptionId,
+                            'name' => [
+                                $this->systemDefaultLocaleCode => $propValue,
+                            ],
+                        ],
+                    ],
+
+                ],
+            ], $this->context);
+            //            echo '2';
             $this->addOptionPropertyGroupsOptionsArray($currentGroupId, $propGroupName, $currentOptionId, $propValue);
+
             return $currentOptionId;
         }
-        
+
         foreach ($propertyGroup['options'] as $id=>$value) {
-            if($value == $propValue) {
+            if ($value == $propValue) {
                 return $id;
             }
         }
-        
-//        $this->propertyGroupRepository->update([
-//                [
-//                    'id' => $currentGroupId,
-//                    'options' => [
-//                        [
-//                            'id' => $currentOptionId,
-//                            'name' => [
-//                                $this->systemDefaultLocaleCode => $propValue
-//                            ],
-//                        ]
-//                    ]
-//
-//                ]
-//            ], $this->context);
-//        echo 'a';
-//        $this->propertyGroupOptionRepository->create([
-//            [
-//                'id' => $currentOptionId,
-//                'groupId' => $currentGroupId,
-//                'name' => [
-//                    $this->systemDefaultLocaleCode => $propValue
-//                ],
-//            ]
-//        ], $this->context);
+
+        //        $this->propertyGroupRepository->update([
+        //                [
+        //                    'id' => $currentGroupId,
+        //                    'options' => [
+        //                        [
+        //                            'id' => $currentOptionId,
+        //                            'name' => [
+        //                                $this->systemDefaultLocaleCode => $propValue
+        //                            ],
+        //                        ]
+        //                    ]
+        //
+        //                ]
+        //            ], $this->context);
+        //        echo 'a';
+        //        $this->propertyGroupOptionRepository->create([
+        //            [
+        //                'id' => $currentOptionId,
+        //                'groupId' => $currentGroupId,
+        //                'name' => [
+        //                    $this->systemDefaultLocaleCode => $propValue
+        //                ],
+        //            ]
+        //        ], $this->context);
         $currentDateTime = date('Y-m-d H:i:s');
         $enId = $this->getEnID();
         $deId = $this->getDeID();
@@ -270,15 +270,15 @@ class EntitiesHelper
             INSERT INTO property_group_option 
             (id, property_group_id, created_at) 
             VALUES (
-            0x'.$currentOptionId.',
-            0x'.$currentGroupId.',
-            "'.$currentDateTime.'"
+            0x' . $currentOptionId . ',
+            0x' . $currentGroupId . ',
+            "' . $currentDateTime . '"
                 )
         ');
-//        echo 'b';
-        if($enId) {
+        //        echo 'b';
+        if ($enId) {
             $this->connection->insert(
-                'property_group_option_translation', 
+                'property_group_option_translation',
                 [
                     'property_group_option_id'=> Uuid::fromHexToBytes($currentOptionId),
                     'language_id'=> Uuid::fromHexToBytes($enId),
@@ -287,10 +287,10 @@ class EntitiesHelper
                 ]
             );
         }
-        
-        if($deId) {
+
+        if ($deId) {
             $this->connection->insert(
-                'property_group_option_translation', 
+                'property_group_option_translation',
                 [
                     'property_group_option_id'=> Uuid::fromHexToBytes($currentOptionId),
                     'language_id'=> Uuid::fromHexToBytes($deId),
@@ -299,16 +299,15 @@ class EntitiesHelper
                 ]
             );
         }
-        
-        
+
         $this->addOptionPropertyGroupsOptionsArray($currentGroupId, $propGroupName, $currentOptionId, $propValue);
+
         return $currentOptionId;
     }
-    
-        
+
     public function getRootCategoryId(): string
     {
-        if(null !== $this->rootCategoryId) {
+        if (null !== $this->rootCategoryId) {
             return $this->rootCategoryId;
         }
         $criteria = new Criteria();
@@ -318,73 +317,76 @@ class EntitiesHelper
             throw new \RuntimeException('Root category not found');
         }
         $this->rootCategoryId = $rootCategory->getId();
+
         return $this->rootCategoryId;
     }
-    
-    
-    private function buildCategorySubTree(?string $categoryId, $categories) : array
+
+    private function buildCategorySubTree(?string $categoryId, $categories): array
     {
         $ret = [];
         foreach ($categories as $category) {
-            if($category->getParentId() === $categoryId) {
+            if ($category->getParentId() === $categoryId) {
                 $ret[] = [
                     'id' => $category->getId(),
                     'name' => $category->getName(),
-                    'childs' => $this->buildCategorySubTree($category->getId(), $categories)
+                    'childs' => $this->buildCategorySubTree($category->getId(), $categories),
                 ];
             }
         }
+
         return $ret;
     }
-    
-    
-    protected function loadCategoryTree() {
-        $categories = $this->categoryRepository->search(new Criteria(), $this->context)->getEntities();
-        $this->categoryTree =  $this->buildCategorySubTree(null, $categories);
-    }
-    
-    public function getCategoryTree() : array
+
+    protected function loadCategoryTree()
     {
-        if(null === $this->categoryTree) {
+        $categories = $this->categoryRepository->search(new Criteria(), $this->context)->getEntities();
+        $this->categoryTree = $this->buildCategorySubTree(null, $categories);
+    }
+
+    public function getCategoryTree(): array
+    {
+        if (null === $this->categoryTree) {
             $this->loadCategoryTree();
         }
+
         return $this->categoryTree;
     }
-    
-    private function findCategoryBranchByParam(string $paramValue, array $categories, string $paramName, bool $inDepth = true) : ?array
+
+    private function findCategoryBranchByParam(string $paramValue, array $categories, string $paramName, bool $inDepth = true): ?array
     {
         foreach ($categories as $cat) {
-            if($cat[$paramName] == $paramValue) {
+            if ($cat[$paramName] == $paramValue) {
                 return $cat;
-            }
-            elseif(count($cat['childs']) && $inDepth) {
+            } elseif (count($cat['childs']) && $inDepth) {
                 $found = $this->findCategoryBranchByParam($paramValue, $cat['childs'], $paramName, $inDepth);
-                if($found) {
+                if ($found) {
                     return $found;
                 }
             }
         }
+
         return null;
     }
 
-    private function findInBranch(string $name, array $branch) : ?array
+    private function findInBranch(string $name, array $branch): ?array
     {
         foreach ($branch['childs'] as $child) {
-            if($child['name'] == $name) {
+            if ($child['name'] == $name) {
                 return $child;
             }
         }
+
         return null;
     }
-    
-    private function prepareCategoriesBranchData(array $categoriesChain) : ?array
+
+    private function prepareCategoriesBranchData(array $categoriesChain): ?array
     {
-        if(!$categoriesChain) {
+        if (!$categoriesChain) {
             return null;
         }
-        
+
         $this->temp = Uuid::randomHex();
-        
+
         $ret = [
             'id' => $this->temp,
             'cmsPageId'=> $this->getDefaultCmsListingPageId(),
@@ -393,31 +395,30 @@ class EntitiesHelper
             'visible' => true,
             'type' => 'page',
             'name' => [
-                $this->systemDefaultLocaleCode => $categoriesChain[0]['waregroup']
-            ]
+                $this->systemDefaultLocaleCode => $categoriesChain[0]['waregroup'],
+            ],
         ];
-        
+
         $child = $this->prepareCategoriesBranchData(array_slice($categoriesChain, 1));
-        
-        if($child) {
+
+        if ($child) {
             $ret['children'] = [
-                $child
+                $child,
             ];
         }
-        
+
         return $ret;
     }
-    
-    
+
     /**
-     * @param array $categoriesChain
-     * @param string $parentId
+     * @param  array  $categoriesChain
+     * @param  string $parentId
      * @return string Id of a last created child category
      */
-    private function createBranch(array $categoriesChain, ?string $parentId) : string
+    private function createBranch(array $categoriesChain, ?string $parentId): string
     {
         $this->temp = Uuid::randomHex();
-        
+
         $data = [
             'id' => $this->temp,
             'cmsPageId'=> $this->getDefaultCmsListingPageId(),
@@ -426,85 +427,83 @@ class EntitiesHelper
             'visible' => true,
             'type' => 'page',
             'name' => [
-                $this->systemDefaultLocaleCode => $categoriesChain[0]['waregroup']
-            ]
+                $this->systemDefaultLocaleCode => $categoriesChain[0]['waregroup'],
+            ],
         ];
-        if($parentId) {
+        if ($parentId) {
             $data['parentId'] = $parentId;
         }
-        
+
         $child = $this->prepareCategoriesBranchData(array_slice($categoriesChain, 1));
-        
-        if($child) {
+
+        if ($child) {
             $data['children'] = [
-                $child
+                $child,
             ];
         }
-        
+
         $this->categoryRepository->create([$data], $this->context);
-        
+
         return $this->temp;
     }
 
-    public function getCategoryId(array $categoriesChain, string $parentCategoryId) : string
+    public function getCategoryId(array $categoriesChain, string $parentCategoryId): string
     {
-        if(null === $this->categoryTree) {
+        if (null === $this->categoryTree) {
             $this->loadCategoryTree();
         }
-        
-        if($parentCategoryId) {
+
+        if ($parentCategoryId) {
             $branch = $this->findCategoryBranchByParam($parentCategoryId, $this->categoryTree, 'id');
-            if(!$branch) {
+            if (!$branch) {
                 return '';
             }
             $parentId = $parentCategoryId;
             foreach ($categoriesChain as $key => $category) {
                 $temp = $this->findInBranch($category['waregroup'], $branch);
-                if($temp) {
+                if ($temp) {
                     $branch = $temp;
                     $parentId = $temp['id'];
-                }
-                else {
+                } else {
                     $parentId = $this->createBranch(array_slice($categoriesChain, $key), $parentId);
                     $this->loadCategoryTree();
                     break;
                 }
             }
-            
+
             return $parentId;
-        }
-        else {
+        } else {
             $branch = $this->findCategoryBranchByParam($categoriesChain[0]['waregroup'], $this->categoryTree, 'name', false);
-            if(!$branch) {
+            if (!$branch) {
                 $parentId = $this->createBranch($categoriesChain, null);
                 $this->loadCategoryTree();
+
                 return $parentId;
             }
-            
+
             $parentId = $branch['id'];
             foreach ($categoriesChain as $key => $category) {
-                if($key == 0) {
+                if ($key == 0) {
                     continue;
                 }
                 $temp = $this->findInBranch($category['waregroup'], $branch);
-                if($temp) {
+                if ($temp) {
                     $branch = $temp;
                     $parentId = $temp['id'];
-                }
-                else {
+                } else {
                     $parentId = $this->createBranch(array_slice($categoriesChain, $key), $parentId);
                     $this->loadCategoryTree();
                     break;
                 }
             }
+
             return $parentId;
         }
     }
 
-    
     public function getDefaultCmsListingPageId(): string
     {
-        if(null !== $this->defaultCmsListingPageId) {
+        if (null !== $this->defaultCmsListingPageId) {
             return $this->defaultCmsListingPageId;
         }
         /*
@@ -524,71 +523,69 @@ class EntitiesHelper
                 AND type = "product_list"
             ')->fetchOne();
 
-
         if ($result === false) {
             throw new \RuntimeException('Default Cms Listing page not found');
         }
 
         $this->defaultCmsListingPageId = Uuid::fromBytesToHex((string) $result);
+
         return $this->defaultCmsListingPageId;
     }
-    
-    
-    private function generateMediaName(string $path, int $timestamp) : string
+
+    private function generateMediaName(string $path, int $timestamp): string
     {
-        $fileName = pathinfo($path, PATHINFO_FILENAME).'-'.$timestamp;
+        $fileName = pathinfo($path, PATHINFO_FILENAME) . '-' . $timestamp;
+
         return $fileName;
     }
-    
-    
-    public function getMediaId(string $imagePath, int $imageTimestamp = 0, string $imagePrefix = '', $echoDownload = '') : string
+
+    public function getMediaId(string $imagePath, int $imageTimestamp = 0, string $imagePrefix = '', $echoDownload = ''): string
     {
         $imageName = $imagePrefix . $this->generateMediaName($imagePath, $imageTimestamp);
-        
+
         $existingMedia = $this->mediaRepository
             ->search(
                 (new Criteria())
-                ->addFilter(new EqualsFilter ('fileName', $imageName))
+                ->addFilter(new EqualsFilter('fileName', $imageName))
                 ->setLimit(1),
                 $this->context
             )
             ->getEntities()
             ->first();
-        
-        if($existingMedia) {
+
+        if ($existingMedia) {
             $mediaId = $existingMedia->getId();
-        }
-        else {
+        } else {
             echo $echoDownload;
-            $fileContent = file_get_contents ($imagePath);
-            
-            if($fileContent === false) {
+            $fileContent = file_get_contents($imagePath);
+
+            if ($fileContent === false) {
                 return '';
             }
-            
+
             $mediaId = $this->createMediaInFolder();
-            
+
             $mediaId = $this->mediaService->saveFile(
-                $fileContent, 
-                'jpg', 
-                'image/jpeg', 
-                $imageName, 
+                $fileContent,
+                'jpg',
+                'image/jpeg',
+                $imageName,
                 $this->context,
                 null,
                 $mediaId,
                 false
             );
         }
-        
+
         return $mediaId;
     }
-    
-    protected function createMediaInFolder() : string
+
+    protected function createMediaInFolder(): string
     {
-        if(!$this->uploadFolderId) {
+        if (!$this->uploadFolderId) {
             $this->createUploadFolder();
         }
-        
+
         $mediaId = Uuid::randomHex();
         $this->mediaRepository->create(
             [
@@ -603,15 +600,15 @@ class EntitiesHelper
 
         return $mediaId;
     }
-    
-    protected function createUploadFolder() : void
+
+    protected function createUploadFolder(): void
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('media_folder.defaultFolder.entity', self::DEFAULT_MAIN_FOLDER));
         $criteria->addAssociation('defaultFolder');
         $criteria->setLimit(1);
         $defaultFolder = $this->mediaFolderRepository->search($criteria, $this->context)->first();
-        
+
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('name', self::UPLOAD_FOLDER_NAME));
         $criteria->addFilter(new EqualsFilter('parentId', $defaultFolder->getId()));
@@ -619,16 +616,17 @@ class EntitiesHelper
         $uploadFolder = $this
             ->mediaFolderRepository
             ->search(
-                $criteria, 
+                $criteria,
                 $this->context
             )
             ->first();
-        
-        if($uploadFolder) {
+
+        if ($uploadFolder) {
             $this->uploadFolderId = $uploadFolder->getId();
+
             return;
         }
-        
+
         $this->uploadFolderId = Uuid::randomHex();
         $this->mediaFolderRepository->create(
             [
@@ -637,15 +635,14 @@ class EntitiesHelper
                     'private' => false,
                     'name' => self::UPLOAD_FOLDER_NAME,
                     'parentId' => $defaultFolder->getId(),
-                    'configurationId' => $defaultFolder->getConfigurationId()
+                    'configurationId' => $defaultFolder->getConfigurationId(),
                 ],
             ],
             $this->context
         );
     }
-    
-    
-    protected function loadManufacturers() : void
+
+    protected function loadManufacturers(): void
     {
         $manufacturers = $this->manufacturerRepository->search(new Criteria(), $this->context)->getEntities();
         $ret = [];
@@ -654,15 +651,14 @@ class EntitiesHelper
         }
         $this->manufacturers = $ret;
     }
-    
-    
-    public function getManufacturerId(string $manufacturerName) : string
+
+    public function getManufacturerId(string $manufacturerName): string
     {
-        if($this->manufacturers === null) {
+        if ($this->manufacturers === null) {
             $this->loadManufacturers();
         }
-        
-        if(isset($this->manufacturers[$manufacturerName])) {
+
+        if (isset($this->manufacturers[$manufacturerName])) {
             $manufacturerId = $this->manufacturers[$manufacturerName];
         } else {
             $manufacturerId = Uuid::randomHex();
@@ -670,87 +666,87 @@ class EntitiesHelper
                 [
                     'id' => $manufacturerId,
                     'name' => [
-                        $this->systemDefaultLocaleCode => $manufacturerName
+                        $this->systemDefaultLocaleCode => $manufacturerName,
                     ],
-                ]
+                ],
             ], $this->context);
             $this->manufacturers[$manufacturerName] = $manufacturerId;
         }
-        
+
         return $manufacturerId;
     }
-    
+
     /**
      * Returns product ids which are compatible with same devices
-     * [['a_id'=>hexid, 'a_version_id'=>hexversionid], ...]
+     * [['a_id'=>hexid, 'a_version_id'=>hexversionid], ...].
      */
-    public function getAlternateProductIds(ProductEntity $product) : array
+    public function getAlternateProductIds(ProductEntity $product): array
     {
         $result = $this->connection->executeQuery('
 SELECT DISTINCT LOWER(HEX(a.id)) a_id, LOWER(HEX(a.version_id)) a_version_id 
  FROM product a, 
       topdata_device_to_product tdp, 
       topdata_device_to_product tda 
- WHERE (0x'.$product->getId().' = tdp.product_id) AND (0x'.$product->getVersionId().' = tdp.product_version_id)
+ WHERE (0x' . $product->getId() . ' = tdp.product_id) AND (0x' . $product->getVersionId() . ' = tdp.product_version_id)
    AND  (a.id = tda.product_id) AND (a.version_id = tda.product_version_id)
    AND  (tdp.device_id = tda.device_id)
-   AND  (0x'.$product->getId().' != a.id)
+   AND  (0x' . $product->getId() . ' != a.id)
             ')->fetchAllAssociative();
-        
+
         return $result;
-        
+
         /*
          #all alternates:
-         SELECT DISTINCT p.product_number, a.product_number 
- FROM product p, 
-      product a, 
-      topdata_device_to_product tdp, 
-      topdata_device_to_product tda 
+         SELECT DISTINCT p.product_number, a.product_number
+ FROM product p,
+      product a,
+      topdata_device_to_product tdp,
+      topdata_device_to_product tda
  WHERE (p.id = tdp.product_id) AND (p.version_id = tdp.product_version_id)
    AND  (a.id = tda.product_id) AND (a.version_id = tda.product_version_id)
    AND  (tdp.device_id = tda.device_id)
    AND  (p.id != a.id)
          */
     }
-    
-    public static function isValidUuid($uuid) : bool
+
+    public static function isValidUuid($uuid): bool
     {
-        if(!is_string($uuid)) {
+        if (!is_string($uuid)) {
             return false;
         }
-        return (bool)preg_match('/^[0-9a-f]{32}$/', $uuid);
+
+        return (bool) preg_match('/^[0-9a-f]{32}$/', $uuid);
     }
-    
-    protected function getLanguageId(string $languageName = '') : string
+
+    protected function getLanguageId(string $languageName = ''): string
     {
-        if($languageName === '') {
+        if ($languageName === '') {
             $languageName = static::LANGUAGE_NAME;
         }
-        
+
         $result = $this->connection->executeQuery("
 SELECT LOWER(HEX(id)) id
  FROM language
  WHERE name='$languageName' LIMIT 1
             ")->fetchAllAssociative();
-        
-        if(!$result) {
+
+        if (!$result) {
             throw new \Exception('No English labguage in db!');
         }
-        
+
         foreach ($result as $res) {
             return $res['id'];
         }
     }
-    
-    
-    public function getPropertyGroupsOptionsArray() : array
+
+    public function getPropertyGroupsOptionsArray(): array
     {
-        if(is_array($this->propertyGroupsOptionsArray)) {
+        if (is_array($this->propertyGroupsOptionsArray)) {
             return $this->propertyGroupsOptionsArray;
         }
-        
+
         $this->propertyGroupsOptionsArray = [];
-        
+
         $langId = $this->getLanguageId();
         $result = $this->connection->executeQuery("
 SELECT LOWER(HEX(pg.id)) pg_id, pgt.name pg_name, LOWER(HEX(pgo.id)) pgo_id, pgot.name pgo_name
@@ -762,34 +758,34 @@ SELECT LOWER(HEX(pg.id)) pg_id, pgt.name pg_name, LOWER(HEX(pgo.id)) pgo_id, pgo
     AND (pgo.id = pgot.property_group_option_id)
  	AND(pgot.language_id = 0x$langId)
             ")->fetchAllAssociative();
-        
+
         foreach ($result as $res) {
-            if(!isset($this->propertyGroupsOptionsArray[$res['pg_id']])) {
+            if (!isset($this->propertyGroupsOptionsArray[$res['pg_id']])) {
                 $this->propertyGroupsOptionsArray[$res['pg_id']] = [
                     'name'=>$res['pg_name'],
-                    'options'=>[]
+                    'options'=>[],
                 ];
             }
             $this->propertyGroupsOptionsArray[$res['pg_id']]['options'][$res['pgo_id']] = $res['pgo_name'];
         }
-        
+
         return $this->propertyGroupsOptionsArray;
     }
-    
-    public function addOptionPropertyGroupsOptionsArray($groupId, $groupName, $groupOptId, $groupOptVal) : void
+
+    public function addOptionPropertyGroupsOptionsArray($groupId, $groupName, $groupOptId, $groupOptVal): void
     {
-        if(!isset($this->propertyGroupsOptionsArray[$groupId])) {
+        if (!isset($this->propertyGroupsOptionsArray[$groupId])) {
             $this->propertyGroupsOptionsArray[$groupId] = [
                 'name'=>$groupName,
-                'options'=>[]
+                'options'=>[],
             ];
         }
         $this->propertyGroupsOptionsArray[$groupId]['options'][$groupOptId] = $groupOptVal;
     }
-    
+
     public function productAlternatesCount(string $productId)
     {
-        if(!$this->isValidUuid($productId)) {
+        if (!$this->isValidUuid($productId)) {
             return 0;
         }
         /*
@@ -801,33 +797,32 @@ SELECT COUNT(*) as cnt
             ')->fetchColumn();
 */
 
-        return $this->connection->executeQuery('SELECT COUNT(*) as cnt FROM topdata_product_to_alternate WHERE 0x'.$productId.' = product_id LIMIT 1')->fetchOne();
+        return $this->connection->executeQuery('SELECT COUNT(*) as cnt FROM topdata_product_to_alternate WHERE 0x' . $productId . ' = product_id LIMIT 1')->fetchOne();
     }
 
-    
-    public function getDeviceSynonymsIds(string $deviceId) : array
+    public function getDeviceSynonymsIds(string $deviceId): array
     {
         $xids = [];
-        
-        if(!$this->isValidUuid($deviceId)) {
+
+        if (!$this->isValidUuid($deviceId)) {
             return $xids;
         }
-        
+
         $deviceIds = $this->connection->executeQuery('
 SELECT LOWER(HEX(synonym_id)) as id
  FROM topdata_device_to_synonym
- WHERE 0x'.$deviceId.' = device_id
+ WHERE 0x' . $deviceId . ' = device_id
             ')->fetchAllAssociative();
         foreach ($deviceIds as $id) {
             $xids[] = $id['id'];
         }
-        
+
         return $xids;
     }
-    
+
     private function getEnID()
     {
-        if($this->enLangID || ($this->enLangID === false)) {
+        if ($this->enLangID || ($this->enLangID === false)) {
             return $this->enLangID;
         }
 
@@ -840,13 +835,14 @@ SELECT LOWER(HEX(synonym_id)) as id
 
         $result = $this->connection->executeQuery('SELECT LOWER(HEX(id)) as id FROM language WHERE name="English" LIMIT 1')->fetchOne();
 
-        $this->enLangID = $result ? : false;
+        $this->enLangID = $result ?: false;
+
         return $this->enLangID;
     }
-    
+
     private function getDeID()
     {
-        if($this->deLangID || ($this->deLangID === false)) {
+        if ($this->deLangID || ($this->deLangID === false)) {
             return $this->deLangID;
         }
 
@@ -859,7 +855,8 @@ SELECT LOWER(HEX(synonym_id)) as id
 
         $result = $this->connection->executeQuery('SELECT LOWER(HEX(id)) as id FROM language WHERE name="Deutsch" LIMIT 1')->fetchOne();
 
-        $this->deLangID = $result ? : false;
+        $this->deLangID = $result ?: false;
+
         return $this->deLangID;
     }
 }

@@ -1,16 +1,18 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6;
 
-use Shopware\Core\Framework\Plugin;
-use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Doctrine\DBAL\Connection;
+use Shopware\Core\Framework\DataAbstractionLayer\Indexing\Indexer\InheritanceIndexer;
+use Shopware\Core\Framework\Plugin;
+use Shopware\Core\Framework\Plugin\Context\ActivateContext;
+use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
-use Shopware\Core\Framework\DataAbstractionLayer\Indexing\Indexer\InheritanceIndexer;
 //use Shopware\Core\Framework\DataAbstractionLayer\Indexing\MessageQueue\IndexerMessageSender;
-use Shopware\Core\Framework\Plugin\Context\ActivateContext;
+use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 
 //use Shopware\Core\Framework\Plugin\Context\InstallContext;
 //use Shopware\Core\Framework\Plugin\Context\UpdateContext;
@@ -25,8 +27,7 @@ class TopdataConnectorSW6 extends Plugin
     {
         parent::build($container);
     }
-    
-    
+
     public function uninstall(UninstallContext $context): void
     {
         parent::uninstall($context);
@@ -52,27 +53,27 @@ class TopdataConnectorSW6 extends Plugin
         $connection->executeStatement('DROP TABLE IF EXISTS `topdata_product_to_color_variant`');
         $connection->executeStatement('DROP TABLE IF EXISTS `topdata_product_to_capacity_variant`');
         $connection->executeStatement('DROP TABLE IF EXISTS `topdata_product_to_variant`');
-        
+
         $customerFields = [];
         $temp = $connection->fetchAllAssociative('SHOW COLUMNS from `customer`');
         foreach ($temp as $field) {
-            if(isset($field['Field'])) {
+            if (isset($field['Field'])) {
                 $customerFields[$field['Field']] = $field['Field'];
             }
         }
-        
-        if(isset($customerFields['devices'])) {
+
+        if (isset($customerFields['devices'])) {
             $connection->executeStatement('ALTER TABLE `customer` DROP `devices`');
         }
-        
+
         $productFields = [];
         $temp = $connection->fetchAllAssociative('SHOW COLUMNS from `product`');
         foreach ($temp as $field) {
-            if(isset($field['Field'])) {
+            if (isset($field['Field'])) {
                 $productFields[$field['Field']] = $field['Field'];
             }
         }
-        
+
         $productFieldsToDelete = [
             'devices',
             'topdata',
@@ -82,14 +83,13 @@ class TopdataConnectorSW6 extends Plugin
             'bundled_products',
             'variant_products',
             'capacity_variant_products',
-            'color_variant_products'
+            'color_variant_products',
         ];
-        
+
         foreach ($productFieldsToDelete as $field) {
-            if(isset($productFields[$field])) {
-                $connection->executeStatement('ALTER TABLE `product`  DROP `'.$field.'`');
+            if (isset($productFields[$field])) {
+                $connection->executeStatement('ALTER TABLE `product`  DROP `' . $field . '`');
             }
         }
-        
     }
 }

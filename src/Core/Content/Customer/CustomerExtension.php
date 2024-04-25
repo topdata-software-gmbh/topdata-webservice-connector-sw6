@@ -1,14 +1,16 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Core\Content\Customer;
 
 use Shopware\Core\Checkout\Customer\CustomerDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityExtension;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Inherited;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
+use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Topdata\TopdataConnectorSW6\Core\Content\Device\Agregate\DeviceCustomer\DeviceCustomerDefinition;
 use Topdata\TopdataConnectorSW6\Core\Content\Device\DeviceDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityExtension;
 
 class CustomerExtension extends EntityExtension
 {

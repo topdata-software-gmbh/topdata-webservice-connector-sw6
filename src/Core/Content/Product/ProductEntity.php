@@ -1,4 +1,7 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
+
 namespace Topdata\TopdataConnectorSW6\Core\Content\Product;
 
 use Shopware\Core\Content\Product\ProductEntity as parentProductEntity;

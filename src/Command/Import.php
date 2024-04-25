@@ -1,58 +1,56 @@
-<?php declare(strict_types = 1);
+<?php
+
+declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Command;
 
-
+use Psr\Log\LoggerInterface;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Topdata\TopdataConnectorSW6\Component\TopdataWebserviceClient;
-use Topdata\TopdataConnectorSW6\Component\Helper\MappingHelper;
-
-use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
-use Psr\Log\LoggerInterface;
+use Topdata\TopdataConnectorSW6\Component\Helper\MappingHelper;
+use Topdata\TopdataConnectorSW6\Component\TopdataWebserviceClient;
 
 class Import extends Command
 {
-
     /**
      * @var bool
      */
     private $verbose = true;
-    
+
     /**
      * @var SystemConfigService
      */
     private $systemConfigService;
-    
+
     /**
      * @var ContainerBagInterface
      */
     private $containerBag;
-    
+
     /**
      * @var LoggerInterface
      */
     private $logger;
-    
+
     /**
-     * @var MappingHelper 
+     * @var MappingHelper
      */
     private $mappingHelper;
-    
+
     protected static $defaultName = 'topdata:connector:import';
-    
+
     private $path;
 
     public function __construct(
-        SystemConfigService $systemConfigService, 
-        ContainerBagInterface $ContainerBag,  
+        SystemConfigService $systemConfigService,
+        ContainerBagInterface $ContainerBag,
         LoggerInterface $logger,
         MappingHelper $mappingHelper
-    )
-    {
+    ) {
         parent::__construct();
         $this->systemConfigService = $systemConfigService;
         $this->containerBag = $ContainerBag;
@@ -61,27 +59,29 @@ class Import extends Command
         $this->path = $this->containerBag->get('kernel.project_dir');
     }
 
-    public function execute(InputInterface $input, OutputInterface $output) : int
+    public function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->verbose = ($input->getOption('verbose') >= 1);
-        
+
         if ($this->verbose) {
             $output->writeln('Starting work...');
         }
-        
+
         $activePlugins = $this->containerBag->get('kernel.active_plugins');
-        if(!isset($activePlugins['Topdata\TopdataConnectorSW6\TopdataConnectorSW6'])) {
+        if (!isset($activePlugins['Topdata\TopdataConnectorSW6\TopdataConnectorSW6'])) {
             if ($this->verbose) {
                 $output->writeln('Plugin is inactive!');
             }
+
             return 1;
         }
-        
+
         $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
-        if($config['apiUsername'] == '' || $config['apiKey'] == '' || $config['apiSalt'] == '' || $config['apiLanguage'] == '') {
+        if ($config['apiUsername'] == '' || $config['apiKey'] == '' || $config['apiSalt'] == '' || $config['apiLanguage'] == '') {
             if ($this->verbose) {
                 $output->writeln('Fill in connection parameters in admin -> Settings -> System -> Plugins -> TopdataConnector config');
             }
+
             return 2;
         }
         $option = [
@@ -96,63 +96,64 @@ class Import extends Command
             'isServiceProductMedia'  => $input->getOption('product-media-only'),
             'isProductVariations'  => $input->getOption('product-variated'),
         ];
-        
-//        if($option['isServiceAll']) {
-//            $output->writeln('Option "all" is currently disabled. Use partial service options instead.');
-//            return ['success' => true];
-//        }
-        
-        $webservice  = new TopdataWebserviceClient(
-            $this->logger, 
+
+        //        if($option['isServiceAll']) {
+        //            $output->writeln('Option "all" is currently disabled. Use partial service options instead.');
+        //            return ['success' => true];
+        //        }
+
+        $webservice = new TopdataWebserviceClient(
+            $this->logger,
             $config['apiUsername'],
-            $config['apiKey'], 
-            $config['apiSalt'], 
+            $config['apiKey'],
+            $config['apiSalt'],
             $config['apiLanguage']
         );
-        
+
         $mappingHelper = $this->mappingHelper;
         $mappingHelper->setApi($webservice);
 
         $mappingHelper->setVerbose($this->verbose);
-        
+
         $configDefaults = [
             'attributeOem'=>'',
             'attributeEan'=>'',
             'attributeOrdernumber'=>'',
         ];
-        
+
         $config = array_merge($configDefaults, $config);
-        
+
         $mappingHelper->setOption('mappingType', $config['mappingType']);
         $mappingHelper->setOption('attributeOem', $config['attributeOem']);
         $mappingHelper->setOption('attributeEan', $config['attributeEan']);
         $mappingHelper->setOption('attributeOrdernumber', $config['attributeOrdernumber']);
-        
-        if(!$option['isServiceAll']) {
-            if($input->getOption('start')) {
-                $mappingHelper->setOption('start', (int)$input->getOption('start'));
+
+        if (!$option['isServiceAll']) {
+            if ($input->getOption('start')) {
+                $mappingHelper->setOption('start', (int) $input->getOption('start'));
             }
-            if($input->getOption('end')) {
-                $mappingHelper->setOption('end', (int)$input->getOption('end'));
+            if ($input->getOption('end')) {
+                $mappingHelper->setOption('end', (int) $input->getOption('end'));
             }
         }
-        
+
         //mapping
-        if($option['isServiceAll'] || $option['isServiceMapping']) {
-            if($this->verbose) {
+        if ($option['isServiceAll'] || $option['isServiceMapping']) {
+            if ($this->verbose) {
                 $output->writeln('mapping products started...');
             }
-            if(!$mappingHelper->mapProducts()) {
+            if (!$mappingHelper->mapProducts()) {
                 if ($this->verbose) {
                     $output->writeln('Mapping failed!');
                 }
+
                 return 3;
             }
         }
 
         //set printer infos
-        if($option['isServiceAll'] || $option['isServiceDevice']) {
-            if(
+        if ($option['isServiceAll'] || $option['isServiceDevice']) {
+            if (
                 !$mappingHelper->setBrands()
                 || !$mappingHelper->setSeries()
                 || !$mappingHelper->setDeviceTypes()
@@ -161,106 +162,107 @@ class Import extends Command
                 if ($this->verbose) {
                     $output->writeln('Device import failed!');
                 }
+
                 return 4;
             }
-        }
-        elseif($option['isServiceDeviceOnly']) {
-            if(!$mappingHelper->setDevices()) {
+        } elseif ($option['isServiceDeviceOnly']) {
+            if (!$mappingHelper->setDevices()) {
                 if ($this->verbose) {
                     $output->writeln('Device import failed!');
                 }
+
                 return 4;
             }
         }
 
         //set printer to products
-        if($option['isServiceAll'] || $option['isServiceProduct']) {
-            if(!$mappingHelper->setProducts()) {
+        if ($option['isServiceAll'] || $option['isServiceProduct']) {
+            if (!$mappingHelper->setProducts()) {
                 if ($this->verbose) {
                     $output->writeln('Set products to devices failed!');
                 }
+
                 return 5;
             }
         }
 
         //set device media
-        if($option['isServiceAll'] || $option['isServiceDeviceMedia']) {
-            if(!$mappingHelper->setDeviceMedia()) {
+        if ($option['isServiceAll'] || $option['isServiceDeviceMedia']) {
+            if (!$mappingHelper->setDeviceMedia()) {
                 if ($this->verbose) {
                     $output->writeln('Load device media failed!');
                 }
+
                 return 6;
             }
         }
-        
+
         //set product information
-        if($option['isServiceAll'] || $option['isServiceProductInformation']) {
-            if(isset($activePlugins['Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6'])) {
+        if ($option['isServiceAll'] || $option['isServiceProductInformation']) {
+            if (isset($activePlugins['Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6'])) {
                 /* TopFeed plugin is enabled */
                 $this->loadTopFeedConfig($mappingHelper);
-                if(!$mappingHelper->setProductInformation()) {
+                if (!$mappingHelper->setProductInformation()) {
                     if ($this->verbose) {
                         $output->writeln('Load product information failed!');
                     }
+
                     return 7;
                 }
-            }
-            elseif($option['isServiceProductInformation'] && $this->verbose) {
+            } elseif ($option['isServiceProductInformation'] && $this->verbose) {
                 $output->writeln('You need TopFeed plugin to update product information!');
             }
-        }
-        elseif($option['isServiceProductMedia']) {
-            if(isset($activePlugins['Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6'])) {
+        } elseif ($option['isServiceProductMedia']) {
+            if (isset($activePlugins['Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6'])) {
                 /* TopFeed plugin is enabled */
                 $this->loadTopFeedConfig($mappingHelper);
-                if(!$mappingHelper->setProductInformation(true)) {
-                if ($this->verbose) {
-                    $output->writeln('Load product information failed!');
+                if (!$mappingHelper->setProductInformation(true)) {
+                    if ($this->verbose) {
+                        $output->writeln('Load product information failed!');
+                    }
+
+                    return 7;
                 }
-                return 7;
-                }
-            }
-            elseif($this->verbose) {
+            } elseif ($this->verbose) {
                 $output->writeln('You need TopFeed plugin to update product information!');
             }
         }
-        
+
         //set device synonyms
-        if($option['isServiceAll'] || $option['isServiceDeviceSynonyms']) {
-            if(!$mappingHelper->setDeviceSynonyms()) {
+        if ($option['isServiceAll'] || $option['isServiceDeviceSynonyms']) {
+            if (!$mappingHelper->setDeviceSynonyms()) {
                 if ($this->verbose) {
                     $output->writeln('Set device synonyms failed!');
                 }
+
                 return 8;
             }
         }
-        
-        
+
         //set variated products
-        if($option['isProductVariations']) {
-            if(isset($activePlugins['Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6'])) {
-                if(!$mappingHelper->setProductColorCapacityVariants()) {
+        if ($option['isProductVariations']) {
+            if (isset($activePlugins['Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6'])) {
+                if (!$mappingHelper->setProductColorCapacityVariants()) {
                     if ($this->verbose) {
                         $output->writeln('Set device synonyms failed!');
                     }
+
                     return 9;
                 }
-            }
-            elseif($this->verbose) {
+            } elseif ($this->verbose) {
                 $output->writeln('You need TopFeed plugin to create variated products!');
             }
         }
-        
+
         //test
-        if($input->getOption('test'))
-        {
-//            $rez = $mappingHelper->getKeysByCustomFieldUnique('Distributor product number');
-//            print_r($rez);
+        if ($input->getOption('test')) {
+            //            $rez = $mappingHelper->getKeysByCustomFieldUnique('Distributor product number');
+            //            print_r($rez);
         }
-        
+
         return 0;
     }
-    
+
     private function loadTopFeedConfig($mappingHelper)
     {
         $configFeed = $this->systemConfigService->get('TopdataTopFeedSW6.config');
@@ -268,17 +270,17 @@ class Import extends Command
         $mappingHelper->setOption('productColorVariant', $configFeed['productVariantColor']);
         $mappingHelper->setOption('productCapacityVariant', $configFeed['productVariantCapacity']);
     }
-    
-    protected function configure() : void
+
+    protected function configure(): void
     {
         $this->setName(static::$defaultName)
-            ->addOption (
+            ->addOption(
                 'test',
                 null,
                 InputOption::VALUE_NONE,
                 'for developer tests'
             )
-            ->addOption (
+            ->addOption(
                 'all',
                 null,
                 InputOption::VALUE_NONE,

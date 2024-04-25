@@ -1,6 +1,5 @@
 <?php
 /**
- *
  * @author    Christoph Muskalla <muskalla@cm-s.eu>
  * @copyright 2019 CMS (http://www.cm-s.eu)
  * @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
@@ -12,9 +11,9 @@ use Monolog\Logger;
 
 class TopdataWebserviceClient
 {
-    const API_VERSION                 = '108';
+    const API_VERSION = '108';
     const TOPDATA_WEBSERVICE_BASE_URL = 'https://ws.topdata.de';
-    const CURL_TIMEOUT                = 30;  // seconds
+    const CURL_TIMEOUT = 30;  // seconds
 
     private $url;
     private $uid;
@@ -53,8 +52,8 @@ class TopdataWebserviceClient
     }
 
     /**
-     * @param $url
-     * @param null $xml_data
+     * @param             $url
+     * @param  null       $xml_data
      * @return bool|mixed
      * @throws \Exception
      */
@@ -68,152 +67,164 @@ class TopdataWebserviceClient
             curl_setopt($ch, CURLOPT_TIMEOUT, self::CURL_TIMEOUT);
             $output = curl_exec($ch);
 
-
             if (curl_errno($ch)) {
-                if (curl_errno($ch) == 28 && $attempt < 3) //TIMEOUT
-                {
+                if (curl_errno($ch) == 28 && $attempt < 3) { //TIMEOUT
                     echo 'cURL-ERROR: ' . curl_error($ch) . "\n" . $url . "\n" . ' ... DO RETRY ' . ($attempt + 1) . "\n";
+
                     return $this->getCURLResponse($url, $xml_data, ($attempt + 1));
                 }
                 throw new \Exception('cURL-ERROR: ' . curl_error($ch));
-
             }
             // Dirty Hack for Curl Bad Request 400
             $header = curl_getinfo($ch);
             if ($header['http_code'] == 400) {
-                $header_size = strpos($output, "{");;
+                $header_size = strpos($output, '{');
                 $output = substr($output, $header_size);
             }
             // ----------------------------------------------------
             curl_close($ch);
             $json = json_decode($output);
-            if (isset($json->error))
+            if (isset($json->error)) {
                 throw new \Exception($json->error[0]->error_message . ' @topdataconnector webservice error');
+            }
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
             throw new \Exception($e->getMessage(), 0, $e);
         }
+
         return $json;
     }
 
-    public function getFinder($finder, $step, $params = array())
+    public function getFinder($finder, $step, $params = [])
     {
-        $p = array();
+        $p = [];
         foreach ($params as $k => $v) {
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
         $url = $this->url . '/finder/' . $finder . '/' . $step . '?' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
 
-    public function product($id, $params = array())
+    public function product($id, $params = [])
     {
-        $p = array();
+        $p = [];
         foreach ($params as $k => $v) {
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
         $url = $this->url . '/product/' . $id . '?' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
 
-    public function myProducts($params = array())
+    public function myProducts($params = [])
     {
-        $p = array();
+        $p = [];
         foreach ($params as $k => $v) {
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
         $url = $this->url . '/my_products?' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
-
 
     public function myProductsOfWaregroup($waregroupId)
     {
-        if (!is_int($waregroupId)) return false;
+        if (!is_int($waregroupId)) {
+            return false;
+        }
 
-        $p = array();
+        $p = [];
         $p[] = $this->getParams();
         $url = $this->url . "/waregroup/$waregroupId?" . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
 
-    public function myDistributorProducts($params = array())
+    public function myDistributorProducts($params = [])
     {
-        $p = array();
+        $p = [];
         foreach ($params as $k => $v) {
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
         $url = $this->url . '/distributor_products?' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
 
-    public function myWaregroups($params = array())
+    public function myWaregroups($params = [])
     {
-        $p = array();
+        $p = [];
         foreach ($params as $k => $v) {
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
         $url = $this->url . '/waregroups?' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
 
-    public function matchMyOems($params = array())
+    public function matchMyOems($params = [])
     {
-        $p = array();
+        $p = [];
         foreach ($params as $k => $v) {
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
         $url = $this->url . '/match/oem?' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
 
-    public function matchMyPcds($params = array())
+    public function matchMyPcds($params = [])
     {
-        $p = array();
+        $p = [];
         foreach ($params as $k => $v) {
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
         $url = $this->url . '/match/pcd?' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
 
-    public function matchMyEANs($params = array())
+    public function matchMyEANs($params = [])
     {
-        $p = array();
+        $p = [];
         foreach ($params as $k => $v) {
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
         $url = $this->url . '/match/ean?' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
 
-    public function matchMyDistributer($params = array())
+    public function matchMyDistributer($params = [])
     {
-        $p = array();
+        $p = [];
         foreach ($params as $k => $v) {
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
         $url = $this->url . '/match/distributor?' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
 
-    public function myProductList($params = array())
+    public function myProductList($params = [])
     {
-        $p = array();
+        $p = [];
         foreach ($params as $k => $v) {
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
         $url = $this->url . '/product_list?' . implode('&', $p);
+
         //debug($url);
         return $this->getCURLResponse($url);
     }
@@ -226,49 +237,53 @@ class TopdataWebserviceClient
     {
         $p[] = $this->getParams();
         $url = $this->url . '/finder/ink_toner/brands?' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
-
 
     public function getModelTypeByBrandId($brandId = false)
     {
         $p[] = $this->getParams();
-        if ($brandId)
+        if ($brandId) {
             $p['brand_id'] = $brandId;
+        }
         $url = $this->url . '/finder/ink_toner/devicetypes?' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
 
     public function getModelSeriesByBrandId($brandId = false)
     {
         $p[] = $this->getParams();
-        if ($brandId)
+        if ($brandId) {
             $p['brand_id'] = $brandId;
+        }
         $url = $this->url . '/finder/ink_toner/modelseries?' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
-
 
     public function getModelsBySeriesId($brandId, $seriesId)
     {
         $p[] = $this->getParams();
         $url = $this->url . '/finder/ink_toner/models?brand_id=' . $brandId . '&modelserie_id=' . $seriesId . '&' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
-
 
     public function getModels($limit = 500, $start = 0)
     {
         $p[] = $this->getParams();
         $url = $this->url . '/finder/ink_toner/models?limit=' . $limit . '&start=' . $start . '&' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
-
 
     public function getModelsByBrandId($brandId)
     {
         $p[] = $this->getParams();
         $url = $this->url . '/finder/ink_toner/models?brand_id=' . $brandId . '&' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
 
@@ -276,20 +291,21 @@ class TopdataWebserviceClient
     {
         $p[] = $this->getParams();
         $url = $this->url . '/user/user_info?' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
 
-
-    public function productAccessories($id, $params = array())
+    public function productAccessories($id, $params = [])
     {
-        $p = array();
+        $p = [];
         if (count($params) != 0) {
             foreach ($params as $k => $v) {
                 $p[] = $k . '=' . rawurlencode($v);
             }
         }
         $p[] = $this->getParams();
-        $url = $this->url . '/product_accessories/' . (int)$id . '?' . implode('&', $p);
+        $url = $this->url . '/product_accessories/' . (int) $id . '?' . implode('&', $p);
+
         return $this->getCURLResponse($url);
     }
 }

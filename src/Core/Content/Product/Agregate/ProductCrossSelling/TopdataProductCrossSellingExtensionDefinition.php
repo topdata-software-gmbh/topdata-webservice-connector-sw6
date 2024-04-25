@@ -1,7 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\ProductCrossSelling;
 
+use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
@@ -10,7 +13,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
-use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingDefinition;
 
 class TopdataProductCrossSellingExtensionDefinition extends EntityDefinition
 {
@@ -33,7 +35,7 @@ class TopdataProductCrossSellingExtensionDefinition extends EntityDefinition
             new FkField('product_cross_selling_id', 'productCrossSellingId', ProductCrossSellingDefinition::class),
             (new StringField('type', 'type')),
 
-            new OneToOneAssociationField('productCrossSelling', 'product_cross_selling_id', 'id', ProductCrossSellingDefinition::class, false)
+            new OneToOneAssociationField('productCrossSelling', 'product_cross_selling_id', 'id', ProductCrossSellingDefinition::class, false),
         ]);
     }
 }

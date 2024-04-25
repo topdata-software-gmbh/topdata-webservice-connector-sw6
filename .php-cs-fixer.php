@@ -19,7 +19,10 @@ $rules = [
     'array_syntax'                                => ['syntax' => 'short'],
     'binary_operator_spaces'                      => [
         'default'   => 'single_space',
-        'operators' => ['=>' => null]
+        'operators' => [
+            '=>' => null,
+            '='  => 'align',
+        ],
     ],
     'blank_line_after_namespace'                  => true,
     'blank_line_after_opening_tag'                => true,
@@ -131,7 +134,7 @@ $rules = [
         'elements' => ['method', 'property']
     ],
     'whitespace_after_comma_in_array'             => true,
-    'phpdoc_align'                                => ['align' => 'left'],
+    'phpdoc_align'                                => ['align' => 'vertical'],
     'yoda_style'                                  => false,
     'array_indentation'                           => true,
     'phpdoc_annotation_without_dot'               => true,

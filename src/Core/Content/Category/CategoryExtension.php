@@ -1,13 +1,15 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Core\Content\Category;
 
 use Shopware\Core\Content\Category\CategoryDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityExtension;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Inherited;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
+use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Topdata\TopdataConnectorSW6\Core\Content\Category\TopdataCategoryExtension\TopdataCategoryExtensionDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityExtension;
 
 class CategoryExtension extends EntityExtension
 {
@@ -15,9 +17,9 @@ class CategoryExtension extends EntityExtension
     {
         $collection->add(
             (new OneToOneAssociationField(
-                'topdataCategoryExtension', 
-                'id', 
-                'category_id', 
+                'topdataCategoryExtension',
+                'id',
+                'category_id',
                 TopdataCategoryExtensionDefinition::class,
                 false
             ))->addFlags(new Inherited())

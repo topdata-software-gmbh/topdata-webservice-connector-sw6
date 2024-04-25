@@ -1,14 +1,17 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Migration;
 
 use Doctrine\DBAL\Connection;
-use Shopware\Core\Framework\Migration\MigrationStep;
 use Shopware\Core\Framework\Migration\InheritanceUpdaterTrait;
+use Shopware\Core\Framework\Migration\MigrationStep;
 
 class Migration1578907114UpdateTables extends MigrationStep
 {
     use InheritanceUpdaterTrait;
+
     public function getCreationTimestamp(): int
     {
         return 1578907114;
@@ -19,19 +22,19 @@ class Migration1578907114UpdateTables extends MigrationStep
         $productFields = [];
         $temp = $connection->fetchAllAssociative('SHOW COLUMNS from `product`');
         foreach ($temp as $field) {
-            if(isset($field['Field'])) {
+            if (isset($field['Field'])) {
                 $productFields[$field['Field']] = $field['Field'];
             }
         }
-        
+
         $customerFields = [];
         $temp = $connection->fetchAllAssociative('SHOW COLUMNS from `customer`');
         foreach ($temp as $field) {
-            if(isset($field['Field'])) {
+            if (isset($field['Field'])) {
                 $customerFields[$field['Field']] = $field['Field'];
             }
         }
-        
+
         $connection->executeStatement('
             CREATE TABLE IF NOT EXISTS `topdata_to_product` (
               `id` binary(16) NOT NULL,
@@ -45,11 +48,11 @@ class Migration1578907114UpdateTables extends MigrationStep
               KEY `idx_product` (`product_id`, `product_version_id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ');
-        
-        if(!isset($productFields['topdata'])) {
+
+        if (!isset($productFields['topdata'])) {
             $this->updateInheritance($connection, 'product', 'topdata');
         }
-        
+
         $connection->executeStatement('
             CREATE TABLE IF NOT EXISTS `topdata_brand` (
               `id` binary(16) NOT NULL,
@@ -94,7 +97,7 @@ class Migration1578907114UpdateTables extends MigrationStep
               KEY `idx_keywords` (`keywords`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ');
-        
+
         $connection->executeStatement('
             CREATE TABLE IF NOT EXISTS `topdata_device_to_synonym` (
               `device_id` binary(16) NOT NULL,
@@ -116,11 +119,11 @@ class Migration1578907114UpdateTables extends MigrationStep
               KEY `idx_product` (`product_id`,`product_version_id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ');
-        
-        if(!isset($productFields['devices'])) {
+
+        if (!isset($productFields['devices'])) {
             $this->updateInheritance($connection, 'product', 'devices');
         }
-        
+
         $connection->executeStatement('
             CREATE TABLE IF NOT EXISTS `topdata_product_to_alternate` (
               `product_id` binary(16) NOT NULL,
@@ -133,11 +136,11 @@ class Migration1578907114UpdateTables extends MigrationStep
               KEY `idx_alternate_id` (`alternate_product_id`, `alternate_product_version_id`)
             ) ENGINE=InnoDB;
         ');
-        
-        if(!isset($productFields['alternate_products'])) {
+
+        if (!isset($productFields['alternate_products'])) {
             $this->updateInheritance($connection, 'product', 'alternate_products');
         }
-        
+
         $connection->executeStatement('
             CREATE TABLE IF NOT EXISTS `topdata_product_to_similar` (
               `product_id` binary(16) NOT NULL,
@@ -150,11 +153,11 @@ class Migration1578907114UpdateTables extends MigrationStep
               KEY `idx_similar_id` (`similar_product_id`, `similar_product_version_id`)
             ) ENGINE=InnoDB;
         ');
-        
-        if(!isset($productFields['similar_products'])) {
+
+        if (!isset($productFields['similar_products'])) {
             $this->updateInheritance($connection, 'product', 'similar_products');
         }
-        
+
         $connection->executeStatement('
             CREATE TABLE IF NOT EXISTS `topdata_product_to_related` (
               `product_id` binary(16) NOT NULL,
@@ -167,11 +170,11 @@ class Migration1578907114UpdateTables extends MigrationStep
               KEY `idx_related_id` (`related_product_id`, `related_product_version_id`)
             ) ENGINE=InnoDB;
         ');
-        
-        if(!isset($productFields['related_products'])) {
+
+        if (!isset($productFields['related_products'])) {
             $this->updateInheritance($connection, 'product', 'related_products');
         }
-        
+
         $connection->executeStatement('
             CREATE TABLE IF NOT EXISTS `topdata_product_to_bundled` (
               `product_id` binary(16) NOT NULL,
@@ -184,11 +187,11 @@ class Migration1578907114UpdateTables extends MigrationStep
               KEY `idx_bundled_id` (`bundled_product_id`, `bundled_product_version_id`)
             ) ENGINE=InnoDB;
         ');
-        
-        if(!isset($productFields['bundled_products'])) {
+
+        if (!isset($productFields['bundled_products'])) {
             $this->updateInheritance($connection, 'product', 'bundled_products');
         }
-        
+
         $connection->executeStatement('
             CREATE TABLE IF NOT EXISTS `topdata_product_to_color_variant` (
               `product_id` binary(16) NOT NULL,
@@ -201,13 +204,11 @@ class Migration1578907114UpdateTables extends MigrationStep
               KEY `idx_color_variant_id` (`color_variant_product_id`, `color_variant_product_version_id`)
             ) ENGINE=InnoDB;
         ');
-        
-        if(!isset($productFields['color_variant_products'])) {
+
+        if (!isset($productFields['color_variant_products'])) {
             $this->updateInheritance($connection, 'product', 'color_variant_products');
         }
-        
-        
-        
+
         $connection->executeStatement('
             CREATE TABLE IF NOT EXISTS `topdata_product_to_capacity_variant` (
               `product_id` binary(16) NOT NULL,
@@ -220,12 +221,11 @@ class Migration1578907114UpdateTables extends MigrationStep
               KEY `idx_capacity_variant_id` (`capacity_variant_product_id`, `capacity_variant_product_version_id`)
             ) ENGINE=InnoDB;
         ');
-        
-        if(!isset($productFields['capacity_variant_products'])) {
+
+        if (!isset($productFields['capacity_variant_products'])) {
             $this->updateInheritance($connection, 'product', 'capacity_variant_products');
         }
-        
-        
+
         $connection->executeStatement('
             CREATE TABLE IF NOT EXISTS `topdata_product_to_variant` (
               `product_id` binary(16) NOT NULL,
@@ -238,13 +238,11 @@ class Migration1578907114UpdateTables extends MigrationStep
               KEY `idx_variant_id` (`variant_product_id`, `variant_product_version_id`)
             ) ENGINE=InnoDB;
         ');
-        
-        if(!isset($productFields['variant_products'])) {
+
+        if (!isset($productFields['variant_products'])) {
             $this->updateInheritance($connection, 'product', 'variant_products');
         }
-        
-        
-        
+
         $connection->executeStatement('
             CREATE TABLE IF NOT EXISTS `topdata_device_to_customer` (
               `id` binary(16) NOT NULL,
@@ -260,11 +258,10 @@ class Migration1578907114UpdateTables extends MigrationStep
               KEY `IDX_CUSTOMER_EXTRA` (`customer_extra_id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ');
-        
-        if(!isset($customerFields['devices'])) {
+
+        if (!isset($customerFields['devices'])) {
             $this->updateInheritance($connection, 'customer', 'devices');
         }
-        
 
         $connection->executeStatement('
             CREATE TABLE IF NOT EXISTS `topdata_device_type` (
@@ -303,7 +300,6 @@ class Migration1578907114UpdateTables extends MigrationStep
               KEY `idx_brandid` (`brand_id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ');
-
     }
 
     public function updateDestructive(Connection $connection): void
