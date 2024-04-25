@@ -63,6 +63,10 @@ After saving credentials you can test connection, just select TopData Plugins me
 
 ## Console commands for work with API
 
+### topdata:connector:test-connection
+
+- it tests whether the connection to the TopData Webservice is working
+
 ### topdata:connector:import
    
 1. `bin/console topdata:connector:import --mapping`  map store products to webservice products
