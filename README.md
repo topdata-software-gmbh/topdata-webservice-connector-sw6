@@ -5,7 +5,7 @@ This plugin is the base for most of the functionality in other TopData plugins f
 It gives possibility to import devices from TopData Webservice.
 
 ## Minimal Requirements
-- Shopware 6.4.13.0 or higher
+- Shopware 6.4.13.0 or higher < 6.5.0
 - PHP 7.4 or higher
 
 ## Installation
