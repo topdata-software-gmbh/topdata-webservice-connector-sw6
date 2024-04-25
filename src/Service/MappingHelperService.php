@@ -5,7 +5,7 @@
  * @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-namespace Topdata\TopdataConnectorSW6\Component\Helper;
+namespace Topdata\TopdataConnectorSW6\Service;
 
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
@@ -19,11 +19,15 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Command\ProductsCommand;
-use Topdata\TopdataConnectorSW6\Component\Helper\EntitiesHelper;
-use Topdata\TopdataConnectorSW6\Component\TopdataWebserviceClient;
-use Topdata\TopdataConnectorSW6\Core\Content\Brand\BrandEntity;
+use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Helper\CliStyle;
 
-class MappingHelper
+/**
+ * TODO: pretty big class, should be refactored to smaller classes
+ *
+ * 04/2024 MappingHelper --> MappingHelperService
+ */
+class MappingHelperService
 {
     const CROSS_SIMILAR          = 'similar';
     const CROSS_ALTERNATE        = 'alternate';
@@ -80,24 +84,11 @@ class MappingHelper
         30  => 'Marketingtext',
     ];
 
-    private $productImportSettings = [];
-
-    private $microtime;
-
-    /**
-     * @var ?array
-     */
-    private $brandWsArray = null;
-
-    /**
-     * @var ?array
-     */
-    private $seriesArray = null;
-
-    /**
-     * @var ?array
-     */
-    private $typesArray = null;
+    private array $productImportSettings = [];
+    private float $microtime;
+    private ?array $brandWsArray = null;
+    private ?array $seriesArray = null;
+    private ?array $typesArray = null;
 
     /**
      * [
@@ -110,122 +101,46 @@ class MappingHelper
      *          'product_version_id' => hexversionid2
      *      ]
      *  ].
-     *
-     * @var ?array
      */
-    private $topidProducts = null;
-
-    /**
-     * @var TopdataWebserviceClient
-     */
-    private $topDataApi;
-
-    /**
-     * @var Connection
-     */
-    private $connection;
-
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
-
-    private $options = [];
-
-    /**
-     * @var bool
-     */
-    private $verbose = false;
-
-    /**
-     * @var EntityRepository
-     */
-    private $brandRepository;
-
-    /**
-     * @var EntityRepository
-     */
-    private $deviceRepository;
-
-    /**
-     * @var EntityRepository
-     */
-    private $seriesRepository;
-
-    /**
-     * @var EntityRepository
-     */
-    private $typeRepository;
-
-    /**
-     * @var EntityRepository
-     */
-    private $topdataToProductRepository;
-
-    /**
-     * @var MediaService
-     */
-    private $mediaService;
-
-    /**
-     * @var EntityRepository
-     */
-    private $mediaRepository;
-
-    /**
-     * @param Context
-     */
-    private $context;
-
-    /**
-     * @var EntityRepository
-     */
-    private $productRepository;
-
-    /**
-     * @var ProductsCommand
-     */
-    private $productCommand;
-
-    /**
-     * @var EntityRepository
-     */
-    private $propertyGroupRepository;
-
-    /**
-     * @var EntitiesHelper
-     */
-    private $entitiesHelper;
-
-    /**
-     * @var EntityRepository
-     */
-    private $productCrossSellingRepository;
-
-    /**
-     * @var EntityRepository
-     */
-    private $productCrossSellingAssignedProductsRepository;
-
-    /** @var string */
-    private $systemDefaultLocaleCode;
+    private ?array $topidProducts = null;
+    private TopdataWebserviceClient $topDataApi;
+    private Connection $connection;
+    private LoggerInterface $logger;
+    private array $options = [];
+    private bool $verbose = false;
+    private EntityRepository $brandRepository;
+    private EntityRepository $deviceRepository;
+    private EntityRepository $seriesRepository;
+    private EntityRepository $typeRepository;
+    private EntityRepository $topdataToProductRepository;
+    private MediaService $mediaService;
+    private EntityRepository $mediaRepository;
+    private Context $context;
+    private EntityRepository $productRepository;
+    private ProductsCommand $productCommand; // ???
+    private EntityRepository $propertyGroupRepository;
+    private EntitiesHelperService $entitiesHelper;
+    private EntityRepository $productCrossSellingRepository;
+    private EntityRepository $productCrossSellingAssignedProductsRepository;
+    private string $systemDefaultLocaleCode;
+    private CliStyle $cliStyle;
 
     public function __construct(
         LoggerInterface $logger,
         Connection $connection,
-        EntityRepository $brandRepository,
-        EntityRepository $deviceRepository,
-        EntityRepository $seriesRepository,
-        EntityRepository $typeRepository,
-        EntityRepository $topdataToProductRepository,
-        EntityRepository $mediaRepository,
-        MediaService $mediaService,
-        EntityRepository $productRepository,
-        ProductsCommand $productCommand,
-        EntityRepository $propertyGroupRepository,
-        EntitiesHelper $entitiesHelper,
-        EntityRepository $productCrossSellingRepository,
-        EntityRepository $productCrossSellingAssignedProductsRepository
+        EntityRepository      $brandRepository,
+        EntityRepository      $deviceRepository,
+        EntityRepository      $seriesRepository,
+        EntityRepository      $typeRepository,
+        EntityRepository      $topdataToProductRepository,
+        EntityRepository      $mediaRepository,
+        MediaService          $mediaService,
+        EntityRepository      $productRepository,
+        ProductsCommand       $productCommand,
+        EntityRepository      $propertyGroupRepository,
+        EntitiesHelperService $entitiesHelper,
+        EntityRepository      $productCrossSellingRepository,
+        EntityRepository      $productCrossSellingAssignedProductsRepository
     ) {
         $this->microtime                                     = microtime(true);
         $this->connection                                    = $connection;
@@ -256,7 +171,7 @@ class MappingHelper
             );
     }
 
-    public function setApi(TopdataWebserviceClient $topDataApi): void
+    public function setTopdataWebserviceClient(TopdataWebserviceClient $topDataApi): void
     {
         $this->topDataApi = $topDataApi;
     }
@@ -518,7 +433,7 @@ class MappingHelper
         return $returnArray;
     }
 
-    private function getTopids($forceReload = false)
+    private function getTopids($forceReload = false): array
     {
         if (null === $this->topidProducts || $forceReload) {
             $ids = $this->connection->fetchAllAssociative('
@@ -875,7 +790,7 @@ class MappingHelper
     public function setBrands(): bool
     {
         try {
-            $this->activity("\nBrands begin\n");
+            $this->cliStyle->section("\n\nBrands");
             $this->activity("Getting data from remote server...\n");
             $this->lap(true);
             $brands = $this->topDataApi->getBrands();
@@ -965,7 +880,7 @@ class MappingHelper
     public function setSeries()
     {
         try {
-            $this->activity("\nSeries begin\n");
+            $this->cliStyle->section("\n\nSeries");
             $this->activity("Getting data from remote server...\n");
             $this->lap(true);
             $series = $this->topDataApi->getModelSeriesByBrandId();
@@ -1056,7 +971,7 @@ class MappingHelper
     public function setDeviceTypes()
     {
         try {
-            $this->activity("\nDevice type begin.\n");
+            $this->cliStyle->section("\n\nDevice type");
             $this->activity("Getting data from remote server...\n");
             $this->lap(true);
             $types = $this->topDataApi->getModelTypeByBrandId();
@@ -2110,9 +2025,9 @@ class MappingHelper
     public function setProductInformation($onlyMedia = false): bool
     {
         if ($onlyMedia) {
-            $this->activity("\nProduct media begin\n");
+            $this->cliStyle->section("\n\nProduct media");
         } else {
-            $this->activity("\nProduct information begin\n");
+            $this->cliStyle->section("\n\nProduct information");
         }
         $topid_products                  = $this->getTopids(true);
         $productDataUpdate               = [];
@@ -2661,7 +2576,7 @@ class MappingHelper
 
     public function setDeviceSynonyms(): bool
     {
-        $this->activity("\nDevice synonyms begin\n");
+        $this->cliStyle->section("\n\nDevice synonyms");
         $availableDevices = [];
         foreach ($this->getEnabledDevices() as $pr) {
             $availableDevices[$pr['ws_id']] = bin2hex($pr['id']);
@@ -2748,7 +2663,7 @@ class MappingHelper
 
     public static function formatStringNoHTML($string)
     {
-        return MappingHelper::formatString(strip_tags((string) $string));
+        return MappingHelperService::formatString(strip_tags((string) $string));
     }
 
     public static function getCrossTypes(): array
@@ -3339,4 +3254,12 @@ SQL;
 
         return $rez;
     }
+
+    public function setCliStyle(CliStyle $cliStyle): void
+    {
+        $this->cliStyle = $cliStyle;
+    }
+
+
+
 }

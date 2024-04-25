@@ -5,7 +5,7 @@
  * @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-namespace Topdata\TopdataConnectorSW6\Component;
+namespace Topdata\TopdataConnectorSW6\Helper;
 
 use Monolog\Logger;
 
@@ -35,13 +35,13 @@ class TopdataWebserviceClient
     {
         $this->logger = $logger;
 
-        $this->url          = self::TOPDATA_WEBSERVICE_BASE_URL;
-        $this->uid          = $uid;
-        $this->password     = $password;
+        $this->url = self::TOPDATA_WEBSERVICE_BASE_URL;
+        $this->uid = $uid;
+        $this->password = $password;
         $this->security_key = $security_key;
-        $this->lg           = $language;
-        $this->version      = self::API_VERSION;
-        $this->lastURL      = false;
+        $this->lg = $language;
+        $this->version = self::API_VERSION;
+        $this->lastURL = false;
     }
 
     public function getLastURL()
@@ -56,7 +56,7 @@ class TopdataWebserviceClient
 
     /**
      * @param             $url
-     * @param  null       $xml_data
+     * @param null $xml_data
      * @return bool|mixed
      * @throws \Exception
      */
@@ -64,7 +64,7 @@ class TopdataWebserviceClient
     {
         try {
             $this->lastURL = $url;
-            $ch            = curl_init($url);
+            $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, self::CURL_TIMEOUT);
             curl_setopt($ch, CURLOPT_TIMEOUT, self::CURL_TIMEOUT);
@@ -82,7 +82,7 @@ class TopdataWebserviceClient
             $header = curl_getinfo($ch);
             if ($header['http_code'] == 400) {
                 $header_size = strpos($output, '{');
-                $output      = substr($output, $header_size);
+                $output = substr($output, $header_size);
             }
             // ----------------------------------------------------
             curl_close($ch);
@@ -140,7 +140,7 @@ class TopdataWebserviceClient
             return false;
         }
 
-        $p   = [];
+        $p = [];
         $p[] = $this->getParams();
         $url = $this->url . "/waregroup/$waregroupId?" . implode('&', $p);
 
@@ -307,7 +307,7 @@ class TopdataWebserviceClient
             }
         }
         $p[] = $this->getParams();
-        $url = $this->url . '/product_accessories/' . (int) $id . '?' . implode('&', $p);
+        $url = $this->url . '/product_accessories/' . (int)$id . '?' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }

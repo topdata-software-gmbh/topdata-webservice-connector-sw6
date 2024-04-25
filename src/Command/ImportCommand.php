@@ -6,14 +6,13 @@ namespace Topdata\TopdataConnectorSW6\Command;
 
 use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
-use Topdata\TopdataConnectorSW6\Component\Helper\MappingHelper;
-use Topdata\TopdataConnectorSW6\Component\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
+use Topdata\TopdataConnectorSW6\Service\MappingHelperService;
 
 /**
  * This command imports data from the TopData Webservice
@@ -27,7 +26,7 @@ class ImportCommand extends AbstractCommand
     private SystemConfigService $systemConfigService;
     private ContainerBagInterface $containerBag;
     private LoggerInterface $logger;
-    private MappingHelper $mappingHelper;
+    private MappingHelperService $mappingHelperService;
     private ConfigCheckerService $configCheckerService;
 
 
@@ -35,7 +34,7 @@ class ImportCommand extends AbstractCommand
         SystemConfigService   $systemConfigService,
         ContainerBagInterface $ContainerBag,
         LoggerInterface       $logger,
-        MappingHelper         $mappingHelper,
+        MappingHelperService  $mappingHelperService,
         ConfigCheckerService  $configCheckerService
     )
     {
@@ -43,12 +42,16 @@ class ImportCommand extends AbstractCommand
         $this->systemConfigService = $systemConfigService;
         $this->containerBag = $ContainerBag;
         $this->logger = $logger;
-        $this->mappingHelper = $mappingHelper;
+        $this->mappingHelperService = $mappingHelperService;
         $this->configCheckerService = $configCheckerService;
     }
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
+        // ---- init
+        $this->mappingHelperService->setCliStyle($this->cliStyle);
+
+
         $this->verbose = ($input->getOption('verbose') >= 1);
 
         if ($this->verbose) {
@@ -90,7 +93,7 @@ class ImportCommand extends AbstractCommand
         //            return ['success' => true];
         //        }
 
-        $webservice = new TopdataWebserviceClient(
+        $topdataWebserviceClient = new TopdataWebserviceClient(
             $this->logger,
             $config['apiUsername'],
             $config['apiKey'],
@@ -98,8 +101,8 @@ class ImportCommand extends AbstractCommand
             $config['apiLanguage']
         );
 
-        $mappingHelper = $this->mappingHelper;
-        $mappingHelper->setApi($webservice);
+        $mappingHelper = $this->mappingHelperService;
+        $mappingHelper->setTopdataWebserviceClient($topdataWebserviceClient);
 
         $mappingHelper->setVerbose($this->verbose);
 

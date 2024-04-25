@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Topdata\TopdataConnectorSW6\Component\Helper;
+namespace Topdata\TopdataConnectorSW6\Service;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Media\MediaService;
@@ -14,7 +14,10 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;use Shopware\C
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 
-class EntitiesHelper
+/**
+ * 04/2024 EntitiesHelper --> EntitiesHelperService
+ */
+class EntitiesHelperService
 {
     const LANGUAGE_NAME       = 'English';
     const DEFAULT_MAIN_FOLDER = 'product';

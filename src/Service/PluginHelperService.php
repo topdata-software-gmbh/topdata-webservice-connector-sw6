@@ -2,12 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Topdata\TopdataConnectorSW6\Component\Helper;
+namespace Topdata\TopdataConnectorSW6\Service;
 
 use Shopware\Core\Kernel;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
-class PluginHelper
+/**
+ * 04/2024 PluginHelper --> PluginHelperService; unused
+ */
+class PluginHelperService
 {
     private $container;
 

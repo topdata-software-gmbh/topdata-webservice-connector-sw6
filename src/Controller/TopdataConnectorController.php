@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Topdata\TopdataConnectorSW6\Command\ProductsCommand;
-use Topdata\TopdataConnectorSW6\Component\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
 
 /**

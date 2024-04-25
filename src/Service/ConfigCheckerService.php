@@ -6,6 +6,7 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 /**
  * a service which checks if the plugin configuration is valid
+ *
  * 04/2024 created
  */
 class ConfigCheckerService
