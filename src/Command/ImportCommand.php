@@ -131,9 +131,9 @@ class ImportCommand extends AbstractCommand
 
         //mapping
         if ($option['isServiceAll'] || $option['isServiceMapping']) {
-            if ($this->verbose) {
-                $this->cliStyle->writeln('mapping products started...');
-            }
+
+            $this->cliStyle->section('Mapping products');
+
             if (!$mappingHelperService->mapProducts()) {
                 if ($this->verbose) {
                     $this->cliStyle->error('Mapping failed!');
