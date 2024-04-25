@@ -55,7 +55,7 @@ class TopdataConnectorSW6 extends Plugin
         $connection->executeStatement('DROP TABLE IF EXISTS `topdata_product_to_variant`');
 
         $customerFields = [];
-        $temp = $connection->fetchAllAssociative('SHOW COLUMNS from `customer`');
+        $temp           = $connection->fetchAllAssociative('SHOW COLUMNS from `customer`');
         foreach ($temp as $field) {
             if (isset($field['Field'])) {
                 $customerFields[$field['Field']] = $field['Field'];
@@ -67,7 +67,7 @@ class TopdataConnectorSW6 extends Plugin
         }
 
         $productFields = [];
-        $temp = $connection->fetchAllAssociative('SHOW COLUMNS from `product`');
+        $temp          = $connection->fetchAllAssociative('SHOW COLUMNS from `product`');
         foreach ($temp as $field) {
             if (isset($field['Field'])) {
                 $productFields[$field['Field']] = $field['Field'];

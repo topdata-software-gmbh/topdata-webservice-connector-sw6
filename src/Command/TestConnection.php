@@ -37,8 +37,8 @@ class TestConnection extends Command
         LoggerInterface $logger
     ) {
         $this->systemConfigService = $systemConfigService;
-        $this->containerBag = $ContainerBag;
-        $this->logger = $logger;
+        $this->containerBag        = $ContainerBag;
+        $this->logger              = $logger;
         parent::__construct();
     }
 
@@ -64,7 +64,7 @@ class TestConnection extends Command
         $output->writeln('Connecting to TopData api server...');
         try {
             $webservice = new TopdataWebserviceClient($this->logger, $config['apiUsername'], $config['apiKey'], $config['apiSalt'], $config['apiLanguage']);
-            $info = $webservice->getUserInfo();
+            $info       = $webservice->getUserInfo();
 
             if (isset($info->error)) {
                 $output->writeln('Connection error:');

@@ -58,10 +58,10 @@ class TopdataConnectorController extends AbstractController
         EntityRepositoryInterface $brandRepository
     ) {
         $this->systemConfigService = $systemConfigService;
-        $this->logger = $logger;
-        $this->containerBag = $containerBag;
-        $this->connection = $connection;
-        $this->brandRepository = $brandRepository;
+        $this->logger              = $logger;
+        $this->containerBag        = $containerBag;
+        $this->connection          = $connection;
+        $this->brandRepository     = $brandRepository;
     }
 
     /**
@@ -70,7 +70,7 @@ class TopdataConnectorController extends AbstractController
     public function test(Request $request, Context $context): JsonResponse
     {
         $additionalData = '';
-        $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
+        $config         = $this->systemConfigService->get('TopdataConnectorSW6.config');
         if ($config['apiUsername'] == '' || $config['apiKey'] == '' || $config['apiSalt'] == '' || $config['apiLanguage'] == '') {
             $credentialsValid = 'no';
             $additionalData .= 'Fill in connection parameters in admin -> Settings -> System -> Plugins -> TopdataConnector config';
@@ -78,14 +78,14 @@ class TopdataConnectorController extends AbstractController
 
         try {
             $webservice = new TopdataWebserviceClient($this->logger, $config['apiUsername'], $config['apiKey'], $config['apiSalt'], $config['apiLanguage']);
-            $info = $webservice->getUserInfo();
+            $info       = $webservice->getUserInfo();
 
             if (isset($info->error)) {
                 $credentialsValid = 'no';
                 $additionalData .= $info->error[0]->error_message;
             } else {
                 $credentialsValid = 'yes';
-                $additionalData = $info;
+                $additionalData   = $info;
             }
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
@@ -96,7 +96,7 @@ class TopdataConnectorController extends AbstractController
 
         return new JsonResponse([
             'credentialsValid' => $credentialsValid,
-            'additionalData' => $additionalData,
+            'additionalData'   => $additionalData,
         ]);
     }
 
@@ -105,9 +105,9 @@ class TopdataConnectorController extends AbstractController
      */
     public function loadBrands(Request $request, Context $context): JsonResponse
     {
-        $allBrands = [];
+        $allBrands     = [];
         $primaryBrands = [];
-        $brands = $this->connection->createQueryBuilder()
+        $brands        = $this->connection->createQueryBuilder()
                 ->select('LOWER(HEX(id)) as id, label as name, sort')
                 ->from('topdata_brand')
                 ->where('is_enabled = 1')
@@ -123,10 +123,10 @@ class TopdataConnectorController extends AbstractController
         }
 
         return new JsonResponse([
-            'brands' => $allBrands,
-            'primary' => $primaryBrands,
-            'brandsCount' => count($allBrands),
-            'primaryCount' => count($primaryBrands),
+            'brands'         => $allBrands,
+            'primary'        => $primaryBrands,
+            'brandsCount'    => count($allBrands),
+            'primaryCount'   => count($primaryBrands),
             'additionalData' => 'success',
         ]);
     }
@@ -147,7 +147,7 @@ class TopdataConnectorController extends AbstractController
         $this->connection->executeStatement('UPDATE topdata_brand SET sort = 0');
 
         if ($brands) {
-            foreach ($brands as $key=>$brandId) {
+            foreach ($brands as $key => $brandId) {
                 if (preg_match('/^[0-9a-f]{32}$/', $brandId)) {
                     $brands[$key] = '0x' . $brandId;
                 }
@@ -166,12 +166,12 @@ class TopdataConnectorController extends AbstractController
      */
     public function activeTopdataPlugins(Request $request, Context $context): JsonResponse
     {
-        $activePlugins = [];
+        $activePlugins  = [];
         $additionalData = '';
 
         $allActivePlugins = $this->containerBag->get('kernel.active_plugins');
 
-        foreach ($allActivePlugins as $pluginClassName=>$val) {
+        foreach ($allActivePlugins as $pluginClassName => $val) {
             $pluginClass = explode('\\', $pluginClassName);
             if ($pluginClass[0] == 'Topdata') {
                 $activePlugins[] = array_pop($pluginClass);
@@ -179,7 +179,7 @@ class TopdataConnectorController extends AbstractController
         }
 
         return new JsonResponse([
-            'activePlugins' => $activePlugins,
+            'activePlugins'  => $activePlugins,
             'additionalData' => $additionalData,
         ]);
     }
@@ -200,9 +200,9 @@ class TopdataConnectorController extends AbstractController
     public function installDemoData(Request $request, Context $context): JsonResponse
     {
         $manufacturerRepository = $this->container->get('product_manufacturer.repository');
-        $productRepository = $this->container->get('product.repository');
-        $connection = $this->container->get('Doctrine\DBAL\Connection');
-        $productsService = new ProductsCommand($manufacturerRepository, $productRepository, $connection);
+        $productRepository      = $this->container->get('product.repository');
+        $connection             = $this->container->get('Doctrine\DBAL\Connection');
+        $productsService        = new ProductsCommand($manufacturerRepository, $productRepository, $connection);
 
         $result = $productsService->installDemoData();
 

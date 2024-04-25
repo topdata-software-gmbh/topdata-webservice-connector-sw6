@@ -20,8 +20,8 @@ $rules = [
     'binary_operator_spaces'                      => [
         'default'   => 'single_space',
         'operators' => [
-            '=>' => null,
-            '='  => 'align',
+            '=>' => 'align_single_space_minimal',
+            '='  => 'align_single_space_minimal',
         ],
     ],
     'blank_line_after_namespace'                  => true,

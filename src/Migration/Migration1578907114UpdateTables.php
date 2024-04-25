@@ -20,7 +20,7 @@ class Migration1578907114UpdateTables extends MigrationStep
     public function update(Connection $connection): void
     {
         $productFields = [];
-        $temp = $connection->fetchAllAssociative('SHOW COLUMNS from `product`');
+        $temp          = $connection->fetchAllAssociative('SHOW COLUMNS from `product`');
         foreach ($temp as $field) {
             if (isset($field['Field'])) {
                 $productFields[$field['Field']] = $field['Field'];
@@ -28,7 +28,7 @@ class Migration1578907114UpdateTables extends MigrationStep
         }
 
         $customerFields = [];
-        $temp = $connection->fetchAllAssociative('SHOW COLUMNS from `customer`');
+        $temp           = $connection->fetchAllAssociative('SHOW COLUMNS from `customer`');
         foreach ($temp as $field) {
             if (isset($field['Field'])) {
                 $customerFields[$field['Field']] = $field['Field'];

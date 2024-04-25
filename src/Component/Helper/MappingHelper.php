@@ -27,18 +27,18 @@ use Topdata\TopdataConnectorSW6\Core\Content\Brand\BrandEntity;
 
 class MappingHelper
 {
-    const CROSS_SIMILAR = 'similar';
-    const CROSS_ALTERNATE = 'alternate';
-    const CROSS_RELATED = 'related';
-    const CROSS_BUNDLED = 'bundled';
-    const CROSS_COLOR_VARIANT = 'colorVariant';
+    const CROSS_SIMILAR          = 'similar';
+    const CROSS_ALTERNATE        = 'alternate';
+    const CROSS_RELATED          = 'related';
+    const CROSS_BUNDLED          = 'bundled';
+    const CROSS_COLOR_VARIANT    = 'colorVariant';
     const CROSS_CAPACITY_VARIANT = 'capacityVariant';
-    const CROSS_VARIANT = 'variant';
+    const CROSS_VARIANT          = 'variant';
 
     const IGNORE_SPECS = [
-        21 => 'Hersteller-Nr. (intern)',
-        24 => 'Product Code (PCD) Intern',
-        32 => 'Kurzbeschreibung',
+        21  => 'Hersteller-Nr. (intern)',
+        24  => 'Product Code (PCD) Intern',
+        32  => 'Kurzbeschreibung',
         573 => 'Kurzbeschreibung (statisch)',
         583 => 'Beschreibung (statisch)',
         293 => 'Gattungsbegriff 1',
@@ -55,13 +55,13 @@ class MappingHelper
         368 => 'Produktcode (PCD) alt',
         371 => 'EAN/GTIN 08 (alt)',
         391 => 'MPS Ready',
-        22 => 'EAN/GTIN-13 (intern)',
-        23 => 'EAN/GTIN-08 (intern)',
+        22  => 'EAN/GTIN-13 (intern)',
+        23  => 'EAN/GTIN-08 (intern)',
         370 => 'EAN/GTIN 13 (alt)',
         372 => 'EAN/GTIN-13 (Alternative)',
         373 => 'EAN/GTIN-08 (Alternative)',
-        26 => 'eCl@ss v6.1.0',
-        28 => 'unspsc 111201',
+        26  => 'eCl@ss v6.1.0',
+        28  => 'unspsc 111201',
         331 => 'eCl@ss v5.1.4',
         332 => 'eCl@ss v6.2.0',
         333 => 'eCl@ss v7.0.0',
@@ -70,16 +70,16 @@ class MappingHelper
         336 => 'eCl@ss v8.1.0',
         337 => 'eCl@ss v9.0.0',
         721 => 'eCl@ss v9.1.0',
-        34 => 'Gruppe Pelikan',
-        35 => 'Gruppe Carma',
-        36 => 'Gruppe Reuter',
-        37 => 'Gruppe Kores',
-        38 => 'Gruppe DK',
-        39 => 'Gruppe Pelikan (falsch)',
-        40 => 'Gruppe USA (Druckwerk)',
+        34  => 'Gruppe Pelikan',
+        35  => 'Gruppe Carma',
+        36  => 'Gruppe Reuter',
+        37  => 'Gruppe Kores',
+        38  => 'Gruppe DK',
+        39  => 'Gruppe Pelikan (falsch)',
+        40  => 'Gruppe USA (Druckwerk)',
         122 => 'Druckwerk',
-        8 => 'Leergut',
-        30 => 'Marketingtext',
+        8   => 'Leergut',
+        30  => 'Marketingtext',
     ];
 
     private $productImportSettings = [];
@@ -229,24 +229,24 @@ class MappingHelper
         EntityRepository $productCrossSellingRepository,
         EntityRepository $productCrossSellingAssignedProductsRepository
     ) {
-        $this->microtime = microtime(true);
-        $this->connection = $connection;
-        $this->logger = $logger;
-        $this->brandRepository = $brandRepository;
-        $this->deviceRepository = $deviceRepository;
-        $this->seriesRepository = $seriesRepository;
-        $this->typeRepository = $typeRepository;
-        $this->topdataToProductRepository = $topdataToProductRepository;
-        $this->mediaRepository = $mediaRepository;
-        $this->mediaService = $mediaService;
-        $this->productRepository = $productRepository;
-        $this->productCommand = $productCommand;
-        $this->propertyGroupRepository = $propertyGroupRepository;
-        $this->entitiesHelper = $entitiesHelper;
-        $this->productCrossSellingRepository = $productCrossSellingRepository;
+        $this->microtime                                     = microtime(true);
+        $this->connection                                    = $connection;
+        $this->logger                                        = $logger;
+        $this->brandRepository                               = $brandRepository;
+        $this->deviceRepository                              = $deviceRepository;
+        $this->seriesRepository                              = $seriesRepository;
+        $this->typeRepository                                = $typeRepository;
+        $this->topdataToProductRepository                    = $topdataToProductRepository;
+        $this->mediaRepository                               = $mediaRepository;
+        $this->mediaService                                  = $mediaService;
+        $this->productRepository                             = $productRepository;
+        $this->productCommand                                = $productCommand;
+        $this->propertyGroupRepository                       = $propertyGroupRepository;
+        $this->entitiesHelper                                = $entitiesHelper;
+        $this->productCrossSellingRepository                 = $productCrossSellingRepository;
         $this->productCrossSellingAssignedProductsRepository = $productCrossSellingAssignedProductsRepository;
-        $this->systemDefaultLocaleCode = $this->getLocaleCodeOfSystemLanguage();
-        $this->context = Context::createDefaultContext();
+        $this->systemDefaultLocaleCode                       = $this->getLocaleCodeOfSystemLanguage();
+        $this->context                                       = Context::createDefaultContext();
     }
 
     private function getLocaleCodeOfSystemLanguage(): string
@@ -291,11 +291,11 @@ class MappingHelper
         $query->select(['p.product_number', 'p.id', 'p.version_id'])
             ->from('product', 'p');
 
-        $results = $query->execute()->fetchAllAssociative();
+        $results     = $query->execute()->fetchAllAssociative();
         $returnArray = [];
         foreach ($results as $res) {
             $returnArray[(string) $res['product_number']][] = [
-                'id' => $res['id'],
+                'id'         => $res['id'],
                 'version_id' => $res['version_id'],
             ];
         }
@@ -458,11 +458,11 @@ class MappingHelper
             ->where('pgt.name = :option')
             ->setParameter(':option', $optionName);
 
-        $results = $query->execute()->fetchAllAssociative();
+        $results     = $query->execute()->fetchAllAssociative();
         $returnArray = [];
         foreach ($results as $res) {
             $returnArray[(string) $res['name']][] = [
-                'id' => $res['id'],
+                'id'         => $res['id'],
                 'version_id' => $res['version_id'],
             ];
         }
@@ -492,7 +492,7 @@ class MappingHelper
                 . ' LOWER(HEX(product_version_id)) as version_id'
                 . ' FROM product_translation ');
         $rez->execute();
-        $results = $rez->fetchAllAssociative();
+        $results     = $rez->fetchAllAssociative();
         $returnArray = [];
         foreach ($results as $val) {
             if (!$val['custom_fields']) {
@@ -505,13 +505,13 @@ class MappingHelper
 
             if (!empty($fieldName)) {
                 $returnArray[] = [
-                    $fieldName => (string) $cf[$technicalName],
-                    'id' => $val['id'],
+                    $fieldName   => (string) $cf[$technicalName],
+                    'id'         => $val['id'],
                     'version_id' => $val['version_id'],
                 ];
             } else {
                 $returnArray[(string) $cf[$technicalName]][] = [
-                    'id' => $val['id'],
+                    'id'         => $val['id'],
                     'version_id' => $val['version_id'],
                 ];
             }
@@ -538,9 +538,9 @@ class MappingHelper
             $this->topidProducts = [];
             foreach ($ids as $id) {
                 $this->topidProducts[$id['top_data_id']][] = [
-                    'product_id' => $id['product_id'],
+                    'product_id'         => $id['product_id'],
                     'product_version_id' => $id['product_version_id'],
-                    'parent_id' => $id['parent_id'],
+                    'parent_id'          => $id['parent_id'],
                 ];
             }
         }
@@ -655,8 +655,8 @@ class MappingHelper
                                                 $this->activity();
                                             }
                                             $dataInsert[] = [
-                                                'topDataId' => $prod->products_id,
-                                                'productId' => $artnosValue['id'],
+                                                'topDataId'        => $prod->products_id,
+                                                'productId'        => $artnosValue['id'],
                                                 'productVersionId' => $artnosValue['version_id'],
                                             ];
                                             if (count($dataInsert) > 500) {
@@ -716,9 +716,9 @@ class MappingHelper
 
                     $oemMap = [];
                     foreach ($oems as $oem) {
-                        $oem['manufacturer_number'] = strtolower(ltrim(trim($oem['manufacturer_number']), '0'));
+                        $oem['manufacturer_number']                                                          = strtolower(ltrim(trim($oem['manufacturer_number']), '0'));
                         $oemMap[(string) $oem['manufacturer_number']][$oem['id'] . '-' . $oem['version_id']] = [
-                            'id' => $oem['id'],
+                            'id'         => $oem['id'],
                             'version_id' => $oem['version_id'],
                         ];
                     }
@@ -726,10 +726,10 @@ class MappingHelper
 
                     $eanMap = [];
                     foreach ($eans as $ean) {
-                        $ean['ean'] = preg_replace('/[^0-9]/', '', $ean['ean']);
-                        $ean['ean'] = ltrim(trim($ean['ean']), '0');
+                        $ean['ean']                                                          = preg_replace('/[^0-9]/', '', $ean['ean']);
+                        $ean['ean']                                                          = ltrim(trim($ean['ean']), '0');
                         $eanMap[(string) $ean['ean']][$ean['id'] . '-' . $ean['version_id']] = [
-                            'id' => $ean['id'],
+                            'id'         => $ean['id'],
                             'version_id' => $ean['version_id'],
                         ];
                     }
@@ -754,8 +754,8 @@ class MappingHelper
                                             }
 
                                             $dataInsert[] = [
-                                                'topDataId' => $prod->products_id,
-                                                'productId' => $product['id'],
+                                                'topDataId'        => $prod->products_id,
+                                                'productId'        => $product['id'],
                                                 'productVersionId' => $product['version_id'],
                                             ];
                                             if (count($dataInsert) > 500) {
@@ -793,8 +793,8 @@ class MappingHelper
                                                 continue;
                                             }
                                             $dataInsert[] = [
-                                                'topDataId' => $prod->products_id,
-                                                'productId' => $product['id'],
+                                                'topDataId'        => $prod->products_id,
+                                                'productId'        => $product['id'],
                                                 'productVersionId' => $product['version_id'],
                                             ];
                                             if (count($dataInsert) > 500) {
@@ -831,8 +831,8 @@ class MappingHelper
                                                 continue;
                                             }
                                             $dataInsert[] = [
-                                                'topDataId' => $prod->products_id,
-                                                'productId' => $product['id'],
+                                                'topDataId'        => $prod->products_id,
+                                                'productId'        => $product['id'],
                                                 'productVersionId' => $product['version_id'],
                                             ];
                                             if (count($dataInsert) > 500) {
@@ -909,11 +909,11 @@ class MappingHelper
 
                 if (!$brand) {
                     $dataCreate[] = [
-                        'code' => $code,
-                        'name' => $b->val,
+                        'code'    => $code,
+                        'name'    => $b->val,
                         'enabled' => false,
-                        'sort' => (int) $b->top,
-                        'wsId' => (int) $b->id,
+                        'sort'    => (int) $b->top,
+                        'wsId'    => (int) $b->id,
                     ];
                 } elseif (
                     $brand->getName() != $b->val ||
@@ -921,7 +921,7 @@ class MappingHelper
                     $brand->getWsId() != $b->id
                 ) {
                     $dataUpdate[] = [
-                        'id' => $brand->getId(),
+                        'id'   => $brand->getId(),
                         'name' => $b->val,
                         //                        'sort' => (int)$b->top,
                         'wsId' => (int) $b->id,
@@ -952,8 +952,8 @@ class MappingHelper
             }
             $this->activity("\nBrands done " . $this->lap() . "sec\n");
             $brandRepository = null;
-            $duplicates = null;
-            $brands = null;
+            $duplicates      = null;
+            $brands          = null;
 
             return true;
         } catch (\Exception $e) {
@@ -973,8 +973,8 @@ class MappingHelper
             $series = $this->topDataApi->getModelSeriesByBrandId();
             $this->activity('Got ' . count($series->data) . " records from remote server\n");
             $seriesRepository = $this->seriesRepository;
-            $dataCreate = [];
-            $dataUpdate = [];
+            $dataCreate       = [];
+            $dataUpdate       = [];
             $this->activity('Processing data');
             $allSeries = $this->getSeriesArray(true);
             foreach ($series->data as $s) {
@@ -996,12 +996,12 @@ class MappingHelper
 
                     if (!$serie) {
                         $dataCreate[] = [
-                            'code' => $code,
+                            'code'    => $code,
                             'brandId' => $brand['id'],
                             //or? 'brand' => $brand,
-                            'label' => $s->val,
-                            'sort' => (int) $s->top,
-                            'wsId' => (int) $s->id,
+                            'label'   => $s->val,
+                            'sort'    => (int) $s->top,
+                            'wsId'    => (int) $s->id,
                             'enabled' => false,
                         ];
                     } elseif (
@@ -1011,11 +1011,11 @@ class MappingHelper
                         || $serie['brand_id'] != $brand['id']
                     ) {
                         $dataUpdate[] = [
-                            'id' => $serie['id'],
-                            'code' => $code,
+                            'id'      => $serie['id'],
+                            'code'    => $code,
                             'brandId' => $brand['id'],
-                            'label' => $s->val,
-                            'sort' => (int) $s->top,
+                            'label'   => $s->val,
+                            'sort'    => (int) $s->top,
                         ];
                     }
 
@@ -1043,7 +1043,7 @@ class MappingHelper
                 $this->activity();
             }
             $this->activity("\nSeries done " . $this->lap() . "sec\n");
-            $series = null;
+            $series           = null;
             $seriesRepository = null;
 
             return true;
@@ -1064,8 +1064,8 @@ class MappingHelper
             $types = $this->topDataApi->getModelTypeByBrandId();
             //            $this->activity("Got ".count($types->data)." records.\n");
             $typeRepository = $this->typeRepository;
-            $dataCreate = [];
-            $dataUpdate = [];
+            $dataCreate     = [];
+            $dataUpdate     = [];
             $this->activity('Processing data...');
             $allTypes = $this->getTypesArray(true);
             foreach ($types->data as $s) {
@@ -1086,11 +1086,11 @@ class MappingHelper
 
                     if (!$type) {
                         $dataCreate[] = [
-                            'code' => $code,
+                            'code'    => $code,
                             'brandId' => $brand['id'],
-                            'label' => $s->val,
-                            'sort' => (int) $s->top,
-                            'wsId' => (int) $s->id,
+                            'label'   => $s->val,
+                            'sort'    => (int) $s->top,
+                            'wsId'    => (int) $s->id,
                             'enabled' => false,
                         ];
                     } elseif (
@@ -1100,11 +1100,11 @@ class MappingHelper
                         || $type['code'] != $code
                     ) {
                         $dataUpdate[] = [
-                            'id' => $type['id'],
-                            'code' => $code,
+                            'id'      => $type['id'],
+                            'code'    => $code,
                             'brandId' => $brand['id'],
-                            'label' => $s->val,
-                            'sort' => (int) $s->top,
+                            'label'   => $s->val,
+                            'sort'    => (int) $s->top,
                         ];
                     }
 
@@ -1150,25 +1150,25 @@ class MappingHelper
             $duplicates = [];
             $dataCreate = [];
             $dataUpdate = [];
-            $updated = 0;
-            $created = 0;
-            $start = 0;
-            $limit = 5000;
-            $SQLlogger = $this->connection->getConfiguration()->getSQLLogger();
+            $updated    = 0;
+            $created    = 0;
+            $start      = 0;
+            $limit      = 5000;
+            $SQLlogger  = $this->connection->getConfiguration()->getSQLLogger();
             $this->connection->getConfiguration()->setSQLLogger(null);
             $this->activity("Devices begin (Chunk size is $limit devices)\n");
             $this->mem();
             $this->activity("\n");
             $functionTimeStart = microtime(true);
-            $chunkNumber = 0;
+            $chunkNumber       = 0;
             if ((int) $this->getOption('start')) {
                 $chunkNumber = (int) $this->getOption('start') - 1;
-                $start = $chunkNumber * $limit;
+                $start       = $chunkNumber * $limit;
             }
             $repeat = true;
             $this->lap(true);
             $seriesArray = $this->getSeriesArray(true);
-            $typesArray = $this->getTypesArray(true);
+            $typesArray  = $this->getTypesArray(true);
             while ($repeat) {
                 if ($start) {
                     $this->mem();
@@ -1224,7 +1224,7 @@ class MappingHelper
                     }
 
                     $deviceArr = [];
-                    $rez = $this
+                    $rez       = $this
                         ->connection
                         ->createQueryBuilder()
                         ->select('*')
@@ -1236,15 +1236,15 @@ class MappingHelper
                         ->fetchAllAssociative();
 
                     if (isset($rez[0])) {
-                        $deviceArr = $rez[0];
-                        $deviceArr['id'] = bin2hex($deviceArr['id']);
-                        $deviceArr['brand_id'] = bin2hex($deviceArr['brand_id']);
-                        $deviceArr['type_id'] = bin2hex($deviceArr['type_id']);
+                        $deviceArr              = $rez[0];
+                        $deviceArr['id']        = bin2hex($deviceArr['id']);
+                        $deviceArr['brand_id']  = bin2hex($deviceArr['brand_id']);
+                        $deviceArr['type_id']   = bin2hex($deviceArr['type_id']);
                         $deviceArr['series_id'] = bin2hex($deviceArr['series_id']);
                     }
 
                     $serieId = null;
-                    $serie = [];
+                    $serie   = [];
                     if ($s->mId) {
                         foreach ($seriesArray as $serieItem) {
                             if ($serieItem['ws_id'] == (int) $s->mId && $serieItem['brand_id'] == $brandArr['id']) {
@@ -1254,12 +1254,12 @@ class MappingHelper
                         }
                     }
                     if ($serie) {
-                        $serieId = $serie['id'];
+                        $serieId           = $serie['id'];
                         $search_keywords[] = $serie['label'];
                     }
 
                     $typeId = null;
-                    $type = [];
+                    $type   = [];
                     if ($s->dId) {
                         foreach ($typesArray as $typeItem) {
                             if ($typeItem['ws_id'] == (int) $s->dId && $typeItem['brand_id'] == $brandArr['id']) {
@@ -1270,7 +1270,7 @@ class MappingHelper
                     }
 
                     if ($type) {
-                        $typeId = $type['id'];
+                        $typeId            = $type['id'];
                         $search_keywords[] = $type['label'];
                     }
 
@@ -1278,16 +1278,16 @@ class MappingHelper
 
                     if (!$deviceArr) {
                         $dataCreate[] = [
-                            'brandId' => $brandArr['id'],
-                            'typeId' => $typeId,
+                            'brandId'  => $brandArr['id'],
+                            'typeId'   => $typeId,
                             'seriesId' => $serieId,
-                            'code' => $code,
-                            'model' => $s->val,
+                            'code'     => $code,
+                            'model'    => $s->val,
                             'keywords' => $keywords,
-                            'sort' => (int) $s->top,
-                            'wsId' => (int) $s->id,
-                            'enabled' => false,
-                            'mediaId' => null,
+                            'sort'     => (int) $s->top,
+                            'wsId'     => (int) $s->id,
+                            'enabled'  => false,
+                            'mediaId'  => null,
                         ];
                     } elseif (
                         $deviceArr['brand_id'] != $brandArr['id']
@@ -1299,12 +1299,12 @@ class MappingHelper
                         || $deviceArr['ws_id'] != $s->id
                     ) {
                         $dataUpdate[] = [
-                            'id' => $deviceArr['id'],
+                            'id'      => $deviceArr['id'],
                             'brandId' => $brandArr['id'],
                             //                        'brandId' => $brand->getId(),
-                            'typeId' => $typeId,
+                            'typeId'   => $typeId,
                             'seriesId' => $serieId,
-                            'model' => $s->val,
+                            'model'    => $s->val,
                             'keywords' => $keywords,
                             //                            'sort' => (int)$s->top,
                             'wsId' => (int) $s->id,
@@ -1346,7 +1346,7 @@ class MappingHelper
                 }
             }
 
-            $models = null;
+            $models     = null;
             $duplicates = null;
             $this->activity("\n");
             $totalSecs = microtime(true) - $functionTimeStart;
@@ -1381,13 +1381,13 @@ class MappingHelper
             }
             $availablePrintersCount = count($available_Printers);
             $processedPrintarsCount = 0;
-            $limit = 5000;
+            $limit                  = 5000;
             $this->activity("Chunk size is $limit devices\n");
-            $start = 0;
+            $start       = 0;
             $chunkNumber = 0;
             if ((int) $this->getOption('start')) {
                 $chunkNumber = (int) $this->getOption('start') - 1;
-                $start = $chunkNumber * $limit;
+                $start       = $chunkNumber * $limit;
             }
             $repeat = true;
             $this->lap(true);
@@ -1426,7 +1426,7 @@ class MappingHelper
                         continue;
                     }
 
-                    $code = $brand['code'] . '_' . $this->formCode($s->val);
+                    $code   = $brand['code'] . '_' . $this->formCode($s->val);
                     $device = $deviceRepository
                         ->search(
                             (new Criteria())
@@ -1447,7 +1447,7 @@ class MappingHelper
                     if (is_null($s->img) && $currentMedia) {
                         $deviceRepository->update([
                             [
-                                'id' => $device->getId(),
+                                'id'      => $device->getId(),
                                 'mediaId' => null,
                             ],
                         ], $this->context);
@@ -1475,7 +1475,7 @@ class MappingHelper
                         if ($mediaId) {
                             $deviceRepository->update([
                                 [
-                                    'id' => $device->getId(),
+                                    'id'      => $device->getId(),
                                     'mediaId' => $mediaId,
                                 ],
                             ], $this->context);
@@ -1538,14 +1538,14 @@ class MappingHelper
             $this->activity($this->lap() . "sec\n");
             $enabledBrands = [];
             $enabledSeries = [];
-            $enabledTypes = [];
+            $enabledTypes  = [];
 
             $topids = array_chunk(array_keys($topid_products), 100);
             foreach ($topids as $k => $prs) {
                 $this->activity("\nGetting data from remote server part " . ($k + 1) . '/' . count($topids) . '...');
                 $products = $this->topDataApi->myProductList([
                     'products' => implode(',', $prs),
-                    'filter' => 'product_application_in',
+                    'filter'   => 'product_application_in',
                 ]);
                 $this->activity($this->lap() . "sec\n");
 
@@ -1585,7 +1585,7 @@ class MappingHelper
                  */
 
                 $deviceIdsToEnable = array_keys($deviceWS);
-                $devices = $this->getDeviceArrayByWsIdArray($deviceIdsToEnable);
+                $devices           = $this->getDeviceArrayByWsIdArray($deviceIdsToEnable);
                 $this->activity();
                 if (!count($devices)) {
                     continue;
@@ -1601,7 +1601,7 @@ class MappingHelper
 
                 /* device_id, product_id, product_version_id, created_at */
                 $insertData = [];
-                $createdAt = date('Y-m-d H:i:s');
+                $createdAt  = date('Y-m-d H:i:s');
 
                 foreach ($devices as $device) {
                     if ($device['brand_id'] && !isset($enabledBrands[$device['brand_id']])) {
@@ -1692,7 +1692,7 @@ class MappingHelper
         $result = [];
 
         $this->brandWsArray = [];
-        $queryRez = $this
+        $queryRez           = $this
             ->connection
             ->createQueryBuilder()
             ->select('*')
@@ -1701,11 +1701,11 @@ class MappingHelper
             ->execute()
             ->fetchAllAssociative();
         foreach ($queryRez as $device) {
-            $device['id'] = bin2hex($device['id']);
-            $device['brand_id'] = bin2hex($device['brand_id']);
-            $device['type_id'] = bin2hex($device['type_id']);
+            $device['id']        = bin2hex($device['id']);
+            $device['brand_id']  = bin2hex($device['brand_id']);
+            $device['type_id']   = bin2hex($device['type_id']);
             $device['series_id'] = bin2hex($device['series_id']);
-            $result[] = $device;
+            $result[]            = $device;
         }
 
         return $result;
@@ -1715,14 +1715,14 @@ class MappingHelper
     {
         if ($this->brandWsArray === null) {
             $this->brandWsArray = [];
-            $query = $this->connection->createQueryBuilder();
-            $rez = $query
+            $query              = $this->connection->createQueryBuilder();
+            $rez                = $query
                 ->select(['id', 'code', 'label', 'ws_id'])
                 ->from('topdata_brand')
                 ->execute()
                 ->fetchAllAssociative();
             foreach ($rez as $brand) {
-                $brand['id'] = bin2hex($brand['id']);
+                $brand['id']                         = bin2hex($brand['id']);
                 $this->brandWsArray[$brand['ws_id']] = $brand;
             }
         }
@@ -1734,7 +1734,7 @@ class MappingHelper
     {
         if ($this->seriesArray === null || $forceReload) {
             $this->seriesArray = [];
-            $results = $this
+            $results           = $this
                 ->connection
                 ->createQueryBuilder()
                 ->select('*')
@@ -1743,8 +1743,8 @@ class MappingHelper
                 ->execute()
                 ->fetchAllAssociative();
             foreach ($results as $r) {
-                $this->seriesArray[bin2hex($r['id'])] = $r;
-                $this->seriesArray[bin2hex($r['id'])]['id'] = bin2hex($r['id']);
+                $this->seriesArray[bin2hex($r['id'])]             = $r;
+                $this->seriesArray[bin2hex($r['id'])]['id']       = bin2hex($r['id']);
                 $this->seriesArray[bin2hex($r['id'])]['brand_id'] = bin2hex($r['brand_id']);
             }
         }
@@ -1756,7 +1756,7 @@ class MappingHelper
     {
         if ($this->typesArray === null || $forceReload) {
             $this->typesArray = [];
-            $results = $this
+            $results          = $this
                 ->connection
                 ->createQueryBuilder()
                 ->select('*')
@@ -1765,8 +1765,8 @@ class MappingHelper
                 ->execute()
                 ->fetchAllAssociative();
             foreach ($results as $r) {
-                $this->typesArray[bin2hex($r['id'])] = $r;
-                $this->typesArray[bin2hex($r['id'])]['id'] = bin2hex($r['id']);
+                $this->typesArray[bin2hex($r['id'])]             = $r;
+                $this->typesArray[bin2hex($r['id'])]['id']       = bin2hex($r['id']);
                 $this->typesArray[bin2hex($r['id'])]['brand_id'] = bin2hex($r['brand_id']);
             }
         }
@@ -1796,7 +1796,7 @@ class MappingHelper
 
             return '';
         }
-        $lapTime = microtime(true) - $this->microtime;
+        $lapTime         = microtime(true) - $this->microtime;
         $this->microtime = microtime(true);
 
         return (string) round($lapTime, 3);
@@ -1805,7 +1805,7 @@ class MappingHelper
     private function prepareProduct(array $productId_versionId, $remoteProductData, $onlyMedia = false): array
     {
         $productData = [];
-        $productId = $productId_versionId['product_id'];
+        $productId   = $productId_versionId['product_id'];
 
         if (!$onlyMedia && $this->getProductOption('productName', $productId) && $remoteProductData->short_description != '') {
             $productData['name'] = trim(substr($remoteProductData->short_description, 0, 255));
@@ -1850,7 +1850,7 @@ class MappingHelper
 
                     try {
                         $echoMediaDownload = $this->verbose ? 'd' : '';
-                        $mediaId = $this->entitiesHelper->getMediaId(
+                        $mediaId           = $this->entitiesHelper->getMediaId(
                             $imageUrl,
                             $imageDate,
                             $k . '-' . $remoteProductData->products_id . '-',
@@ -1858,9 +1858,9 @@ class MappingHelper
                         );
                         if ($mediaId) {
                             $media[] = [
-                                'id' => Uuid::randomHex(), // $mediaId,
+                                'id'       => Uuid::randomHex(), // $mediaId,
                                 'position' => $k + 1,
-                                'mediaId' => $mediaId,
+                                'mediaId'  => $mediaId,
                             ];
                         }
                     } catch (\Exception $e) {
@@ -1952,7 +1952,7 @@ class MappingHelper
         ) {
             foreach ($remoteProductData->waregroups as $waregroupObject) {
                 $categoriesChain = json_decode(json_encode($waregroupObject->waregroup_tree), true);
-                $categoryId = $this->entitiesHelper->getCategoryId($categoriesChain, (string) $this->getOption('productWaregroupsParent'));
+                $categoryId      = $this->entitiesHelper->getCategoryId($categoriesChain, (string) $this->getOption('productWaregroupsParent'));
                 if (!$categoryId) {
                     break;
                 }
@@ -1976,7 +1976,7 @@ class MappingHelper
     private function findRelatedProducts($remoteProductData): array
     {
         $relatedProducts = [];
-        $topid_products = $this->getTopids();
+        $topid_products  = $this->getTopids();
         if (isset($remoteProductData->product_accessories->products) && count($remoteProductData->product_accessories->products)) {
             foreach ($remoteProductData->product_accessories->products as $tid) {
                 if (!isset($topid_products[$tid])) {
@@ -1992,7 +1992,7 @@ class MappingHelper
     private function findBundledProducts($remoteProductData): array
     {
         $bundledProducts = [];
-        $topid_products = $this->getTopids();
+        $topid_products  = $this->getTopids();
         if (isset($remoteProductData->bundle_content->products) && count($remoteProductData->bundle_content->products)) {
             foreach ($remoteProductData->bundle_content->products as $tid) {
                 if (!isset($topid_products[$tid->products_id])) {
@@ -2008,7 +2008,7 @@ class MappingHelper
     private function findAlternateProducts($remoteProductData): array
     {
         $alternateProducts = [];
-        $topid_products = $this->getTopids();
+        $topid_products    = $this->getTopids();
         if (isset($remoteProductData->product_alternates->products) && count($remoteProductData->product_alternates->products)) {
             foreach ($remoteProductData->product_alternates->products as $tid) {
                 if (!isset($topid_products[$tid])) {
@@ -2024,7 +2024,7 @@ class MappingHelper
     private function findSimilarProducts($remoteProductData): array
     {
         $similarProducts = [];
-        $topid_products = $this->getTopids();
+        $topid_products  = $this->getTopids();
 
         if (isset($remoteProductData->product_same_accessories->products) && count($remoteProductData->product_same_accessories->products)) {
             foreach ($remoteProductData->product_same_accessories->products as $tid) {
@@ -2090,7 +2090,7 @@ class MappingHelper
 
     private function findVariantProducts($remoteProductData): array
     {
-        $products = [];
+        $products       = [];
         $topid_products = $this->getTopids();
 
         if (isset($remoteProductData->product_variants->products) && count($remoteProductData->product_variants->products)) {
@@ -2116,9 +2116,9 @@ class MappingHelper
         } else {
             $this->activity("\nProduct information begin\n");
         }
-        $topid_products = $this->getTopids(true);
-        $productDataUpdate = [];
-        $productDataUpdateCovers = [];
+        $topid_products                  = $this->getTopids(true);
+        $productDataUpdate               = [];
+        $productDataUpdateCovers         = [];
         $productDataDeleteDuplicateMedia = [];
 
         $chunkSize = 50;
@@ -2137,7 +2137,7 @@ class MappingHelper
             $this->activity('Getting data from remote server part ' . ($k + 1) . '/' . count($topids) . ' (' . count($prs) . ' products)...');
             $products = $this->topDataApi->myProductList([
                 'products' => implode(',', $prs),
-                'filter' => 'all',
+                'filter'   => 'all',
             ]);
             $this->activity($this->lap() . "sec\n");
 
@@ -2148,7 +2148,7 @@ class MappingHelper
             }
             $this->activity('Processing data...');
 
-            $temp = array_slice($topid_products, $k * $chunkSize, $chunkSize);
+            $temp                   = array_slice($topid_products, $k * $chunkSize, $chunkSize);
             $currentChunkProductIds = [];
             foreach ($temp as $p) {
                 $currentChunkProductIds[] = $p[0]['product_id'];
@@ -2174,14 +2174,14 @@ class MappingHelper
 
                     if (isset($productData['media'][0]['id'])) {
                         $productDataUpdateCovers[] = [
-                            'id' => $productData['id'],
+                            'id'      => $productData['id'],
                             'coverId' => $productData['media'][0]['id'],
                         ];
                         foreach ($productData['media'] as $tempMedia) {
                             $productDataDeleteDuplicateMedia[] = [
                                 'productId' => $productData['id'],
-                                'mediaId' => $tempMedia['mediaId'],
-                                'id' => $tempMedia['id'],
+                                'mediaId'   => $tempMedia['mediaId'],
+                                'id'        => $tempMedia['id'],
                             ];
                         }
                     }
@@ -2226,16 +2226,16 @@ class MappingHelper
             $chunks = array_chunk($productDataDeleteDuplicateMedia, 100);
             foreach ($chunks as $chunk) {
                 $productIds = [];
-                $mediaIds = [];
-                $pmIds = [];
+                $mediaIds   = [];
+                $pmIds      = [];
                 foreach ($chunk as $el) {
                     $productIds[] = $el['productId'];
-                    $mediaIds[] = $el['mediaId'];
-                    $pmIds[] = $el['id'];
+                    $mediaIds[]   = $el['mediaId'];
+                    $pmIds[]      = $el['id'];
                 }
                 $productIds = '0x' . implode(', 0x', $productIds);
-                $mediaIds = '0x' . implode(', 0x', $mediaIds);
-                $pmIds = '0x' . implode(', 0x', $pmIds);
+                $mediaIds   = '0x' . implode(', 0x', $mediaIds);
+                $pmIds      = '0x' . implode(', 0x', $pmIds);
 
                 $this->connection->executeStatement("
                     DELETE FROM product_media 
@@ -2309,9 +2309,9 @@ class MappingHelper
         }
         //load each product category path
         $productCategories = [];
-        $allCategories = [];
-        $ids = '0x' . implode(',0x', $productIds);
-        $temp = $this->connection->fetchAllAssociative('
+        $allCategories     = [];
+        $ids               = '0x' . implode(',0x', $productIds);
+        $temp              = $this->connection->fetchAllAssociative('
             SELECT LOWER(HEX(id)) as id, category_tree
               FROM product 
               WHERE (category_tree is NOT NULL)AND(id IN (' . $ids . '))
@@ -2322,7 +2322,7 @@ class MappingHelper
             foreach ($parsedIds as $id) {
                 if (is_string($id) && Uuid::isValid($id)) {
                     $productCategories[$item['id']][] = $id;
-                    $allCategories[$id] = false;
+                    $allCategories[$id]               = false;
                 }
             }
         }
@@ -2332,7 +2332,7 @@ class MappingHelper
         }
 
         //load each category settings
-        $ids = '0x' . implode(',0x', array_keys($allCategories));
+        $ids  = '0x' . implode(',0x', array_keys($allCategories));
         $temp = $this->connection->fetchAllAssociative('
             SELECT LOWER(HEX(category_id)) as id, import_settings
               FROM topdata_category_extension 
@@ -2376,31 +2376,31 @@ class MappingHelper
     public function mapProductOption(string $optionName): string
     {
         $map = [
-            'name' => 'productName',
-            'description' => 'productDescription',
-            'brand' => 'productBrand',
-            'EANs' => 'productEan',
-            'MPNs' => 'productOem',
-            'pictures' => 'productImages',
+            'name'              => 'productName',
+            'description'       => 'productDescription',
+            'brand'             => 'productBrand',
+            'EANs'              => 'productEan',
+            'MPNs'              => 'productOem',
+            'pictures'          => 'productImages',
             'unlinkOldPictures' => 'productImagesDelete',
-            'properties' => 'productSpecifications',
-            'PCDsProp' => 'specReferencePCD',
-            'MPNsProp' => 'specReferenceOEM',
+            'properties'        => 'productSpecifications',
+            'PCDsProp'          => 'specReferencePCD',
+            'MPNsProp'          => 'specReferenceOEM',
 
-            'importSimilar' => 'productSimilar',
-            'importAlternates' => 'productAlternate',
-            'importAccessories' => 'productRelated',
-            'importBoundles' => 'productBundled',
-            'importVariants' => 'productVariant',
-            'importColorVariants' => 'productColorVariant',
+            'importSimilar'          => 'productSimilar',
+            'importAlternates'       => 'productAlternate',
+            'importAccessories'      => 'productRelated',
+            'importBoundles'         => 'productBundled',
+            'importVariants'         => 'productVariant',
+            'importColorVariants'    => 'productColorVariant',
             'importCapacityVariants' => 'productCapacityVariant',
 
-            'crossSimilar' => 'productSimilarCross',
-            'crossAlternates' => 'productAlternateCross',
-            'crossAccessories' => 'productRelatedCross',
-            'crossBoundles' => 'productBundledCross',
-            'crossVariants' => 'productVariantCross',
-            'crossColorVariants' => 'productVariantColorCross',
+            'crossSimilar'          => 'productSimilarCross',
+            'crossAlternates'       => 'productAlternateCross',
+            'crossAccessories'      => 'productRelatedCross',
+            'crossBoundles'         => 'productBundledCross',
+            'crossVariants'         => 'productVariantCross',
+            'crossColorVariants'    => 'productVariantColorCross',
             'crossCapacityVariants' => 'productVariantCapacityCross',
         ];
 
@@ -2484,12 +2484,12 @@ class MappingHelper
 
     private function linkProducts(array $productId_versionId, $remoteProductData): void
     {
-        $dateTime = date('Y-m-d H:i:s');
+        $dateTime  = date('Y-m-d H:i:s');
         $productId = $productId_versionId['product_id'];
 
         if ($this->getProductOption('productSimilar', $productId)) {
             $dataInsert = [];
-            $temp = $this->findSimilarProducts($remoteProductData);
+            $temp       = $this->findSimilarProducts($remoteProductData);
             foreach ($temp as $tempProd) {
                 $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
             }
@@ -2511,7 +2511,7 @@ class MappingHelper
 
         if ($this->getProductOption('productAlternate', $productId)) {
             $dataInsert = [];
-            $temp = $this->findAlternateProducts($remoteProductData);
+            $temp       = $this->findAlternateProducts($remoteProductData);
             foreach ($temp as $tempProd) {
                 $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
             }
@@ -2533,7 +2533,7 @@ class MappingHelper
 
         if ($this->getProductOption('productRelated', $productId)) {
             $dataInsert = [];
-            $temp = $this->findRelatedProducts($remoteProductData);
+            $temp       = $this->findRelatedProducts($remoteProductData);
             foreach ($temp as $tempProd) {
                 $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
             }
@@ -2555,7 +2555,7 @@ class MappingHelper
 
         if ($this->getProductOption('productBundled', $productId)) {
             $dataInsert = [];
-            $temp = $this->findBundledProducts($remoteProductData);
+            $temp       = $this->findBundledProducts($remoteProductData);
             foreach ($temp as $tempProd) {
                 $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
             }
@@ -2577,7 +2577,7 @@ class MappingHelper
 
         if ($this->getProductOption('productColorVariant', $productId)) {
             $dataInsert = [];
-            $temp = $this->findColorVariantProducts($remoteProductData);
+            $temp       = $this->findColorVariantProducts($remoteProductData);
             foreach ($temp as $tempProd) {
                 $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
             }
@@ -2601,7 +2601,7 @@ class MappingHelper
 
         if ($this->getProductOption('productCapacityVariant', $productId)) {
             $dataInsert = [];
-            $temp = $this->findCapacityVariantProducts($remoteProductData);
+            $temp       = $this->findCapacityVariantProducts($remoteProductData);
             foreach ($temp as $tempProd) {
                 $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
             }
@@ -2625,7 +2625,7 @@ class MappingHelper
 
         if ($this->getProductOption('productVariant', $productId)) {
             $dataInsert = [];
-            $temp = $this->findVariantProducts($remoteProductData);
+            $temp       = $this->findVariantProducts($remoteProductData);
             foreach ($temp as $tempProd) {
                 $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
             }
@@ -2652,7 +2652,7 @@ class MappingHelper
     {
         $result = [];
         foreach ($keywords as $keyword) {
-            $temp = mb_strtolower(trim($keyword));
+            $temp     = mb_strtolower(trim($keyword));
             $result[] = $temp;
             $result[] = str_replace(['_', '/', '-', ' ', '.'], '', $temp);
             $result[] = trim(preg_replace('/\s+/', ' ', str_replace(['_', '/', '-', '.'], ' ', $temp)));
@@ -2688,7 +2688,7 @@ class MappingHelper
             $this->activity('Getting data from remote server part ' . ($k + 1) . '/' . count($chunks) . '...');
             $devices = $this->topDataApi->myProductList([
                 'products' => implode(',', array_keys($prs)),
-                'filter' => 'all',
+                'filter'   => 'all',
             ]);
             $this->activity($this->lap() . "sec\n");
 
@@ -2718,7 +2718,7 @@ class MappingHelper
                 }
             }
 
-            $dateTime = date('Y-m-d H:i:s');
+            $dateTime   = date('Y-m-d H:i:s');
             $dataInsert = [];
             foreach ($variantsMap as $deviceId => $synonymIds) {
                 foreach ($synonymIds as $synonymId) {
@@ -2837,31 +2837,31 @@ class MappingHelper
                     WHERE cross_selling_id = 0x$crossId");
         } else {
             $crossId = Uuid::randomHex();
-            $data = [
-                'id' => $crossId,
-                'productId' => $currentProductId['product_id'],
+            $data    = [
+                'id'               => $crossId,
+                'productId'        => $currentProductId['product_id'],
                 'productVersionId' => $currentProductId['product_version_id'],
-                'name' => $this->getCrossName($crossType),
-                'position' => array_search($crossType, static::getCrossTypes()),
-                'type' => ProductCrossSellingDefinition::TYPE_PRODUCT_LIST,
-                'sortBy' => ProductCrossSellingDefinition::SORT_BY_NAME,
-                'sortDirection' => FieldSorting::ASCENDING,
-                'active' => true,
-                'limit' => 24,
+                'name'             => $this->getCrossName($crossType),
+                'position'         => array_search($crossType, static::getCrossTypes()),
+                'type'             => ProductCrossSellingDefinition::TYPE_PRODUCT_LIST,
+                'sortBy'           => ProductCrossSellingDefinition::SORT_BY_NAME,
+                'sortDirection'    => FieldSorting::ASCENDING,
+                'active'           => true,
+                'limit'            => 24,
                 'topdataExtension' => ['type' => $crossType],
             ];
             $this->productCrossSellingRepository->create([$data], $this->context);
             $this->activity();
         }
 
-        $i = 1;
+        $i    = 1;
         $data = [];
         foreach ($linkedProductIds as $prodId) {
             $data[] = [
-                'crossSellingId' => $crossId,
-                'productId' => $prodId['product_id'],
+                'crossSellingId'   => $crossId,
+                'productId'        => $prodId['product_id'],
                 'productVersionId' => $prodId['product_version_id'],
-                'position' => $i++,
+                'position'         => $i++,
             ];
         }
 
@@ -2893,9 +2893,9 @@ class MappingHelper
         //            $debug = true;
         //        }
 
-        $colorVariants = ($variants == 'color');
+        $colorVariants    = ($variants == 'color');
         $capacityVariants = ($variants == 'capacity');
-        $groupExists = false;
+        $groupExists      = false;
         foreach ($groups as $key => $group) {
             foreach ($ids as $id) {
                 if (in_array($id, $group['ids'])) {
@@ -2926,9 +2926,9 @@ class MappingHelper
         }
 
         $groups[] = [
-            'ids' => $ids,
-            'color' => $colorVariants,
-            'capacity' => $capacityVariants,
+            'ids'              => $ids,
+            'color'            => $colorVariants,
+            'capacity'         => $capacityVariants,
             'referenceProduct' => false,
         ];
 
@@ -2945,7 +2945,7 @@ class MappingHelper
 SQL;
         $rez = $this->connection->fetchAllAssociative($query);
         foreach ($rez as $row) {
-            $ids = array_merge([$row['id']], explode(',', $row['variant_ids']));
+            $ids    = array_merge([$row['id']], explode(',', $row['variant_ids']));
             $groups = $this->addToGroup($groups, $ids, 'color');
         }
 
@@ -2962,7 +2962,7 @@ SQL;
 SQL;
         $rez = $this->connection->fetchAllAssociative($query);
         foreach ($rez as $row) {
-            $ids = array_merge([$row['id']], explode(',', $row['variant_ids']));
+            $ids    = array_merge([$row['id']], explode(',', $row['variant_ids']));
             $groups = $this->addToGroup($groups, $ids, 'capacity');
         }
 
@@ -2999,10 +2999,10 @@ SQL;
             $added = false;
             foreach ($return as $key => $g) {
                 if (count(array_intersect($group['ids'], $g['ids']))) {
-                    $return[$key]['ids'] = array_unique(array_merge($group['ids'], $g['ids']));
-                    $return[$key]['color'] = $group['color'] || $g['color'];
+                    $return[$key]['ids']      = array_unique(array_merge($group['ids'], $g['ids']));
+                    $return[$key]['color']    = $group['color'] || $g['color'];
                     $return[$key]['capacity'] = $group['capacity'] || $g['capacity'];
-                    $added = true;
+                    $added                    = true;
                     break;
                 }
             }
@@ -3050,7 +3050,7 @@ SQL;
 
             if (count($products)) {
                 $invalidProd = false;
-                $parentId = null;
+                $parentId    = null;
                 foreach ($groups[$i]['ids'] as $productId) {
                     $product = $products->get($productId);
                     if (!$product) {
@@ -3080,11 +3080,11 @@ SQL;
 
                     foreach ($product->getProperties() as $property) {
                         if ($groups[$i]['color'] && in_array($property->getGroup()->getName(), $this->colorNames())) {
-                            $prodOptions['colorId'] = $property->getId();
+                            $prodOptions['colorId']      = $property->getId();
                             $prodOptions['colorGroupId'] = $property->getGroup()->getId();
                         }
                         if ($groups[$i]['capacity'] && in_array($property->getGroup()->getName(), $this->capacityNames())) {
-                            $prodOptions['capacityId'] = $property->getId();
+                            $prodOptions['capacityId']      = $property->getId();
                             $prodOptions['capacityGroupId'] = $property->getGroup()->getId();
                         }
                     }
@@ -3102,7 +3102,7 @@ SQL;
                         if (!isset($groups[$i]['options'])) {
                             $groups[$i]['options'] = [];
                         }
-                        $prodOptions['skip'] = (bool) ($product->getParentId());
+                        $prodOptions['skip']               = (bool) ($product->getParentId());
                         $groups[$i]['options'][$productId] = $prodOptions;
                     } else {
                         $this->activity("\nProduct id=$productId has no valid properties!\n");
@@ -3145,14 +3145,14 @@ SQL;
     {
         if (is_null($parentId)) {
             /** @var ProductEntity $refProd */
-            $refProd = $group['referenceProduct'];
+            $refProd  = $group['referenceProduct'];
             $parentId = Uuid::randomHex();
 
             $visibilities = [];
             foreach ($refProd->getVisibilities() as $visibility) {
                 $visibilities[] = [
                     'salesChannelId' => $visibility->getSalesChannelId(),
-                    'visibility' => $visibility->getVisibility(),
+                    'visibility'     => $visibility->getVisibility(),
                 ];
             }
 
@@ -3164,21 +3164,21 @@ SQL;
             }
 
             $prod = [
-                'id' => $parentId,
-                'productNumber' => 'VAR-' . $refProd->getProductNumber(),
-                'active' => true,
-                'taxId' => $refProd->getTaxId(),
-                'stock' => $refProd->getStock(),
-                'shippingFree' => $refProd->getShippingFree(),
-                'purchasePrice' => 0.0,
+                'id'               => $parentId,
+                'productNumber'    => 'VAR-' . $refProd->getProductNumber(),
+                'active'           => true,
+                'taxId'            => $refProd->getTaxId(),
+                'stock'            => $refProd->getStock(),
+                'shippingFree'     => $refProd->getShippingFree(),
+                'purchasePrice'    => 0.0,
                 'displayInListing' => true,
-                'name' => [
+                'name'             => [
                     $this->systemDefaultLocaleCode => 'VAR ' . $refProd->getName(),
                 ],
                 'price' => [[
-                    'net' => 0.0,
-                    'gross' => 0.0,
-                    'linked' => true,
+                    'net'        => 0.0,
+                    'gross'      => 0.0,
+                    'linked'     => true,
                     'currencyId' => Defaults::CURRENCY,
                 ]],
             ];
@@ -3205,10 +3205,10 @@ SQL;
                 WHERE product_id=0x' . $parentId);
         }
 
-        $configuratorSettings = [];
-        $optionGroupIds = [];
-        $confOptions = [];
-        $data = [];
+        $configuratorSettings     = [];
+        $optionGroupIds           = [];
+        $confOptions              = [];
+        $data                     = [];
         $productIdsToClearCrosses = [];
 
         //        echo "\n";
@@ -3233,7 +3233,7 @@ SQL;
                 }
                 if ($add) {
                     $confOptions[] = [
-                        'id' => $item['colorId'],
+                        'id'    => $item['colorId'],
                         'group' => [
                             'id' => $item['colorGroupId'],
                         ],
@@ -3258,7 +3258,7 @@ SQL;
                 }
                 if ($add) {
                     $confOptions[] = [
-                        'id' => $item['capacityId'],
+                        'id'    => $item['capacityId'],
                         'group' => [
                             'id' => $item['capacityGroupId'],
                         ],
@@ -3269,8 +3269,8 @@ SQL;
 
             if (count($options)) {
                 $data[] = [
-                    'id' => $prodId,
-                    'options' => $options,
+                    'id'       => $prodId,
+                    'options'  => $options,
                     'parentId' => $parentId,
                 ];
                 $productIdsToClearCrosses[] = $prodId;
@@ -3278,15 +3278,15 @@ SQL;
         }
 
         $configuratorGroupConfig = [];
-        $optionGroupIds = array_unique($optionGroupIds);
+        $optionGroupIds          = array_unique($optionGroupIds);
         //        echo "\n";
         //        print_r($parentId.'='.count($optionGroupIds));
         //        echo "\n";
         foreach ($optionGroupIds as $groupId) {
             $configuratorGroupConfig[] = [
-                'id' => $groupId,
+                'id'                    => $groupId,
                 'expressionForListings' => true,
-                'representation' => 'box',
+                'representation'        => 'box',
             ];
         }
 
@@ -3298,9 +3298,9 @@ SQL;
 
         if ($configuratorSettings) {
             $data[] = [
-                'id' => $parentId,
+                'id'                      => $parentId,
                 'configuratorGroupConfig' => $configuratorGroupConfig ?: null,
-                'configuratorSettings' => $configuratorSettings,
+                'configuratorSettings'    => $configuratorSettings,
             ];
         }
 
@@ -3320,9 +3320,9 @@ SQL;
 
     private function getWordsFromString(string $string): array
     {
-        $rez = [];
+        $rez    = [];
         $string = str_replace(['-', '/', '+', '&', '.', ','], ' ', $string);
-        $words = explode(' ', $string);
+        $words  = explode(' ', $string);
         foreach ($words as $word) {
             if (trim($word)) {
                 $rez[] = trim($word);

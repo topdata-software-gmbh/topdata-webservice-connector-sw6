@@ -84,10 +84,10 @@ class ProductsCommand extends Command
         EntityRepository $productRepository,
         Connection $connection
     ) {
-        $this->productRepository = $productRepository;
-        $this->manufacturerRepository = $manufacturerRepository;
-        $this->context = Context::createDefaultContext();
-        $this->connection = $connection;
+        $this->productRepository       = $productRepository;
+        $this->manufacturerRepository  = $manufacturerRepository;
+        $this->context                 = Context::createDefaultContext();
+        $this->connection              = $connection;
         $this->systemDefaultLocaleCode = $this->getLocaleCodeOfSystemLanguage();
         parent::__construct();
     }
@@ -123,7 +123,7 @@ class ProductsCommand extends Command
     public function execute(InputInterface $input, OutputInterface $output): int
     {
         $products = [];
-        $file = $input->getOption('file');
+        $file     = $input->getOption('file');
         if (!$file) {
             echo "add file!\n";
 
@@ -138,17 +138,17 @@ class ProductsCommand extends Command
         }
         echo $file . "\n";
 
-        $this->lineStart = ($input->getOption('start') !== null) ? (int) $input->getOption('start') : 1;
-        $this->lineEnd = ($input->getOption('end') !== null) ? (int) $input->getOption('end') : null;
-        $this->columnName = (int) $input->getOption('name');
-        $this->columnNumber = (int) $input->getOption('number');
-        $this->columnTopdataId = ($input->getOption('wsid') !== null) ? (int) $input->getOption('wsid') : null;
+        $this->lineStart         = ($input->getOption('start') !== null) ? (int) $input->getOption('start') : 1;
+        $this->lineEnd           = ($input->getOption('end') !== null) ? (int) $input->getOption('end') : null;
+        $this->columnName        = (int) $input->getOption('name');
+        $this->columnNumber      = (int) $input->getOption('number');
+        $this->columnTopdataId   = ($input->getOption('wsid') !== null) ? (int) $input->getOption('wsid') : null;
         $this->columnDescription = ($input->getOption('description') !== null) ? (int) $input->getOption('description') : null;
-        $this->columnEAN = ($input->getOption('ean') !== null) ? (int) $input->getOption('ean') : null;
-        $this->columnMPN = ($input->getOption('mpn') !== null) ? (int) $input->getOption('mpn') : null;
-        $this->columnBrand = ($input->getOption('brand') !== null) ? (int) $input->getOption('brand') : null;
-        $this->divider = ($input->getOption('divider') !== null) ? $input->getOption('divider') : ';';
-        $this->trim = ($input->getOption('trim') !== null) ? $input->getOption('trim') : '"';
+        $this->columnEAN         = ($input->getOption('ean') !== null) ? (int) $input->getOption('ean') : null;
+        $this->columnMPN         = ($input->getOption('mpn') !== null) ? (int) $input->getOption('mpn') : null;
+        $this->columnBrand       = ($input->getOption('brand') !== null) ? (int) $input->getOption('brand') : null;
+        $this->divider           = ($input->getOption('divider') !== null) ? $input->getOption('divider') : ';';
+        $this->trim              = ($input->getOption('trim') !== null) ? $input->getOption('trim') : '"';
 
         if ($handle) {
             $lineNumber = -1;
@@ -167,7 +167,7 @@ class ProductsCommand extends Command
                 }
                 $products[$values[$this->columnNumber]] = [
                     'productNumber' => $values[$this->columnNumber],
-                    'name' => $values[$this->columnName],
+                    'name'          => $values[$this->columnName],
                 ];
                 if (null !== $this->columnTopdataId) {
                     $products[$values[$this->columnNumber]]['topDataId'] = (int) $values[$this->columnTopdataId];
@@ -266,9 +266,9 @@ class ProductsCommand extends Command
 
     private function getManufacturersArray(): void
     {
-        $criteria = new Criteria();
+        $criteria      = new Criteria();
         $manufacturers = $this->manufacturerRepository->search($criteria, $this->context)->getEntities();
-        $ret = [];
+        $ret           = [];
         foreach ($manufacturers as $manufacturer) {
             $ret[$manufacturer->getName()] = $manufacturer->getId();
         }
@@ -287,7 +287,7 @@ class ProductsCommand extends Command
             $manufacturerId = Uuid::randomHex();
             $this->manufacturerRepository->create([
                 [
-                    'id' => $manufacturerId,
+                    'id'   => $manufacturerId,
                     'name' => [
                         $this->systemDefaultLocaleCode => $manufacturerName,
                     ],
@@ -301,34 +301,34 @@ class ProductsCommand extends Command
 
     private function formProductsArray(array $input, float $price = 1.0): array
     {
-        $output = [];
-        $taxId = $this->getTaxId();
+        $output                 = [];
+        $taxId                  = $this->getTaxId();
         $storefrontSalesChannel = $this->getStorefrontSalesChannel();
-        $priceTax = $price * (1.19);
+        $priceTax               = $price * (1.19);
         foreach ($input as $in) {
             $prod = [
-                'id' => Uuid::randomHex(),
+                'id'            => Uuid::randomHex(),
                 'productNumber' => $in['productNumber'],
-                'active' => true,
-                'taxId' => $taxId,
-                'stock' => 10,
-                'shippingFree' => false,
+                'active'        => true,
+                'taxId'         => $taxId,
+                'stock'         => 10,
+                'shippingFree'  => false,
                 'purchasePrice' => $priceTax,
                 //                    'releaseDate' => new \DateTimeImmutable(),
                 'displayInListing' => true,
-                'name' => [
+                'name'             => [
                     $this->systemDefaultLocaleCode => $in['name'],
                 ],
                 'price' => [[
-                    'net' => $price,
-                    'gross' => $priceTax,
-                    'linked' => true,
+                    'net'        => $price,
+                    'gross'      => $priceTax,
+                    'linked'     => true,
                     'currencyId' => Defaults::CURRENCY,
                 ]],
                 'visibilities' => [
                     [
                         'salesChannelId' => $storefrontSalesChannel,
-                        'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL,
+                        'visibility'     => ProductVisibilityDefinition::VISIBILITY_ALL,
                     ],
                 ],
             ];
@@ -341,7 +341,7 @@ class ProductsCommand extends Command
 
             if (isset($in['brand'])) {
                 $prod['manufacturer'] = [
-                    'id' =>  $this->getManufacturerIdByName($in['brand']),
+                    'id' => $this->getManufacturerIdByName($in['brand']),
                 ];
             }
 
@@ -372,7 +372,7 @@ class ProductsCommand extends Command
 
     private function clearExistingProductsByProductNumber(array $products): array
     {
-        $rezProducts = $products;
+        $rezProducts    = $products;
         $product_arrays = array_chunk($products, 50, true);
         foreach ($product_arrays as $prods) {
             $criteria = new Criteria();
@@ -389,19 +389,19 @@ class ProductsCommand extends Command
     public function installDemoData(string $filename = 'demo.csv'): array
     {
         $this->divider = ';';
-        $this->trim = '"';
+        $this->trim    = '"';
         if (!$filename) {
             return [
-                'success' => false,
+                'success'        => false,
                 'additionalInfo' => 'file with demo data not found!',
             ];
         }
 
-        $file = dirname(__FILE__) . '/../DemoData/' . $filename;
+        $file   = dirname(__FILE__) . '/../DemoData/' . $filename;
         $handle = fopen($file, 'r');
         if (!$handle) {
             return [
-                'success' => false,
+                'success'        => false,
                 'additionalInfo' => 'file with demo not accessible!',
             ];
         }
@@ -409,7 +409,7 @@ class ProductsCommand extends Command
         $line = fgets($handle);
         if ($line === false) {
             return [
-                'success' => false,
+                'success'        => false,
                 'additionalInfo' => 'file is empty!',
             ];
         }
@@ -433,28 +433,28 @@ class ProductsCommand extends Command
 
         if (is_null($this->columnNumber)) {
             return [
-                'success' => false,
+                'success'        => false,
                 'additionalInfo' => 'article_no column not exists!',
             ];
         }
 
         if (is_null($this->columnName)) {
             return [
-                'success' => false,
+                'success'        => false,
                 'additionalInfo' => 'short_desc column not exists!',
             ];
         }
 
         if (is_null($this->columnEAN)) {
             return [
-                'success' => false,
+                'success'        => false,
                 'additionalInfo' => 'ean column not exists!',
             ];
         }
 
         if (is_null($this->columnMPN)) {
             return [
-                'success' => false,
+                'success'        => false,
                 'additionalInfo' => 'oem column not exists!',
             ];
         }
@@ -468,9 +468,9 @@ class ProductsCommand extends Command
             }
             $products[$values[$this->columnNumber]] = [
                 'productNumber' => $values[$this->columnNumber],
-                'name' => $values[$this->columnName],
-                'ean' => $values[$this->columnEAN],
-                'mpn' => $values[$this->columnMPN],
+                'name'          => $values[$this->columnName],
+                'ean'           => $values[$this->columnEAN],
+                'mpn'           => $values[$this->columnMPN],
             ];
         }
 
@@ -481,7 +481,7 @@ class ProductsCommand extends Command
             $products = $this->formProductsArray($products, 100000.0);
         } else {
             return [
-                'success' => true,
+                'success'        => true,
                 'additionalInfo' => 'Nothing to add',
             ];
         }
@@ -489,7 +489,7 @@ class ProductsCommand extends Command
         $this->createProducts($products);
 
         return [
-            'success' => true,
+            'success'        => true,
             'additionalInfo' => count($products) . ' products has been added',
         ];
     }

@@ -18,20 +18,20 @@ use Shopware\Core\Framework\Uuid\Uuid;
 
 class EntitiesHelper
 {
-    const LANGUAGE_NAME = 'English';
+    const LANGUAGE_NAME       = 'English';
     const DEFAULT_MAIN_FOLDER = 'product';
-    const UPLOAD_FOLDER_NAME = 'TopData';
+    const UPLOAD_FOLDER_NAME  = 'TopData';
 
-    private $propertyGroups = null;
-    private $categoryTree = null;
-    private $manufacturers = null;
-    private $rootCategoryId = null;
+    private $propertyGroups          = null;
+    private $categoryTree            = null;
+    private $manufacturers           = null;
+    private $rootCategoryId          = null;
     private $defaultCmsListingPageId = null;
     private $temp;
     private $propertyGroupsOptionsArray = null;
-    private $uploadFolderId = null;
-    private $enLangID = null;
-    private $deLangID = null;
+    private $uploadFolderId             = null;
+    private $enLangID                   = null;
+    private $deLangID                   = null;
 
     /**
      * @var Connection
@@ -91,18 +91,18 @@ class EntitiesHelper
         EntityRepository $mediaFolderRepository,
         EntityRepository $propertyGroupOptionRepository
     ) {
-        $this->connection = $connection;
-        $this->mediaRepository = $mediaRepository;
-        $this->mediaService = $mediaService;
+        $this->connection              = $connection;
+        $this->mediaRepository         = $mediaRepository;
+        $this->mediaService            = $mediaService;
         $this->propertyGroupRepository = $propertyGroupRepository;
-        $this->categoryRepository = $categoryRepository;
-        $this->manufacturerRepository = $manufacturerRepository;
-        $this->mediaFolderRepository = $mediaFolderRepository;
+        $this->categoryRepository      = $categoryRepository;
+        $this->manufacturerRepository  = $manufacturerRepository;
+        $this->mediaFolderRepository   = $mediaFolderRepository;
 
         $this->propertyGroupOptionRepository = $propertyGroupOptionRepository;
 
         $this->systemDefaultLocaleCode = $this->getLocaleCodeOfSystemLanguage();
-        $this->context = Context::createDefaultContext();
+        $this->context                 = Context::createDefaultContext();
     }
 
     private function getLocaleCodeOfSystemLanguage(): string
@@ -118,7 +118,7 @@ class EntitiesHelper
     {
         $this->propertyGroups = $this->propertyGroupRepository->search(
             (new Criteria())
-            ->addAssociation('options'),
+                ->addAssociation('options'),
             $this->context
         )->getEntities();
     }
@@ -192,14 +192,14 @@ class EntitiesHelper
     {
         $propGroups = $this->getPropertyGroupsOptionsArray();
 
-        $currentGroup = null;
-        $currentGroupId = null;
+        $currentGroup    = null;
+        $currentGroupId  = null;
         $currentOptionId = Uuid::randomHex();
 
-        foreach ($propGroups as $id=>$propertyGroup) {
+        foreach ($propGroups as $id => $propertyGroup) {
             if ($propertyGroup['name'] == $propGroupName) {
                 $currentGroupId = $id;
-                $currentGroup = $propertyGroup;
+                $currentGroup   = $propertyGroup;
                 break;
             }
         }
@@ -209,16 +209,16 @@ class EntitiesHelper
             //            echo '1';
             $this->propertyGroupRepository->create([
                 [
-                    'id' => $currentGroupId,
+                    'id'          => $currentGroupId,
                     'sortingType' => PropertyGroupDefinition::SORTING_TYPE_ALPHANUMERIC,
                     'displayType' => PropertyGroupDefinition::DISPLAY_TYPE_TEXT,
-                    'filterable' => false,
-                    'name' => [
+                    'filterable'  => false,
+                    'name'        => [
                         $this->systemDefaultLocaleCode => $propGroupName,
                     ],
                     'options' => [
                         [
-                            'id' => $currentOptionId,
+                            'id'   => $currentOptionId,
                             'name' => [
                                 $this->systemDefaultLocaleCode => $propValue,
                             ],
@@ -233,7 +233,7 @@ class EntitiesHelper
             return $currentOptionId;
         }
 
-        foreach ($propertyGroup['options'] as $id=>$value) {
+        foreach ($propertyGroup['options'] as $id => $value) {
             if ($value == $propValue) {
                 return $id;
             }
@@ -264,8 +264,8 @@ class EntitiesHelper
         //            ]
         //        ], $this->context);
         $currentDateTime = date('Y-m-d H:i:s');
-        $enId = $this->getEnID();
-        $deId = $this->getDeID();
+        $enId            = $this->getEnID();
+        $deId            = $this->getDeID();
         $this->connection->executeStatement('
             INSERT INTO property_group_option 
             (id, property_group_id, created_at) 
@@ -280,10 +280,10 @@ class EntitiesHelper
             $this->connection->insert(
                 'property_group_option_translation',
                 [
-                    'property_group_option_id'=> Uuid::fromHexToBytes($currentOptionId),
-                    'language_id'=> Uuid::fromHexToBytes($enId),
-                    'name'=> $propValue,
-                    'created_at'=> $currentDateTime,
+                    'property_group_option_id' => Uuid::fromHexToBytes($currentOptionId),
+                    'language_id'              => Uuid::fromHexToBytes($enId),
+                    'name'                     => $propValue,
+                    'created_at'               => $currentDateTime,
                 ]
             );
         }
@@ -292,10 +292,10 @@ class EntitiesHelper
             $this->connection->insert(
                 'property_group_option_translation',
                 [
-                    'property_group_option_id'=> Uuid::fromHexToBytes($currentOptionId),
-                    'language_id'=> Uuid::fromHexToBytes($deId),
-                    'name'=> $propValue,
-                    'created_at'=> $currentDateTime,
+                    'property_group_option_id' => Uuid::fromHexToBytes($currentOptionId),
+                    'language_id'              => Uuid::fromHexToBytes($deId),
+                    'name'                     => $propValue,
+                    'created_at'               => $currentDateTime,
                 ]
             );
         }
@@ -327,8 +327,8 @@ class EntitiesHelper
         foreach ($categories as $category) {
             if ($category->getParentId() === $categoryId) {
                 $ret[] = [
-                    'id' => $category->getId(),
-                    'name' => $category->getName(),
+                    'id'     => $category->getId(),
+                    'name'   => $category->getName(),
                     'childs' => $this->buildCategorySubTree($category->getId(), $categories),
                 ];
             }
@@ -339,7 +339,7 @@ class EntitiesHelper
 
     protected function loadCategoryTree()
     {
-        $categories = $this->categoryRepository->search(new Criteria(), $this->context)->getEntities();
+        $categories         = $this->categoryRepository->search(new Criteria(), $this->context)->getEntities();
         $this->categoryTree = $this->buildCategorySubTree(null, $categories);
     }
 
@@ -388,13 +388,13 @@ class EntitiesHelper
         $this->temp = Uuid::randomHex();
 
         $ret = [
-            'id' => $this->temp,
-            'cmsPageId'=> $this->getDefaultCmsListingPageId(),
-            'active' => true,
+            'id'                    => $this->temp,
+            'cmsPageId'             => $this->getDefaultCmsListingPageId(),
+            'active'                => true,
             'displayNestedProducts' => true,
-            'visible' => true,
-            'type' => 'page',
-            'name' => [
+            'visible'               => true,
+            'type'                  => 'page',
+            'name'                  => [
                 $this->systemDefaultLocaleCode => $categoriesChain[0]['waregroup'],
             ],
         ];
@@ -420,13 +420,13 @@ class EntitiesHelper
         $this->temp = Uuid::randomHex();
 
         $data = [
-            'id' => $this->temp,
-            'cmsPageId'=> $this->getDefaultCmsListingPageId(),
-            'active' => true,
+            'id'                    => $this->temp,
+            'cmsPageId'             => $this->getDefaultCmsListingPageId(),
+            'active'                => true,
             'displayNestedProducts' => true,
-            'visible' => true,
-            'type' => 'page',
-            'name' => [
+            'visible'               => true,
+            'type'                  => 'page',
+            'name'                  => [
                 $this->systemDefaultLocaleCode => $categoriesChain[0]['waregroup'],
             ],
         ];
@@ -462,7 +462,7 @@ class EntitiesHelper
             foreach ($categoriesChain as $key => $category) {
                 $temp = $this->findInBranch($category['waregroup'], $branch);
                 if ($temp) {
-                    $branch = $temp;
+                    $branch   = $temp;
                     $parentId = $temp['id'];
                 } else {
                     $parentId = $this->createBranch(array_slice($categoriesChain, $key), $parentId);
@@ -488,7 +488,7 @@ class EntitiesHelper
                 }
                 $temp = $this->findInBranch($category['waregroup'], $branch);
                 if ($temp) {
-                    $branch = $temp;
+                    $branch   = $temp;
                     $parentId = $temp['id'];
                 } else {
                     $parentId = $this->createBranch(array_slice($categoriesChain, $key), $parentId);
@@ -546,8 +546,8 @@ class EntitiesHelper
         $existingMedia = $this->mediaRepository
             ->search(
                 (new Criteria())
-                ->addFilter(new EqualsFilter('fileName', $imageName))
-                ->setLimit(1),
+                    ->addFilter(new EqualsFilter('fileName', $imageName))
+                    ->setLimit(1),
                 $this->context
             )
             ->getEntities()
@@ -590,8 +590,8 @@ class EntitiesHelper
         $this->mediaRepository->create(
             [
                 [
-                    'id' => $mediaId,
-                    'private' => false,
+                    'id'            => $mediaId,
+                    'private'       => false,
                     'mediaFolderId' => $this->uploadFolderId,
                 ],
             ],
@@ -631,10 +631,10 @@ class EntitiesHelper
         $this->mediaFolderRepository->create(
             [
                 [
-                    'id' => $this->uploadFolderId,
-                    'private' => false,
-                    'name' => self::UPLOAD_FOLDER_NAME,
-                    'parentId' => $defaultFolder->getId(),
+                    'id'              => $this->uploadFolderId,
+                    'private'         => false,
+                    'name'            => self::UPLOAD_FOLDER_NAME,
+                    'parentId'        => $defaultFolder->getId(),
                     'configurationId' => $defaultFolder->getConfigurationId(),
                 ],
             ],
@@ -645,7 +645,7 @@ class EntitiesHelper
     protected function loadManufacturers(): void
     {
         $manufacturers = $this->manufacturerRepository->search(new Criteria(), $this->context)->getEntities();
-        $ret = [];
+        $ret           = [];
         foreach ($manufacturers as $manufacturer) {
             $ret[$manufacturer->getName()] = $manufacturer->getId();
         }
@@ -664,7 +664,7 @@ class EntitiesHelper
             $manufacturerId = Uuid::randomHex();
             $this->manufacturerRepository->create([
                 [
-                    'id' => $manufacturerId,
+                    'id'   => $manufacturerId,
                     'name' => [
                         $this->systemDefaultLocaleCode => $manufacturerName,
                     ],
@@ -762,8 +762,8 @@ SELECT LOWER(HEX(pg.id)) pg_id, pgt.name pg_name, LOWER(HEX(pgo.id)) pgo_id, pgo
         foreach ($result as $res) {
             if (!isset($this->propertyGroupsOptionsArray[$res['pg_id']])) {
                 $this->propertyGroupsOptionsArray[$res['pg_id']] = [
-                    'name'=>$res['pg_name'],
-                    'options'=>[],
+                    'name'    => $res['pg_name'],
+                    'options' => [],
                 ];
             }
             $this->propertyGroupsOptionsArray[$res['pg_id']]['options'][$res['pgo_id']] = $res['pgo_name'];
@@ -776,8 +776,8 @@ SELECT LOWER(HEX(pg.id)) pg_id, pgt.name pg_name, LOWER(HEX(pgo.id)) pgo_id, pgo
     {
         if (!isset($this->propertyGroupsOptionsArray[$groupId])) {
             $this->propertyGroupsOptionsArray[$groupId] = [
-                'name'=>$groupName,
-                'options'=>[],
+                'name'    => $groupName,
+                'options' => [],
             ];
         }
         $this->propertyGroupsOptionsArray[$groupId]['options'][$groupOptId] = $groupOptVal;

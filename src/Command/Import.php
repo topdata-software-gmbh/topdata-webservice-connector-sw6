@@ -53,10 +53,10 @@ class Import extends Command
     ) {
         parent::__construct();
         $this->systemConfigService = $systemConfigService;
-        $this->containerBag = $ContainerBag;
-        $this->logger = $logger;
-        $this->mappingHelper = $mappingHelper;
-        $this->path = $this->containerBag->get('kernel.project_dir');
+        $this->containerBag        = $ContainerBag;
+        $this->logger              = $logger;
+        $this->mappingHelper       = $mappingHelper;
+        $this->path                = $this->containerBag->get('kernel.project_dir');
     }
 
     public function execute(InputInterface $input, OutputInterface $output): int
@@ -85,16 +85,16 @@ class Import extends Command
             return 2;
         }
         $option = [
-            'isServiceAll'  => $input->getOption('all'),
-            'isServiceMapping'  => $input->getOption('mapping'),
-            'isServiceDevice'  => $input->getOption('device'),
-            'isServiceDeviceOnly'  => $input->getOption('device-only'),
-            'isServiceDeviceMedia'  => $input->getOption('device-media'),
-            'isServiceDeviceSynonyms'  => $input->getOption('device-synonyms'),
-            'isServiceProduct'  => $input->getOption('product'),
-            'isServiceProductInformation'  => $input->getOption('product-info'),
-            'isServiceProductMedia'  => $input->getOption('product-media-only'),
-            'isProductVariations'  => $input->getOption('product-variated'),
+            'isServiceAll'                => $input->getOption('all'),
+            'isServiceMapping'            => $input->getOption('mapping'),
+            'isServiceDevice'             => $input->getOption('device'),
+            'isServiceDeviceOnly'         => $input->getOption('device-only'),
+            'isServiceDeviceMedia'        => $input->getOption('device-media'),
+            'isServiceDeviceSynonyms'     => $input->getOption('device-synonyms'),
+            'isServiceProduct'            => $input->getOption('product'),
+            'isServiceProductInformation' => $input->getOption('product-info'),
+            'isServiceProductMedia'       => $input->getOption('product-media-only'),
+            'isProductVariations'         => $input->getOption('product-variated'),
         ];
 
         //        if($option['isServiceAll']) {
@@ -116,9 +116,9 @@ class Import extends Command
         $mappingHelper->setVerbose($this->verbose);
 
         $configDefaults = [
-            'attributeOem'=>'',
-            'attributeEan'=>'',
-            'attributeOrdernumber'=>'',
+            'attributeOem'         => '',
+            'attributeEan'         => '',
+            'attributeOrdernumber' => '',
         ];
 
         $config = array_merge($configDefaults, $config);
