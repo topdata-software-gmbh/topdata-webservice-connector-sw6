@@ -1,0 +1,47 @@
+{
+    "topdata-connector": {
+        "header": "TopData Plugins",
+        "test": "Test",
+        "installDemoData": "Install demo data",
+        "testDisclamer": "Save changes before testing API connection",
+        "demoDisclamer": "Install demo products, than you can use console command for import, use default OEM/EAN mapping",
+        "testSuccessHeader": "Success!",
+        "testSuccessText": "We connected to the server!",
+        "testFailHeader": "Failed!",
+        "testFailText": "Something went wrong...",
+        "mainMenuItemGeneral": "TopData Plugins",
+        "descriptionTextModule": "TopData TopCONNECTOR info",
+        "pluginName" : "TopData TopCONNECTOR",
+        "settings": "TopCONNECTOR settings",
+        "finder": {
+            "pluginName" : "TopData TopFINDER",
+            "settings": "TopFINDER settings",
+            "primaryBrands": "Brands display first",
+            "savePrimaryBrands": "Save"
+        },
+        "feed": {
+            "pluginName" : "TopData TopFEED",
+            "settings": "TopFEED settings"
+        },
+        "colors": {
+            "pluginName" : "TopData Colors",
+            "settings": "Colors settings"
+        },
+        "compareProducts": {
+            "pluginName" : "TopData Compare Products",
+            "settings": "Settings"
+        },
+        "productMenu": {
+            "pluginName" : "TopData Product Menu",
+            "settings": "Settings"
+        },
+        "productQuickView": {
+            "pluginName" : "TopData Product Quick View",
+            "settings": "Settings"
+        },
+        "categoryFilter": {
+            "pluginName" : "TopData Category Filter",
+            "settings": "Settings"
+        }
+    }
+}

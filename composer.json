@@ -1,0 +1,43 @@
+{
+    "name": "topdata/topdata-connector-sw6",
+    "description": "Connects TopData Software data to your Shopware system",
+    "version": "v1.2.5",
+    "type": "shopware-platform-plugin",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "TopData Software GmbH",
+            "homepage": "https://www.topdata.de",
+            "role": "Manufacturer"
+        }
+    ],
+    "require": {
+        "shopware/core": "6.5.*"
+    },
+    "extra": {
+        "shopware-plugin-class": "Topdata\\TopdataConnectorSW6\\TopdataConnectorSW6",
+        "plugin-icon": "src/Resources/config/plugin.png",
+        "copyright": "(c) by TopData Software GmbH",
+        "label": {
+            "de-DE": "Topdata Connector",
+            "en-GB": "Topdata Connector"
+        },
+        "description": {
+            "de-DE": "Der TopdataConnector verbindet unsere TopData Software Daten mit Ihrem Shopware Store. Der TopdataConnector wird benoetigt um anderer unserer Plugins zu verwenden.",
+            "en-GB": "The TopdataConnector connects TopData Software data to your Shopware system. The TopdataConnector is needed to use our other Plugins for your Shopware system."
+        },
+        "manufacturerLink": {
+            "de-DE": "https://www.topdata.de",
+            "en-GB": "https://www.topdata.de"
+        },
+        "supportLink": {
+            "de-DE": "https://www.topdata.de",
+            "en-GB": "https://www.topdata.de"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Topdata\\TopdataConnectorSW6\\": "src/"
+        }
+    }
+}

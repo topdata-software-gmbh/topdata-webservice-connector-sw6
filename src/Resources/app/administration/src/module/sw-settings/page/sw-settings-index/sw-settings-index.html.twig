@@ -1,0 +1,9 @@
+{% block sw_settings_content_tab_plugins %}
+    {% parent %}
+
+    <sw-tabs-item 
+        :route="{ name: 'topdata.connector.info' }" 
+        title="{{ $tc('topdata-connector.header') }}">
+        {{ $tc('topdata-connector.header') }}
+    </sw-tabs-item>
+{% endblock %}

@@ -1,0 +1,149 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+        <!-- ENTITIES -->
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Brand\BrandDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_brand" />
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Device\DeviceDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_device" />
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\DeviceType\DeviceTypeDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_device_type" />
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Series\SeriesDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_series" />
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\TopdataProduct\TopdataProductDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_to_product" />
+        </service>
+        
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Device\Agregate\DeviceProduct\DeviceProductDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_device_to_product"/>
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\Alternate\ProductAlternateDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_product_to_alternate"/>
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\Bundled\ProductBundledDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_product_to_bundled"/>
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\Related\ProductRelatedDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_product_to_related"/>
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\Similar\ProductSimilarDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_product_to_similar"/>
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\CapacityVariant\ProductCapacityVariantDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_product_to_capacity_variant"/>
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\ColorVariant\ProductColorVariantDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_product_to_color_variant"/>
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\Variant\ProductVariantDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_product_to_variant"/>
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Product\ProductExtension">
+            <tag name="shopware.entity.extension"/>
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\ProductCrossSelling\ProductCrossSellingExtension">
+            <tag name="shopware.entity.extension"/>
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\ProductCrossSelling\TopdataProductCrossSellingExtensionDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_product_cross_selling_extension"/>
+        </service>
+        
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Device\Agregate\DeviceCustomer\DeviceCustomerDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_device_to_customer"/>
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Customer\CustomerExtension">
+            <tag name="shopware.entity.extension"/>
+        </service>
+        
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Category\TopdataCategoryExtension\TopdataCategoryExtensionDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_category_extension"/>
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\Category\CategoryExtension">
+            <tag name="shopware.entity.extension"/>
+        </service>
+        
+        <!-- CONSOLE COMMANDS -->
+        <service id="Topdata\TopdataConnectorSW6\Command\TestConnection" autowire="true">
+            <!--argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
+            <argument type="service" id="parameter_bag" />
+            <argument type="service" id="logger" /-->
+            <tag name="console.command"/>
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Command\Import">
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
+            <argument type="service" id="parameter_bag" />
+            <argument type="service" id="logger" />
+            <argument type="service" id="Topdata\TopdataConnectorSW6\Component\Helper\MappingHelper" />
+            <!--argument type="service" id="kernel" /-->
+            <!--argument>"%kernel.project_dir%"</argument-->
+            <tag name="console.command"/>
+        </service>
+        
+        <!-- SERVICES -->
+        <service id="Topdata\TopdataConnectorSW6\Component\Helper\EntitiesHelper">
+            <argument type="service" id="Doctrine\DBAL\Connection" />
+            <argument type="service" id="media.repository"/>
+            <argument type="service" id="Shopware\Core\Content\Media\MediaService"/>
+            <argument type="service" id="property_group.repository"/>
+            <argument type="service" id="category.repository"/>
+            <argument type="service" id="product_manufacturer.repository"/>
+            <argument type="service" id="media_folder.repository"/>
+            <argument type="service" id="property_group_option.repository"/>
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Component\Helper\MappingHelper">
+            <argument type="service" id="logger" />
+            <argument type="service" id="Doctrine\DBAL\Connection" />
+            <argument type="service" id="topdata_brand.repository"/>
+            <argument type="service" id="topdata_device.repository"/>
+            <argument type="service" id="topdata_series.repository"/>
+            <argument type="service" id="topdata_device_type.repository"/>
+            <argument type="service" id="topdata_to_product.repository"/>
+            <argument type="service" id="media.repository"/>
+            <argument type="service" id="Shopware\Core\Content\Media\MediaService"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="Topdata\TopdataConnectorSW6\Command\ProductsCommand"/>
+            <argument type="service" id="property_group.repository"/>
+            <argument type="service" id="Topdata\TopdataConnectorSW6\Component\Helper\EntitiesHelper"/>
+            <argument type="service" id="product_cross_selling.repository"/>
+            <argument type="service" id="product_cross_selling_assigned_products.repository"/>
+        </service>
+        
+        <!-- Controllers -->
+        <service id="Topdata\TopdataConnectorSW6\Controller\TopdataConnectorController" public="true">
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="logger" />
+            <argument type="service" id="parameter_bag" />
+            <argument type="service" id="Doctrine\DBAL\Connection" />
+            <argument type="service" id="topdata_brand.repository"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+        
+        <!-- CRON JOBS -->
+        <service id="Topdata\TopdataConnectorSW6\ScheduledTask\ConnectorImportTask">
+            <tag name="shopware.scheduled.task" />
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\ScheduledTask\ConnectorImportTaskHandler">
+            <argument type="service" id="scheduled_task.repository" />
+            <argument type="service" id="parameter_bag" />
+            <tag name="messenger.message_handler" />
+        </service>
+        
+        <!-- test feature form import products from csv -->
+        <service id="Topdata\TopdataConnectorSW6\Command\ProductsCommand">
+            <argument type="service" id="product_manufacturer.repository" />
+            <argument type="service" id="product.repository" />
+            <argument type="service" id="Doctrine\DBAL\Connection" />
+            <tag name="console.command"/>
+        </service>
+    </services>
+</container>

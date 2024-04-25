@@ -1,0 +1,20 @@
+<div>
+    <div>{{ $tc('topdata-connector.testDisclamer') }}</div>
+    <sw-button-process
+        :isLoading="isLoading"
+        :processSuccess="processSuccess"
+        variant="primary"
+        @process-finish="testFinish"
+        @click="onClickTest">
+        {{ $tc('topdata-connector.test') }}
+    </sw-button-process>
+    <div>{{ $tc('topdata-connector.demoDisclamer') }}</div>
+    <sw-button-process
+        :isLoading="isLoading"
+        :processSuccess="demoSuccess"
+        variant="primary"
+        @process-finish="demoFinish"
+        @click="onClickDemo">
+        {{ $tc('topdata-connector.installDemoData') }}
+    </sw-button-process>
+</div>

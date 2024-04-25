@@ -1,0 +1,8 @@
+{
+    "name": "topdata-connector-sw6",
+    "version": "1.0.0",
+    "description": "Administration for TopData Connector",
+    "main": "main.js",
+    "author": "TopData",
+    "license": "MIT"
+}
