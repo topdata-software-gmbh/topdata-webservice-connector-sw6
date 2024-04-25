@@ -12,7 +12,7 @@ It gives possibility to import devices from TopData Webservice.
 ```bash
 # clone the repository
 cd custom/plugins
-git clone https://github.com/topdata-software-gmbh/topdata-webservice-connector-sw6.git
+git clone-b {main|main-sw64|main-sw65|main-sw66} https://github.com/topdata-software-gmbh/topdata-webservice-connector-sw6.git
 
 # install the plugin
 bin/console plugin:refresh
