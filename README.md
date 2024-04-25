@@ -5,7 +5,7 @@ This plugin is the base for most of the functionality in other TopData plugins f
 It gives possibility to import devices from TopData Webservice.
 
 ## Minimal Requirements
-- Shopware 6.4.13.0 or higher < 6.5.0
+- Shopware 6.4 or higher
 - PHP 7.4 or higher
 
 ## Installation
@@ -20,7 +20,7 @@ bin/console plugin:install --activate --clearCache TopdataConnectorSW6
 ```
 
 ## Configuration
-After installing plugin, you need to fill in API credentials to connect to TopData Webservice.
+After installing the plugin, you need to fill in API credentials to connect to TopData Webservice.
 
 ### Webservice Credentials
 Settings - System - Plugins - TopdataConnector menu (... on the right) - Config
