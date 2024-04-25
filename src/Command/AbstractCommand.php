@@ -40,6 +40,7 @@ abstract class AbstractCommand extends Command
             'no-interaction',
             'env',
             'no-debug',
+            'profile',
         ];
         $options = UtilDict::omit($input->getOptions(), $ignoreList);
         foreach ($options as $key => $val) {

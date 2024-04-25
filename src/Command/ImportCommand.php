@@ -58,7 +58,7 @@ class ImportCommand extends AbstractCommand
         $activePlugins = $this->containerBag->get('kernel.active_plugins');
         if (!isset($activePlugins['Topdata\TopdataConnectorSW6\TopdataConnectorSW6'])) {
             if ($this->verbose) {
-                $this->cliStyle->writeln('Plugin is inactive!');
+                $this->cliStyle->error('The TopdataConnectorSW6 plugin is inactive!');
             }
 
             return 1;
@@ -67,7 +67,7 @@ class ImportCommand extends AbstractCommand
         $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
         if ($this->configCheckerService->isConfigEmpty()) {
             if ($this->verbose) {
-                $this->cliStyle->writeln('Fill in connection parameters in admin -> Settings -> System -> Plugins -> TopdataConnector config');
+                $this->cliStyle->writeln('Fill in the connection parameters in admin: Extensions > My Extensions > Topdata Webservice Connector > [...] > Configure');
             }
 
             return 2;

@@ -57,7 +57,7 @@ class TopdataConnectorController extends AbstractController
         $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
         if ($this->configCheckerService->isConfigEmpty()) {
             $credentialsValid = 'no';
-            $additionalData .= 'Fill in connection parameters in admin -> Settings -> System -> Plugins -> TopdataConnector config';
+            $additionalData .= 'Fill in the connection parameters in admin: Extensions > My Extensions > Topdata Webservice Connector > [...] > Configure';
         }
 
         try {

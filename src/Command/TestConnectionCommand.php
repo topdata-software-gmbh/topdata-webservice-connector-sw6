@@ -53,7 +53,7 @@ class TestConnectionCommand extends AbstractCommand
         $activePlugins = $this->containerBag->get('kernel.active_plugins');
         if (!isset($activePlugins['Topdata\TopdataConnectorSW6\TopdataConnectorSW6'])) {
             // a bit silly check, as this command is part of the TopdataConnectorSW6 plugin
-            $this->cliStyle->writeln('The TopdataConnectorSW6 plugin is inactive!');
+            $this->cliStyle->error('The TopdataConnectorSW6 plugin is inactive!');
             $this->cliStyle->writeln('Activate the TopdataConnectorSW6 plugin first. Abort.');
 
             return self::ERROR_CODE_TOPDATA_WEBSERVICE_CONNECTOR_PLUGIN_INACTIVE;
@@ -61,7 +61,7 @@ class TestConnectionCommand extends AbstractCommand
         $this->cliStyle->writeln('Getting connection params...');
         $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
         if ($this->configCheckerService->isConfigEmpty()) {
-            $this->cliStyle->writeln('Fill in connection parameters in admin -> Settings -> System -> Plugins -> TopdataConnector config');
+            $this->cliStyle->error('Fill in the connection parameters in admin: Extensions > My Extensions > Topdata Webservice Connector > [...] > Configure');
             $this->cliStyle->writeln('Abort.');
 
             return self::ERROR_CODE_MISSING_CONFIG;
@@ -73,25 +73,22 @@ class TestConnectionCommand extends AbstractCommand
             $info = $webservice->getUserInfo();
 
             if (isset($info->error)) {
-                $this->cliStyle->writeln('Connection error:');
-                $this->cliStyle->writeln($info->error[0]->error_message);
+                $this->cliStyle->error("Connection error: {$info->error[0]->error_message}");
                 $this->cliStyle->writeln('Abort.');
 
                 return self::ERROR_CODE_CONNECTION_ERROR;
-            } else {
-                $this->cliStyle->writeln('Connection success!');
-
-                return Command::SUCCESS;
             }
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
-            $this->logger->error($errorMessage);
-            $this->cliStyle->writeln('Connection error:');
-            $this->cliStyle->writeln($errorMessage);
+            // $this->logger->error($errorMessage);
+            $this->cliStyle->error("Connection error: $errorMessage");
             $this->cliStyle->writeln('Abort.');
 
             return self::ERROR_CODE_EXCEPTION;
         }
+
+        $this->cliStyle->success('Connection success!');
+        $this->done();
 
         return Command::SUCCESS;
     }
