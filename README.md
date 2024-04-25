@@ -1,7 +1,7 @@
 # TopData Webservice Connector for Shopware 6
 
 ## About
-This plugin is the base for most of the functionality in other TopData plugins for Shopware 6.3
+This plugin is the base for most of the functionality in other TopData plugins for Shopware 6.
 It gives possibility to import devices from TopData Webservice.
 
 ## Installation
@@ -67,7 +67,7 @@ After saving credentials you can test connection, just select TopData Plugins me
 
 3. `bin/console topdata:connector:import --product`  this will connect products in store to devices in local database. Products must be mapped by console command and devices must be fetched from webservice.
 
-4. `bin/console topdata:connector:import --device-media`  this will download device images, this process must have rights to write in website folders (You may use sudo or chown or chmod)
+4. `bin/console topdata:connector:import --device-media`  this will download device images, this process must have rights to write in website folders (You may use or chown or chmod)
 
 5. `bin/console topdata:connector:import --product-info`  Only works with Topdata TopFeed plugin. This will fetch all product information from webservice to local database. You can select what data to fetch in Topdata TopFeed plugin settings. You need write permisions for process if you select to store product images.
 
@@ -81,7 +81,7 @@ After saving credentials you can test connection, just select TopData Plugins me
 
 Command order is important, for example --device-media (4) downloads images only for enabled devices, those devices are enabled by --product (3)
 
-### Additional options:
+### Additional options
 `-v` key for verbose output, it shows memmory usage, data chunk numbers, time and other information
 
 `--no-debug` keys for faster work and less memmory usage
@@ -123,10 +123,25 @@ When you use TopFeed plugin for additional product information it is also recomm
 
 ### Normal workflow
 
-1. `sudo bin/console topdata:connector:import -v --mapping --no-debug`
+Step 1 
+```bash
+bin/console topdata:connector:import -v --mapping --no-debug
+```
 
-2. `sudo bin/console topdata:connector:import -v --device --start=1 --end=10 --no-debug;sudo bin/console topdata:connector:import -v --device-only --start=11 --end=20 --no-debug; sudo bin/console topdata:connector:import -v --device-only --start=21 --no-debug`
+ Step 2
+```bash
+bin/console topdata:connector:import --no-debug -v --device --start=1 --end=10
+bin/console topdata:connector:import --no-debug -v --device-only --start=11 --end=20
+bin/console topdata:connector:import --no-debug -v --device-only --start=21
+```
 
-3. ...
+Step 3
+```bash
+# ...
+```
 
-If you download product or device images from Top Data Webservice to yours shop locale storage, don't forget to change permisions for files if command and server user are not the same user, e.g. `sudo chown -R www-data:www-data .`
+If you download product or device images from Top Data Webservice to yours shop locale storage, don't forget to change permisions for files if command and server user are not the same user, e.g.
+<!-- TODO: fix the path "." in the command -->
+```bash
+chown -R www-data:www-data .
+```
