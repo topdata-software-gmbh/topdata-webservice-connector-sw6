@@ -4,6 +4,17 @@
 This plugin is the base for most of the functionality in other TopData plugins for Shopware 6.3
 It gives possibility to import devices from TopData Webservice.
 
+## Installation
+```bash
+# clone the repository
+cd custom/plugins
+git clone https://github.com/topdata-software-gmbh/topdata-webservice-connector-sw6.git
+
+# install the plugin
+bin/console plugin:refresh
+bin/console plugin:install --activate --clearCache TopdataConnectorSW6 
+```
+
 ## Configuration
 After installing plugin, you need to feel in API credentials to connect to TopData Webservice.
 

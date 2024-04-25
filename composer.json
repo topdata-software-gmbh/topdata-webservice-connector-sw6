@@ -19,20 +19,20 @@
         "plugin-icon": "src/Resources/config/plugin.png",
         "copyright": "(c) by TopData Software GmbH",
         "label": {
-            "de-DE": "Topdata Connector",
-            "en-GB": "Topdata Connector"
+            "de-DE": "Topdata Webservice Connector",
+            "en-GB": "Topdata Webservice Connector"
         },
         "description": {
-            "de-DE": "Der TopdataConnector verbindet unsere TopData Software Daten mit Ihrem Shopware Store. Der TopdataConnector wird benoetigt um anderer unserer Plugins zu verwenden.",
-            "en-GB": "The TopdataConnector connects TopData Software data to your Shopware system. The TopdataConnector is needed to use our other Plugins for your Shopware system."
+            "de-DE": "Der TopdataWebserviceConnector verbindet Ihren Shopware6 Store mit dem Topdata Webservice. Der TopdataWebserviceConnector wird benoetigt um anderer unserer Plugins zu verwenden.",
+            "en-GB": "The TopdataWebserviceConnector connects your Shopware6 store with the Topdata webservice. The TopdataWebserviceConnector is required to use other of our plugins."
         },
         "manufacturerLink": {
             "de-DE": "https://www.topdata.de",
             "en-GB": "https://www.topdata.de"
         },
         "supportLink": {
-            "de-DE": "https://www.topdata.de",
-            "en-GB": "https://www.topdata.de"
+            "de-DE": "https://www.topdata.de/shopware/seite/connector",
+            "en-GB": "https://www.topdata.de/shopware/seite/connector"
         }
     },
     "autoload": {
