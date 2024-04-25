@@ -8,9 +8,6 @@ use Doctrine\DBAL\Connection;
 use Monolog\Logger;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
@@ -24,6 +21,7 @@ use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
 /**
  * @Route(defaults={"_routeScope"={"administration"}})
  */
+#[Route(defaults: ['_routeScope' => 'administration'])]
 class TopdataConnectorController extends AbstractController
 {
     private SystemConfigService $systemConfigService;
@@ -51,6 +49,7 @@ class TopdataConnectorController extends AbstractController
     /**
      * @Route("/api/topdata/connector-test", name="api.action.topdata.connector-test", methods={"GET"})
      */
+    #[Route('/api/topdata/connector-test', name: 'api.action.topdata.connector-test', methods: ['GET'])]
     public function connectorTestAction(): JsonResponse
     {
         $additionalData = '';
@@ -87,6 +86,7 @@ class TopdataConnectorController extends AbstractController
     /**
      * @Route("/api/topdata/load-brands", name="api.action.topdata.load-brands", methods={"GET"})
      */
+    #[Route('/api/topdata/load-brands', name: 'api.action.topdata.load-brands', methods: ['GET'])]
     public function loadBrands(Request $request, Context $context): JsonResponse
     {
         $allBrands = [];
@@ -118,6 +118,7 @@ class TopdataConnectorController extends AbstractController
     /**
      * @Route("/api/topdata/save-primary-brands", name="api.action.topdata.save-primary-brands", methods={"POST"})
      */
+    #[Route('/api/topdata/save-primary-brands', name: 'api.action.topdata.save-primary-brands', methods: ['POST'])]
     public function savePrimaryBrands(Request $request, Context $context): JsonResponse
     {
         $params = $request->request->all();
@@ -148,6 +149,7 @@ class TopdataConnectorController extends AbstractController
     /**
      * @Route("/api/topdata/connector-plugins", name="api.action.topdata.connector-plugins", methods={"GET"})
      */
+    #[Route('/api/topdata/connector-plugins', name: 'api.action.topdata.connector-plugins', methods: ['GET'])]
     public function activeTopdataPlugins(Request $request, Context $context): JsonResponse
     {
         $activePlugins = [];
@@ -171,6 +173,7 @@ class TopdataConnectorController extends AbstractController
     /**
      * @Route("/api/_action/connector/connector-credentials-get", name="api.action.connector.connector.credentials.get", methods={"GET"})
      */
+    #[Route('/api/_action/connector/connector-credentials-get', name: 'api.action.connector.connector.credentials.get', methods: ['GET'])]
     public function getCredentialsAction(): JsonResponse
     {
         $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
@@ -181,6 +184,7 @@ class TopdataConnectorController extends AbstractController
     /**
      * @Route("/api/topdata/connector-install-demodata", name="api.action.topdata.connector-install-demodata", methods={"GET"})
      */
+    #[Route('/api/topdata/connector-install-demodata', name: 'api.action.topdata.connector-install-demodata', methods: ['GET'])]
     public function installDemoData(Request $request, Context $context): JsonResponse
     {
         $manufacturerRepository = $this->container->get('product_manufacturer.repository');

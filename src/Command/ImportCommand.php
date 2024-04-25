@@ -20,9 +20,6 @@ use Topdata\TopdataConnectorSW6\Service\MappingHelperService;
  */
 class ImportCommand extends AbstractCommand
 {
-    protected static $defaultName = 'topdata:connector:import';
-    protected static $defaultDescription = 'Import data from the TopData Webservice';
-
     private bool $verbose = true;
     private SystemConfigService $systemConfigService;
     private ContainerBagInterface $containerBag;
@@ -265,6 +262,8 @@ class ImportCommand extends AbstractCommand
 
     protected function configure(): void
     {
+        $this->setName('topdata:connector:import');
+        $this->setDescription('Import data from the TopData Webservice');
         $this->addOption(
             'test',
             null,

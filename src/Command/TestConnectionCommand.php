@@ -27,9 +27,6 @@ class TestConnectionCommand extends AbstractCommand
     private SystemConfigService $systemConfigService;
     private ContainerBagInterface $containerBag;
     private LoggerInterface $logger;
-
-    protected static $defaultName = 'topdata:connector:test-connection';
-    protected static $defaultDescription = 'Test connection to the TopData webservice';
     private ConfigCheckerService $configCheckerService;
 
     public function __construct(
@@ -47,7 +44,14 @@ class TestConnectionCommand extends AbstractCommand
         parent::__construct();
     }
 
-    public function execute(InputInterface $input, OutputInterface $output): int
+
+    protected function configure(): void
+    {
+        $this->setName('topdata:connector:test-connection');
+        $this->setDescription('Test connection to the TopData webservice');
+    }
+
+        public function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->cliStyle->writeln('Check plugin is active...');
         $activePlugins = $this->containerBag->get('kernel.active_plugins');
