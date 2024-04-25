@@ -40,7 +40,7 @@ If you want to test the plugin with demo credentials, you can use the following:
 After saving credentials you can test connection, just select TopData Plugins menu item in main menu and press "Test" button in TopData Connector block.
 
 
----
+### Other Options
 
 "please select your search option" - here you select how to map your products:
 
@@ -54,7 +54,12 @@ After saving credentials you can test connection, just select TopData Plugins me
 
 5. Product number is web service id - product number in your store is same as API product id on Top Data Webservice
 
+
+
+
 ## Console commands for work with API
+
+### topdata:connector:import
    
 1. `bin/console topdata:connector:import --mapping`  map store products to webservice products
 
@@ -76,44 +81,51 @@ After saving credentials you can test connection, just select TopData Plugins me
 
 Command order is important, for example --device-media (4) downloads images only for enabled devices, those devices are enabled by --product (3)
 
-### Additional keys:
-"-v" key for verbose output, it shows memmory usage, data chunk numbers, time and other information
+### Additional options:
+`-v` key for verbose output, it shows memmory usage, data chunk numbers, time and other information
 
-"--env=prod --no-debug" keys for faster work and less memmory usage
+`--no-debug` keys for faster work and less memmory usage
 
-"--start" and "--end" keys, depending on command it use chunk numbers or element counts (you can see this numbers if verbose output is enabled)
+`--start` and `--end` keys, depending on command it use chunk numbers or element counts (you can see this numbers if verbose output is enabled)
 
 
-## Console command for import products from csv file
-`bin/console topdata:connector:products --file=prods2020-07-26.csv --start=1 --end=1000 --number=4 --wsid=4 --name=11 --brand=10`
+## topdata:connector:products
+- a console command for import products from csv file
+- example usage:
+ 
+```bash
+bin/console topdata:connector:products --file=prods2020-07-26.csv --start=1 --end=1000 --number=4 --wsid=4 --name=11 --brand=10
+```
 
---file  specify filename
+`--file`  specify filename
 
---start  start line of a file, default is 1 (first line is 0, it usually have column titles)
+`--start`  start line of a file, default is 1 (first line is 0, it usually have column titles)
 
---end  end line of a file, by default file will be read until the end
+`--end`  end line of a file, by default file will be read until the end
 
---number  column with unique product number
+`--number`  column with unique product number
 
---wsid  column with Webservice id (if csv is given from TopData it may have this column), if it is set product will be mapped to Top Data Webserivce products
+`--wsid`  column with Webservice id (if csv is given from TopData it may have this column), if it is set product will be mapped to Top Data Webserivce products
 
---name  column with product name
+`--name`  column with product name
 
---brand  column with product brand name (will be created if is not present yet)
+`--brand`  column with product brand name (will be created if is not present yet)
 
-It is recomended to limit product count with start/end, depending on server RAM. Then you can read next chunk of products in second command.
+It is recommended to limit product count with start/end, depending on server RAM. Then you can read next chunk of products in second command.
 
 ## Advices and examples
 
-There are more than 100000 devices on Webservice, when you fetch devices or device media, you can use --start --end keys to chunk entire process, also it is highly recomended to use -v key to see number of chunk where something went wrong.
+### use --start and --end options
 
-When you use TopFeed plugin for additional product information it is also recommended to use --start/--end keys when you have thousands of products in the store.
+There are more than 100.000 devices on Webservice, when you fetch devices or device media, you can use `--start` `--end` options to chunk entire process, also it is highly recommended to use `-v` key to see number of chunk where something went wrong.
 
-Normal workflow:
+When you use TopFeed plugin for additional product information it is also recommended to use `--start` / `--end` options when you have thousands of products in the store.
 
-1. `sudo bin/console topdata:connector:import -v --mapping --env=prod --no-debug`
+### Normal workflow
 
-2. `sudo bin/console topdata:connector:import -v --device --start=1 --end=10 --env=prod --no-debug;sudo bin/console topdata:connector:import -v --device-only --start=11 --end=20 --env=prod --no-debug; sudo bin/console topdata:connector:import -v --device-only --start=21 --env=prod --no-debug`
+1. `sudo bin/console topdata:connector:import -v --mapping --no-debug`
+
+2. `sudo bin/console topdata:connector:import -v --device --start=1 --end=10 --no-debug;sudo bin/console topdata:connector:import -v --device-only --start=11 --end=20 --no-debug; sudo bin/console topdata:connector:import -v --device-only --start=21 --no-debug`
 
 3. ...
 

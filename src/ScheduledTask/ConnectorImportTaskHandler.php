@@ -31,6 +31,6 @@ class ConnectorImportTaskHandler extends ScheduledTaskHandler
         /* @TODO:
          * uncomment???
          */
-        //        exec("php " . $this->projectPath . '/bin/console topdata:connector:import --all --env=prod --no-debug > /dev/null');
+        //        exec("php " . $this->projectPath . '/bin/console topdata:connector:import --all --no-debug > /dev/null');
     }
 }
