@@ -7,11 +7,10 @@ namespace Topdata\TopdataConnectorSW6\Command;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopware\Core\Defaults;
-//use Symfony\Component\Console\Input\InputArgument;
+
+
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\Console\Command\Command;
@@ -19,29 +18,13 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class ProductsCommand extends Command
+class ProductsCommand extends AbstractCommand
 {
     private $_manufacturers = null;
-
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $productRepository;
-
-    /**
-     * @var EntityRepositoryInterface
-     */
-    private $manufacturerRepository;
-
-    /**
-     * @param Context
-     */
-    private $context;
-
-    /**
-     * @var Connection
-     */
-    private $connection;
+    private EntityRepository $productRepository;
+    private EntityRepository $manufacturerRepository;
+    private Context $context;
+    private Connection $connection;
 
     /** @var int|null */
     private $lineStart;
@@ -82,33 +65,33 @@ class ProductsCommand extends Command
     public function __construct(
         EntityRepository $manufacturerRepository,
         EntityRepository $productRepository,
-        Connection $connection
-    ) {
-        $this->productRepository       = $productRepository;
-        $this->manufacturerRepository  = $manufacturerRepository;
-        $this->context                 = Context::createDefaultContext();
-        $this->connection              = $connection;
+        Connection       $connection
+    )
+    {
+        $this->productRepository = $productRepository;
+        $this->manufacturerRepository = $manufacturerRepository;
+        $this->context = Context::createDefaultContext();
+        $this->connection = $connection;
         $this->systemDefaultLocaleCode = $this->getLocaleCodeOfSystemLanguage();
         parent::__construct();
     }
 
     protected function configure(): void
     {
-        $this
-            ->setName('topdata:connector:products')
-            ->addOption('file', null, InputOption::VALUE_REQUIRED, 'csv filename')
-            ->addOption('start', null, InputOption::VALUE_OPTIONAL, 'start line')
-            ->addOption('end', null, InputOption::VALUE_OPTIONAL, 'end line')
-            ->addOption('name', null, InputOption::VALUE_REQUIRED, 'name column number')
-            ->addOption('number', null, InputOption::VALUE_REQUIRED, 'name column number')
-            ->addOption('wsid', null, InputOption::VALUE_OPTIONAL, 'Topdata webservice ID column number')
-            ->addOption('description', null, InputOption::VALUE_OPTIONAL, 'description column number')
-            ->addOption('ean', null, InputOption::VALUE_OPTIONAL, 'EAN column number')
-            ->addOption('mpn', null, InputOption::VALUE_OPTIONAL, 'MPN column number')
-            ->addOption('brand', null, InputOption::VALUE_OPTIONAL, 'brand column number')
-            ->addOption('divider', null, InputOption::VALUE_OPTIONAL, 'divider for columns, default ;')
-            ->addOption('trim', null, InputOption::VALUE_OPTIONAL, 'trim character in column, default semicolon \' ')
-            ->setDescription('Adds prods from csv');
+        $this->setName('topdata:connector:products');
+        $this->setDescription('Import products from a csv file');
+        $this->addOption('file', null, InputOption::VALUE_REQUIRED, 'csv filename');
+        $this->addOption('start', null, InputOption::VALUE_OPTIONAL, 'start line');
+        $this->addOption('end', null, InputOption::VALUE_OPTIONAL, 'end line');
+        $this->addOption('name', null, InputOption::VALUE_REQUIRED, 'name column number');
+        $this->addOption('number', null, InputOption::VALUE_REQUIRED, 'name column number');
+        $this->addOption('wsid', null, InputOption::VALUE_OPTIONAL, 'Topdata webservice ID column number');
+        $this->addOption('description', null, InputOption::VALUE_OPTIONAL, 'description column number');
+        $this->addOption('ean', null, InputOption::VALUE_OPTIONAL, 'EAN column number');
+        $this->addOption('mpn', null, InputOption::VALUE_OPTIONAL, 'MPN column number');
+        $this->addOption('brand', null, InputOption::VALUE_OPTIONAL, 'brand column number');
+        $this->addOption('divider', null, InputOption::VALUE_OPTIONAL, 'divider for columns, default ;');
+        $this->addOption('trim', null, InputOption::VALUE_OPTIONAL, 'trim character in column, default semicolon \' ');
     }
 
     private function getLocaleCodeOfSystemLanguage(): string
@@ -123,7 +106,7 @@ class ProductsCommand extends Command
     public function execute(InputInterface $input, OutputInterface $output): int
     {
         $products = [];
-        $file     = $input->getOption('file');
+        $file = $input->getOption('file');
         if (!$file) {
             echo "add file!\n";
 
@@ -138,17 +121,17 @@ class ProductsCommand extends Command
         }
         echo $file . "\n";
 
-        $this->lineStart         = ($input->getOption('start') !== null) ? (int) $input->getOption('start') : 1;
-        $this->lineEnd           = ($input->getOption('end') !== null) ? (int) $input->getOption('end') : null;
-        $this->columnName        = (int) $input->getOption('name');
-        $this->columnNumber      = (int) $input->getOption('number');
-        $this->columnTopdataId   = ($input->getOption('wsid') !== null) ? (int) $input->getOption('wsid') : null;
-        $this->columnDescription = ($input->getOption('description') !== null) ? (int) $input->getOption('description') : null;
-        $this->columnEAN         = ($input->getOption('ean') !== null) ? (int) $input->getOption('ean') : null;
-        $this->columnMPN         = ($input->getOption('mpn') !== null) ? (int) $input->getOption('mpn') : null;
-        $this->columnBrand       = ($input->getOption('brand') !== null) ? (int) $input->getOption('brand') : null;
-        $this->divider           = ($input->getOption('divider') !== null) ? $input->getOption('divider') : ';';
-        $this->trim              = ($input->getOption('trim') !== null) ? $input->getOption('trim') : '"';
+        $this->lineStart = ($input->getOption('start') !== null) ? (int)$input->getOption('start') : 1;
+        $this->lineEnd = ($input->getOption('end') !== null) ? (int)$input->getOption('end') : null;
+        $this->columnName = (int)$input->getOption('name');
+        $this->columnNumber = (int)$input->getOption('number');
+        $this->columnTopdataId = ($input->getOption('wsid') !== null) ? (int)$input->getOption('wsid') : null;
+        $this->columnDescription = ($input->getOption('description') !== null) ? (int)$input->getOption('description') : null;
+        $this->columnEAN = ($input->getOption('ean') !== null) ? (int)$input->getOption('ean') : null;
+        $this->columnMPN = ($input->getOption('mpn') !== null) ? (int)$input->getOption('mpn') : null;
+        $this->columnBrand = ($input->getOption('brand') !== null) ? (int)$input->getOption('brand') : null;
+        $this->divider = ($input->getOption('divider') !== null) ? $input->getOption('divider') : ';';
+        $this->trim = ($input->getOption('trim') !== null) ? $input->getOption('trim') : '"';
 
         if ($handle) {
             $lineNumber = -1;
@@ -170,7 +153,7 @@ class ProductsCommand extends Command
                     'name'          => $values[$this->columnName],
                 ];
                 if (null !== $this->columnTopdataId) {
-                    $products[$values[$this->columnNumber]]['topDataId'] = (int) $values[$this->columnTopdataId];
+                    $products[$values[$this->columnNumber]]['topDataId'] = (int)$values[$this->columnTopdataId];
                 }
                 if (null !== $this->columnDescription) {
                     $products[$values[$this->columnNumber]]['description'] = $values[$this->columnDescription];
@@ -193,11 +176,11 @@ class ProductsCommand extends Command
             return 3;
         }
 
-        $output->writeln('Products in file: ' . count($products));
+        $this->cliStyle->writeln('Products in file: ' . count($products));
 
         $products = $this->clearExistingProductsByProductNumber($products);
 
-        $output->writeln('Products not added yet: ' . count($products));
+        $this->cliStyle->writeln('Products not added yet: ' . count($products));
 
         if (count($products)) {
             $products = $this->formProductsArray($products);
@@ -237,7 +220,7 @@ class ProductsCommand extends Command
             throw new \RuntimeException('No tax found, please make sure that basic data is available by running the migrations.');
         }
 
-        return (string) $result;
+        return (string)$result;
     }
 
     private function getStorefrontSalesChannel(): string
@@ -261,14 +244,14 @@ class ProductsCommand extends Command
             throw new \RuntimeException('No sale channel found.');
         }
 
-        return (string) $result;
+        return (string)$result;
     }
 
     private function getManufacturersArray(): void
     {
-        $criteria      = new Criteria();
+        $criteria = new Criteria();
         $manufacturers = $this->manufacturerRepository->search($criteria, $this->context)->getEntities();
-        $ret           = [];
+        $ret = [];
         foreach ($manufacturers as $manufacturer) {
             $ret[$manufacturer->getName()] = $manufacturer->getId();
         }
@@ -301,31 +284,31 @@ class ProductsCommand extends Command
 
     private function formProductsArray(array $input, float $price = 1.0): array
     {
-        $output                 = [];
-        $taxId                  = $this->getTaxId();
+        $output = [];
+        $taxId = $this->getTaxId();
         $storefrontSalesChannel = $this->getStorefrontSalesChannel();
-        $priceTax               = $price * (1.19);
+        $priceTax = $price * (1.19);
         foreach ($input as $in) {
             $prod = [
-                'id'            => Uuid::randomHex(),
-                'productNumber' => $in['productNumber'],
-                'active'        => true,
-                'taxId'         => $taxId,
-                'stock'         => 10,
-                'shippingFree'  => false,
-                'purchasePrice' => $priceTax,
+                'id'               => Uuid::randomHex(),
+                'productNumber'    => $in['productNumber'],
+                'active'           => true,
+                'taxId'            => $taxId,
+                'stock'            => 10,
+                'shippingFree'     => false,
+                'purchasePrice'    => $priceTax,
                 //                    'releaseDate' => new \DateTimeImmutable(),
                 'displayInListing' => true,
                 'name'             => [
                     $this->systemDefaultLocaleCode => $in['name'],
                 ],
-                'price' => [[
+                'price'            => [[
                     'net'        => $price,
                     'gross'      => $priceTax,
                     'linked'     => true,
                     'currencyId' => Defaults::CURRENCY,
                 ]],
-                'visibilities' => [
+                'visibilities'     => [
                     [
                         'salesChannelId' => $storefrontSalesChannel,
                         'visibility'     => ProductVisibilityDefinition::VISIBILITY_ALL,
@@ -372,7 +355,7 @@ class ProductsCommand extends Command
 
     private function clearExistingProductsByProductNumber(array $products): array
     {
-        $rezProducts    = $products;
+        $rezProducts = $products;
         $product_arrays = array_chunk($products, 50, true);
         foreach ($product_arrays as $prods) {
             $criteria = new Criteria();
@@ -389,7 +372,7 @@ class ProductsCommand extends Command
     public function installDemoData(string $filename = 'demo.csv'): array
     {
         $this->divider = ';';
-        $this->trim    = '"';
+        $this->trim = '"';
         if (!$filename) {
             return [
                 'success'        => false,
@@ -397,7 +380,7 @@ class ProductsCommand extends Command
             ];
         }
 
-        $file   = dirname(__FILE__) . '/../DemoData/' . $filename;
+        $file = dirname(__FILE__) . '/../DemoData/' . $filename;
         $handle = fopen($file, 'r');
         if (!$handle) {
             return [

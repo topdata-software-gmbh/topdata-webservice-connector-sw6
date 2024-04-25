@@ -14,9 +14,7 @@ use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSell
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -140,27 +138,27 @@ class MappingHelper
     private $verbose = false;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $brandRepository;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $deviceRepository;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $seriesRepository;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $typeRepository;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $topdataToProductRepository;
 
@@ -170,7 +168,7 @@ class MappingHelper
     private $mediaService;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $mediaRepository;
 
@@ -180,7 +178,7 @@ class MappingHelper
     private $context;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $productRepository;
 
@@ -190,7 +188,7 @@ class MappingHelper
     private $productCommand;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $propertyGroupRepository;
 
@@ -200,12 +198,12 @@ class MappingHelper
     private $entitiesHelper;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $productCrossSellingRepository;
 
     /**
-     * @var EntityRepositoryInterface
+     * @var EntityRepository
      */
     private $productCrossSellingAssignedProductsRepository;
 

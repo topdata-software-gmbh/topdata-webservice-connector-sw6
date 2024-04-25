@@ -11,8 +11,12 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Topdata\TopdataConnectorSW6\Component\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
 
-class TestConnectionCommand extends Command
+/**
+ * Test connection to the TopData webservice
+ */
+class TestConnectionCommand extends AbstractCommand
 {
     const ERROR_CODE_TOPDATA_WEBSERVICE_CONNECTOR_PLUGIN_INACTIVE = 1;
     const ERROR_CODE_MISSING_CONFIG                               = 2;
@@ -25,61 +29,66 @@ class TestConnectionCommand extends Command
     private LoggerInterface $logger;
 
     protected static $defaultName = 'topdata:connector:test-connection';
+    protected static $defaultDescription = 'Test connection to the TopData webservice';
+    private ConfigCheckerService $configCheckerService;
 
     public function __construct(
         SystemConfigService   $systemConfigService,
         ContainerBagInterface $ContainerBag,
-        LoggerInterface       $logger
+        LoggerInterface       $logger,
+        ConfigCheckerService  $configCheckerService
     )
     {
         $this->systemConfigService = $systemConfigService;
         $this->containerBag = $ContainerBag;
         $this->logger = $logger;
+        $this->configCheckerService = $configCheckerService;
+
         parent::__construct();
     }
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        $output->writeln('Check plugin is active...');
+        $this->cliStyle->writeln('Check plugin is active...');
         $activePlugins = $this->containerBag->get('kernel.active_plugins');
         if (!isset($activePlugins['Topdata\TopdataConnectorSW6\TopdataConnectorSW6'])) {
             // a bit silly check, as this command is part of the TopdataConnectorSW6 plugin
-            $output->writeln('The TopdataConnectorSW6 plugin is inactive!');
-            $output->writeln('Activate the TopdataConnectorSW6 plugin first. Abort.');
+            $this->cliStyle->writeln('The TopdataConnectorSW6 plugin is inactive!');
+            $this->cliStyle->writeln('Activate the TopdataConnectorSW6 plugin first. Abort.');
 
             return self::ERROR_CODE_TOPDATA_WEBSERVICE_CONNECTOR_PLUGIN_INACTIVE;
         }
-        $output->writeln('Getting connection params...');
+        $this->cliStyle->writeln('Getting connection params...');
         $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
-        if ($config['apiUsername'] == '' || $config['apiKey'] == '' || $config['apiSalt'] == '' || $config['apiLanguage'] == '') {
-            $output->writeln('Fill in connection parameters in admin -> Settings -> System -> Plugins -> TopdataConnector config');
-            $output->writeln('Abort.');
+        if ($this->configCheckerService->isConfigEmpty()) {
+            $this->cliStyle->writeln('Fill in connection parameters in admin -> Settings -> System -> Plugins -> TopdataConnector config');
+            $this->cliStyle->writeln('Abort.');
 
             return self::ERROR_CODE_MISSING_CONFIG;
         }
 
-        $output->writeln('Connecting to TopData api server...');
+        $this->cliStyle->writeln('Connecting to TopData api server...');
         try {
             $webservice = new TopdataWebserviceClient($this->logger, $config['apiUsername'], $config['apiKey'], $config['apiSalt'], $config['apiLanguage']);
             $info = $webservice->getUserInfo();
 
             if (isset($info->error)) {
-                $output->writeln('Connection error:');
-                $output->writeln($info->error[0]->error_message);
-                $output->writeln('Abort.');
+                $this->cliStyle->writeln('Connection error:');
+                $this->cliStyle->writeln($info->error[0]->error_message);
+                $this->cliStyle->writeln('Abort.');
 
                 return self::ERROR_CODE_CONNECTION_ERROR;
             } else {
-                $output->writeln('Connection success!');
+                $this->cliStyle->writeln('Connection success!');
 
                 return Command::SUCCESS;
             }
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
             $this->logger->error($errorMessage);
-            $output->writeln('Connection error:');
-            $output->writeln($errorMessage);
-            $output->writeln('Abort.');
+            $this->cliStyle->writeln('Connection error:');
+            $this->cliStyle->writeln($errorMessage);
+            $this->cliStyle->writeln('Abort.');
 
             return self::ERROR_CODE_EXCEPTION;
         }

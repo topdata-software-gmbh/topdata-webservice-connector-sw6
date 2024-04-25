@@ -90,6 +90,7 @@
         </service>
 
         <!-- SERVICES -->
+        <service id="Topdata\TopdataConnectorSW6\Service\ConfigCheckerService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Component\Helper\EntitiesHelper">
             <argument type="service" id="Doctrine\DBAL\Connection" />
             <argument type="service" id="media.repository"/>

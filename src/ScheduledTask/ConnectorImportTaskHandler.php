@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\ScheduledTask;
 
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 
@@ -15,7 +15,7 @@ class ConnectorImportTaskHandler extends ScheduledTaskHandler
      */
     protected $projectPath;
 
-    public function __construct(EntityRepositoryInterface $scheduledTaskRepository, ContainerBagInterface $ContainerBag)
+    public function __construct(EntityRepository $scheduledTaskRepository, ContainerBagInterface $ContainerBag)
     {
         $this->projectPath = $ContainerBag->get('kernel.project_dir');
         parent::__construct($scheduledTaskRepository);
