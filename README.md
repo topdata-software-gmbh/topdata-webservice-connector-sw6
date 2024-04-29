@@ -5,14 +5,14 @@ This plugin is the base for most of the functionality in other TopData plugins f
 It gives possibility to import devices from TopData Webservice.
 
 ## Minimal Requirements
-- Shopware 6.4 or higher
-- PHP 7.4 or higher
+- Shopware 6.6.0 or higher
+- PHP 8.0 or higher
 
 ## Installation
 ```bash
 # clone the repository
 cd custom/plugins
-git clone -b {main|main-sw64|main-sw65|main-sw66} https://github.com/topdata-software-gmbh/topdata-webservice-connector-sw6.git
+git clone -b main https://github.com/topdata-software-gmbh/topdata-webservice-connector-sw6.git
 
 # install the plugin
 bin/console plugin:refresh
