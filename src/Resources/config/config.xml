@@ -33,19 +33,11 @@
                     <id>de</id>
                     <name>German</name>
                     <name lang="de-DE">Deutsch</name>
-                    <name lang="nl-NL">Duits</name>
                 </option>
                 <option>
                     <id>en</id>
                     <name>English</name>
                     <name lang="de-DE">Englisch</name>
-                    <name lang="nl-NL">Engels</name>
-                </option>
-                <option>
-                    <id>nl</id>
-                    <name>Dutch</name>
-                    <name lang="de-DE">Niederländisch</name>
-                    <name lang="nl-NL">Nederlands</name>
                 </option>
             </options>
             <defaultValue>de</defaultValue>

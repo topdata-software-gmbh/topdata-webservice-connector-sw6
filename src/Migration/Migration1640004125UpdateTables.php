@@ -1,17 +1,14 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Migration;
 
 use Doctrine\DBAL\Connection;
-use Shopware\Core\Framework\Migration\InheritanceUpdaterTrait;
 use Shopware\Core\Framework\Migration\MigrationStep;
+use Shopware\Core\Framework\Migration\InheritanceUpdaterTrait;
 
 class Migration1640004125UpdateTables extends MigrationStep
 {
     use InheritanceUpdaterTrait;
-
     public function getCreationTimestamp(): int
     {
         return 1640004125;
@@ -19,7 +16,7 @@ class Migration1640004125UpdateTables extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $sql = <<<'SQL'
+        $sql = <<<SQL
 CREATE TABLE IF NOT EXISTS `topdata_category_extension` (
               `id` binary(16) NOT NULL,
               `category_id` binary(16) DEFAULT NULL,
@@ -32,6 +29,7 @@ CREATE TABLE IF NOT EXISTS `topdata_category_extension` (
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 SQL;
         $connection->executeStatement($sql);
+        
     }
 
     public function updateDestructive(Connection $connection): void
