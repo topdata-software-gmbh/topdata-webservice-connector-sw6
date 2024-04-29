@@ -1,14 +1,12 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Core\Content\Series;
 
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 
 /**
- * @method void              add(SeriesEntity $entity)
- * @method void              set(string $key, SeriesEntity $entity)
+ * @method void             add(SeriesEntity $entity)
+ * @method void             set(string $key, SeriesEntity $entity)
  * @method SeriesEntity[]    getIterator()
  * @method SeriesEntity[]    getElements()
  * @method SeriesEntity|null get(string $key)

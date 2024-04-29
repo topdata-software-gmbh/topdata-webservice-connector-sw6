@@ -1,47 +1,46 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Core\Content\TopdataProduct;
 
-use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
+use Shopware\Core\Content\Product\ProductEntity;
+
 
 class TopdataProductEntity extends Entity
-{
+{  
     use EntityIdTrait;
-
+    
     /**
      * @var int
      */
     protected $topDataId;
-
+    
     /**
      * @var string
      */
     protected $productId;
-
+    
     /**
      * @var string
      */
     protected $productVersionId;
-
+    
     /**
      * @var ?ProductEntity
      */
     protected $product;
-
+    
     public function getTopDataId(): int
     {
         return $this->topDataId;
     }
-
+    
     public function setTopDataId(int $topDataId): void
     {
         $this->topDataId = $topDataId;
     }
-
+    
     public function getProductId(): string
     {
         return $this->productId;
@@ -51,7 +50,7 @@ class TopdataProductEntity extends Entity
     {
         $this->productId = $productId;
     }
-
+    
     public function getProductVersionId(): string
     {
         return $this->productVersionId;
@@ -61,13 +60,13 @@ class TopdataProductEntity extends Entity
     {
         $this->productVersionId = $productVersionId;
     }
-
-    public function getProduct(): ?ProductEntity
+    
+    public function getProduct() : ?ProductEntity
     {
         return $this->product;
     }
-
-    public function setProduct(?ProductEntity $product): void
+    
+    public function setProduct(?ProductEntity $product) : void
     {
         $this->product = $product;
     }

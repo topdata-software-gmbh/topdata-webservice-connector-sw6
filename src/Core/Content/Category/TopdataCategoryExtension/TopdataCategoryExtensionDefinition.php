@@ -1,19 +1,17 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Core\Content\Category\TopdataCategoryExtension;
 
-use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\JsonField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\JsonField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopware\Core\Content\Category\CategoryDefinition;
 
 class TopdataCategoryExtensionDefinition extends EntityDefinition
 {
@@ -37,7 +35,7 @@ class TopdataCategoryExtensionDefinition extends EntityDefinition
             new BoolField('plugin_settings', 'pluginSettings'),
             new JsonField('import_settings', 'importSettings'),
 
-            new OneToOneAssociationField('category', 'category_id', 'id', CategoryDefinition::class, false),
+            new OneToOneAssociationField('category', 'category_id', 'id', CategoryDefinition::class, false)
         ]);
     }
 }
