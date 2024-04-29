@@ -153,3 +153,9 @@ If you download product or device images from Top Data Webservice to yours shop 
 ```bash
 chown -R www-data:www-data .
 ```
+
+### One command to import all
+
+```bash
+php -d memory_limit=2048M bin/console topdata:connector:import -v --all
+```
