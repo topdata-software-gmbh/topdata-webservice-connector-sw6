@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\ScheduledTask;
 
@@ -15,6 +13,6 @@ class ConnectorImportTask extends ScheduledTask
 
     public static function getDefaultInterval(): int
     {
-        return 3600 * 24; // once a day
+        return 3600*24; // once a day
     }
 }

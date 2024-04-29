@@ -1,26 +1,24 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Core\Content\Product;
 
 use Shopware\Core\Content\Product\ProductDefinition;
-use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityExtension;
+use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Inherited;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
-use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Topdata\TopdataConnectorSW6\Core\Content\Device\Agregate\DeviceProduct\DeviceProductDefinition;
 use Topdata\TopdataConnectorSW6\Core\Content\Device\DeviceDefinition;
 use Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\Alternate\ProductAlternateDefinition;
 use Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\Bundled\ProductBundledDefinition;
-use Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\CapacityVariant\ProductCapacityVariantDefinition;
-use Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\ColorVariant\ProductColorVariantDefinition;
 use Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\Related\ProductRelatedDefinition;
 use Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\Similar\ProductSimilarDefinition;
+use Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\CapacityVariant\ProductCapacityVariantDefinition;
+use Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\ColorVariant\ProductColorVariantDefinition;
 use Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\Variant\ProductVariantDefinition;
+use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductDefinition;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
 use Topdata\TopdataConnectorSW6\Core\Content\TopdataProduct\TopdataProductDefinition;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityExtension;
 
 class ProductExtension extends EntityExtension
 {
@@ -28,14 +26,14 @@ class ProductExtension extends EntityExtension
     {
         $collection->add(
             (new OneToOneAssociationField(
-                'topdata',
-                'id',
-                'product_id',
+                'topdata', 
+                'id', 
+                'product_id', 
                 TopdataProductDefinition::class,
                 false
             ))->addFlags(new Inherited())
         );
-
+        
         $collection->add(
             (new ManyToManyAssociationField(
                 'alternate_products',
@@ -45,7 +43,7 @@ class ProductExtension extends EntityExtension
                 'alternate_product_id'
             ))->addFlags(new Inherited())
         );
-
+        
         $collection->add(
             (new ManyToManyAssociationField(
                 'bundled_products',
@@ -55,7 +53,7 @@ class ProductExtension extends EntityExtension
                 'bundled_product_id'
             ))->addFlags(new Inherited())
         );
-
+        
         $collection->add(
             (new ManyToManyAssociationField(
                 'related_products',
@@ -65,7 +63,7 @@ class ProductExtension extends EntityExtension
                 'related_product_id'
             ))->addFlags(new Inherited())
         );
-
+        
         $collection->add(
             (new ManyToManyAssociationField(
                 'similar_products',
@@ -85,7 +83,7 @@ class ProductExtension extends EntityExtension
                 'capacity_variant_product_id'
             ))->addFlags(new Inherited())
         );
-
+        
         $collection->add(
             (new ManyToManyAssociationField(
                 'color_variant_products',
@@ -95,7 +93,7 @@ class ProductExtension extends EntityExtension
                 'color_variant_product_id'
             ))->addFlags(new Inherited())
         );
-
+        
         $collection->add(
             (new ManyToManyAssociationField(
                 'variant_products',
