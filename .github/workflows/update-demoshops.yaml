@@ -1,0 +1,33 @@
+# 05/2024 created
+# This workflow triggers a plugin update in the topdata shopware6 demoshops
+
+name: Update Plugin
+
+on: [push]
+
+jobs:
+    update-demoshops:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Install dependencies
+              run: sudo apt-get update && sudo apt-get install -y jq curl
+
+            - name: Get Composer Name
+              run: |
+                  COMPOSER_NAME=$(jq -r .name composer.json)
+                  echo "COMPOSER_NAME=$COMPOSER_NAME" >> $GITHUB_ENV
+
+            - name: Build urls.txt
+              run: |
+                  cat << EOF > urls.txt
+                  url = "${{ secrets.UPDATE_URL_SW64 }}/${{ env.COMPOSER_NAME }}"
+                  url = "${{ secrets.UPDATE_URL_SW65 }}/${{ env.COMPOSER_NAME }}"
+                  url = "${{ secrets.UPDATE_URL_SW66 }}/${{ env.COMPOSER_NAME }}"
+                  EOF
+
+            - name: Trigger Plugin Update on demoshops
+              run: |
+                  curl -f -sS -X GET --parallel --parallel-immediate --parallel-max 4 --config urls.txt
