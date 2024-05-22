@@ -3,7 +3,7 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/master/src/Core/System/SystemConfig/Schema/config.xsd">
 
     <card>
-        <title>api configuration</title>
+        <title>API Configuration</title>
         <title lang="de-DE">API Einstellungen</title>
         <input-field>
             <name>apiUsername</name>
@@ -66,8 +66,8 @@
             <options>
                 <option>
                     <id>default</id>
-                    <name>Standard mapping via MPN/EAN</name>
-                    <name lang="de-DE">Standard-Mapping über OEM/EAN</name>
+                    <name>Standard mapping via MPN / EAN</name>
+                    <name lang="de-DE">Standard-Mapping über MPN / EAN</name>
                 </option>
                 <option>
                     <id>distributorDefault</id>
@@ -76,8 +76,8 @@
                 </option>
                 <option>
                     <id>custom</id>
-                    <name>User defined mapping via MPN / EAN  (Property group field)</name>
-                    <name lang="de-DE">Benutzerdefiniertes Mapping über OEM / EAN  (Eigenschaftenfeld)</name>
+                    <name>User defined mapping via MPN / EAN (Property group field)</name>
+                    <name lang="de-DE">Benutzerdefiniertes Mapping über MPN / EAN (Eigenschaftenfeld)</name>
                 </option>
                 <option>
                     <id>distributorCustom</id>
@@ -86,8 +86,8 @@
                 </option>
                 <option>
                     <id>customField</id>
-                    <name>User defined mapping via MPN / EAN  (Customfield)</name>
-                    <name lang="de-DE">Benutzerdefiniertes Mapping über OEM / EAN  (Zusatzfeld)</name>
+                    <name>User defined mapping via MPN / EAN (Customfield)</name>
+                    <name lang="de-DE">Benutzerdefiniertes Mapping über MPN / EAN (Zusatzfeld)</name>
                 </option>
                 <option>
                     <id>distributorCustomField</id>
@@ -109,9 +109,9 @@
         <input-field>
             <name>attributeOem</name>
             <label>MPN Field</label>
-            <label lang="de-DE">OEM-Feld</label>
+            <label lang="de-DE">MPN-Feld</label>
             <helpText>Enter the technical name of the MPN property group-/customfield you have defined</helpText>
-            <helpText lang="de-DE">Geben Sie den technischen Namen des von Ihnen festgelegten OEM Eigenschaften-/Zusatzfeldes an</helpText>
+            <helpText lang="de-DE">Geben Sie den technischen Namen des von Ihnen festgelegten MPN Eigenschaften-/Zusatzfeldes an</helpText>
         </input-field>
         <input-field>
             <name>attributeEan</name>
