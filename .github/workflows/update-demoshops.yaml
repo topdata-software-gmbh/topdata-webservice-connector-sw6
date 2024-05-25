@@ -1,5 +1,6 @@
 # 05/2024 created
 # This workflow triggers a plugin update in the topdata shopware6 demoshops
+# The demoshop needs the topdata-plugin-manager-sw6 plugin installed
 
 name: Update Plugin
 
