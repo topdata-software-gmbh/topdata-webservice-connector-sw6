@@ -27,9 +27,6 @@ jobs:
                   url = "${{ secrets.UPDATE_URL_DEMOSHOP_SW64_STAGING }}/${{ env.COMPOSER_NAME }}"
                   url = "${{ secrets.UPDATE_URL_DEMOSHOP_SW65_STAGING }}/${{ env.COMPOSER_NAME }}"
                   url = "${{ secrets.UPDATE_URL_DEMOSHOP_SW66_STAGING }}/${{ env.COMPOSER_NAME }}"
-#                  url = "${{ secrets.UPDATE_URL_DEMOSHOP_SW64_PROD }}/${{ env.COMPOSER_NAME }}"
-#                  url = "${{ secrets.UPDATE_URL_DEMOSHOP_SW65_PROD }}/${{ env.COMPOSER_NAME }}"
-#                  url = "${{ secrets.UPDATE_URL_DEMOSHOP_SW66_PROD }}/${{ env.COMPOSER_NAME }}"
                   EOF
 
             - name: Trigger Plugin Update on demoshops
