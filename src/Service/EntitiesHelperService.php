@@ -15,6 +15,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 /**
+ * Note: this is also used by the TopdataTopfinderProSW6 plugin
+ *
  * 04/2024 EntitiesHelper --> EntitiesHelperService
  */
 class EntitiesHelperService
