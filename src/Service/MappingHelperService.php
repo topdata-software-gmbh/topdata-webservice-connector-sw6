@@ -22,6 +22,7 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Command\ProductsCommand;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Helper\CliStyle;
+use Topdata\TopdataConnectorSW6\Util\ImportReport;
 
 /**
  * TODO: pretty big class, should be refactored to smaller classes
@@ -1167,8 +1168,22 @@ class MappingHelperService
                         $deviceArr = $rez[0];
                         $deviceArr['id'] = bin2hex($deviceArr['id']);
                         $deviceArr['brand_id'] = bin2hex($deviceArr['brand_id']);
-                        $deviceArr['type_id'] = bin2hex($deviceArr['type_id']);
-                        $deviceArr['series_id'] = bin2hex($deviceArr['series_id']);
+                        if($deviceArr['type_id'] === null) {
+                            ImportReport::incCounter('Device Without Type Id');
+                            $deviceArr['type_id'] = null;
+                        } else {
+                            ImportReport::incCounter('Device With Type Id');
+                            $deviceArr['type_id'] = bin2hex($deviceArr['type_id']);
+                        }
+                        if($deviceArr['series_id'] === null) {
+                            ImportReport::incCounter('Device Without Series Id');
+                            $deviceArr['series_id'] = null;
+                        } else {
+                            ImportReport::incCounter('Device With Series Id');
+                            $deviceArr['series_id'] = bin2hex($deviceArr['series_id']);
+                        }
+//                        $deviceArr['type_id'] = bin2hex($deviceArr['type_id']);
+//                        $deviceArr['series_id'] = bin2hex($deviceArr['series_id']);
                     }
 
                     $serieId = null;

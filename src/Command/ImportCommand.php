@@ -7,6 +7,7 @@ namespace Topdata\TopdataConnectorSW6\Command;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Content\ImportExport\Processing\Mapping\Mapping;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -14,6 +15,7 @@ use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
 use Topdata\TopdataConnectorSW6\Service\MappingHelperService;
+use Topdata\TopdataConnectorSW6\Util\ImportReport;
 
 /**
  * This command imports data from the TopData Webservice
@@ -44,6 +46,9 @@ class ImportCommand extends AbstractCommand
         $this->configCheckerService = $configCheckerService;
     }
 
+    /**
+     * ==== MAIN ====
+     */
     public function execute(InputInterface $input, OutputInterface $output): int
     {
         // ---- init
@@ -249,7 +254,11 @@ class ImportCommand extends AbstractCommand
             //            print_r($rez);
         }
 
-        return 0;
+
+        // ---- dump report
+        $this->cliStyle->dumpDict(ImportReport::getCountersSorted(), 'Report');
+
+        return Command::SUCCESS;
     }
 
     private function loadTopFeedConfig($mappingHelper)
