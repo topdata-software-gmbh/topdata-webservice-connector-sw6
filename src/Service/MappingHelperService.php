@@ -1171,23 +1171,29 @@ class MappingHelperService
                     if (isset($rez[0])) {
                         $deviceArr = $rez[0];
                         $deviceArr['id'] = bin2hex($deviceArr['id']);
-                        $deviceArr['brand_id'] = bin2hex($deviceArr['brand_id']);
-                        if($deviceArr['type_id'] === null) {
+                        // brand
+                        if(empty($deviceArr['brand_id'])) {
+                            ImportReport::incCounter('Device Without Brand Id');
+                            $deviceArr['brand_id'] = 0x0; // or null?
+                        } else {
+                            ImportReport::incCounter('Device With Brand Id');
+                        }
+                        // type
+                        if(empty($deviceArr['type_id'])) {
                             ImportReport::incCounter('Device Without Type Id');
-                            $deviceArr['type_id'] = null;
+                            $deviceArr['type_id'] = 0x0; // or null?
                         } else {
                             ImportReport::incCounter('Device With Type Id');
                             $deviceArr['type_id'] = bin2hex($deviceArr['type_id']);
                         }
-                        if($deviceArr['series_id'] === null) {
+                        // series
+                        if(empty($deviceArr['series_id'])) {
                             ImportReport::incCounter('Device Without Series Id');
-                            $deviceArr['series_id'] = null;
+                            $deviceArr['series_id'] = 0x0; // or null?
                         } else {
                             ImportReport::incCounter('Device With Series Id');
                             $deviceArr['series_id'] = bin2hex($deviceArr['series_id']);
                         }
-//                        $deviceArr['type_id'] = bin2hex($deviceArr['type_id']);
-//                        $deviceArr['series_id'] = bin2hex($deviceArr['series_id']);
                     }
 
                     $serieId = null;
@@ -1650,9 +1656,9 @@ class MappingHelperService
             ->fetchAllAssociative();
         foreach ($queryRez as $device) {
             $device['id'] = bin2hex($device['id']);
-            $device['brand_id'] = bin2hex($device['brand_id']);
-            $device['type_id'] = bin2hex($device['type_id']);
-            $device['series_id'] = bin2hex($device['series_id']);
+            $device['brand_id'] = bin2hex($device['brand_id'] ?? '');
+            $device['type_id'] = bin2hex($device['type_id'] ?? '');
+            $device['series_id'] = bin2hex($device['series_id'] ?? '');
             $result[] = $device;
         }
 
