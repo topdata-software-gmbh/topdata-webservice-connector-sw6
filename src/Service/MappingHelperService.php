@@ -811,6 +811,7 @@ class MappingHelperService
             $this->lap(true);
             $brands = $this->topDataApi->getBrands();
             $this->activity('Got ' . count($brands->data) . " brands from remote server\n");
+            ImportReport::setCounter('Brands fetched', count($brands->data));
             $brandRepository = $this->brandRepository;
 
             $duplicates = [];
@@ -901,6 +902,7 @@ class MappingHelperService
             $this->lap(true);
             $series = $this->topDataApi->getModelSeriesByBrandId();
             $this->activity('Got ' . count($series->data) . " records from remote server\n");
+            ImportReport::setCounter('Series fetched', count($series->data));
             $seriesRepository = $this->seriesRepository;
             $dataCreate = [];
             $dataUpdate = [];
@@ -992,6 +994,7 @@ class MappingHelperService
             $this->lap(true);
             $types = $this->topDataApi->getModelTypeByBrandId();
             //            $this->activity("Got ".count($types->data)." records.\n");
+            ImportReport::setCounter('DeviceTypes fetched', count($types->data));
             $typeRepository = $this->typeRepository;
             $dataCreate = [];
             $dataUpdate = [];
@@ -1108,6 +1111,7 @@ class MappingHelperService
                     break;
                 }
                 $this->activity("\nGetting data chunk $chunkNumber from remote server...");
+                ImportReport::incCounter('Device Chunks');
                 $models = $this->topDataApi->getModels($limit, $start);
                 $this->activity($this->lap() . "sec\n");
                 if (!isset($models->data) || count($models->data) == 0) {
@@ -1340,6 +1344,7 @@ class MappingHelperService
                     break;
                 }
                 $this->activity("\nGetting data chunk $chunkNumber from remote server...");
+                ImportReport::incCounter('Device Media Chunks');
                 $models = $this->topDataApi->getModels($limit, $start);
                 $this->activity($this->lap() . 'sec. ');
                 $this->mem();
