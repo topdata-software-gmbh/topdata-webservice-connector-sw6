@@ -513,7 +513,7 @@ class MappingHelperService
                     $currentDateTime = date('Y-m-d H:i:s');
                     foreach ($artnos as $wsid => $prods) {
                         foreach ($prods as $prodid) {
-                            if (ctype_digit($wsid)) {
+                            if (ctype_digit((string)$wsid)) {
                                 $dataInsert[] = '(' .
                                     '0x' . Uuid::randomHex() . ',' .
                                     "$wsid," .
