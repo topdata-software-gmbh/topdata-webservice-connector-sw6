@@ -209,13 +209,13 @@ class MappingHelperService
     /**
      * an "option" can be either something from command line or a plugin setting
      */
-    public function setOption($name, $value)
+    public function setOption($name, $value): void
     {
         $this->cliStyle->blue("option: $name = $value");
         $this->options[$name] = $value;
     }
 
-    public function setOptions(array $keyValueArray)
+    public function setOptions(array $keyValueArray): void
     {
         foreach ($keyValueArray as $key => $value) {
             $this->options[$key] = $value;
@@ -227,7 +227,10 @@ class MappingHelperService
         return (isset($this->options[$name])) ? $this->options[$name] : false;
     }
 
-    private function getKeysByOrdernumber()
+    /**
+     * FIXME? ordernumber?
+     */
+    private function getKeysByOrdernumber(): array
     {
         $query = $this->connection->createQueryBuilder();
         $query->select(['p.product_number', 'p.id', 'p.version_id'])
