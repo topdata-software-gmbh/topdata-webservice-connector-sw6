@@ -22,6 +22,17 @@ use Topdata\TopdataConnectorSW6\Util\ImportReport;
  */
 class ImportCommand extends AbstractCommand
 {
+    const ERROR_CODE_PLUGIN_INACTIVE                  = 1;
+    const ERROR_CODE_MISSING_PLUGIN_CONFIGURATION     = 2;
+    const ERROR_CODE_MAPPING_PRODUCTS_FAILED          = 3;
+    const ERROR_CODE_DEVICE_IMPORT_FAILED             = 4;
+    const ERROR_CODE_PRODUCT_TO_DEVICE_LINKING_FAILED = 5;
+    const ERROR_CODE_LOAD_DEVICE_MEDIA_FAILED         = 6;
+    const ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED  = 7;
+    const ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED       = 8;
+    const ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED_2     = 9;
+
+
     private bool $verbose = true;
     private SystemConfigService $systemConfigService;
     private ContainerBagInterface $containerBag;
@@ -53,31 +64,33 @@ class ImportCommand extends AbstractCommand
     {
         // ---- init
         $this->mappingHelperService->setCliStyle($this->cliStyle);
-
-
         $this->verbose = ($input->getOption('verbose') >= 1);
-
+        $this->mappingHelperService->setVerbose($this->verbose);
         if ($this->verbose) {
             $this->cliStyle->writeln('Starting work...');
         }
 
+        // ---- check if plugin is active
         $activePlugins = $this->containerBag->get('kernel.active_plugins');
         if (!isset($activePlugins['Topdata\TopdataConnectorSW6\TopdataConnectorSW6'])) {
             if ($this->verbose) {
                 $this->cliStyle->error('The TopdataConnectorSW6 plugin is inactive!');
             }
 
-            return 1;
+            return self::ERROR_CODE_PLUGIN_INACTIVE;
         }
 
+        // ---- check if plugin is configured
         $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
         if ($this->configCheckerService->isConfigEmpty()) {
             if ($this->verbose) {
                 $this->cliStyle->writeln('Fill in the connection parameters in admin: Extensions > My Extensions > Topdata Webservice Connector > [...] > Configure');
             }
 
-            return 2;
+            return self::ERROR_CODE_MISSING_PLUGIN_CONFIGURATION;
         }
+
+        // ---- cli options
         $cliOptions = [
             'isServiceAll'                => $input->getOption('all'), // full update with webservice
             'isServiceMapping'            => $input->getOption('mapping'), // Mapping all existing products to webservice
@@ -96,6 +109,7 @@ class ImportCommand extends AbstractCommand
         //            return ['success' => true];
         //        }
 
+        // ---- init webservice client
         $topdataWebserviceClient = new TopdataWebserviceClient(
             $this->logger,
             $pluginConfig['apiUsername'],
@@ -103,10 +117,7 @@ class ImportCommand extends AbstractCommand
             $pluginConfig['apiSalt'],
             $pluginConfig['apiLanguage']
         );
-
         $this->mappingHelperService->setTopdataWebserviceClient($topdataWebserviceClient);
-
-        $this->mappingHelperService->setVerbose($this->verbose);
 
         $configDefaults = [
             'attributeOem'         => '',
@@ -140,7 +151,7 @@ class ImportCommand extends AbstractCommand
                     $this->cliStyle->error('Mapping failed!');
                 }
 
-                return 3;
+                return self::ERROR_CODE_MAPPING_PRODUCTS_FAILED;
             }
         }
 
@@ -156,7 +167,7 @@ class ImportCommand extends AbstractCommand
                     $this->cliStyle->error('Device import failed!');
                 }
 
-                return 4;
+                return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
             }
         } elseif ($cliOptions['isServiceDeviceOnly']) {
             if (!$this->mappingHelperService->setDevices()) {
@@ -164,7 +175,7 @@ class ImportCommand extends AbstractCommand
                     $this->cliStyle->error('Device import failed!');
                 }
 
-                return 4;
+                return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
             }
         }
 
@@ -175,7 +186,7 @@ class ImportCommand extends AbstractCommand
                     $this->cliStyle->error('Set products to devices failed!');
                 }
 
-                return 5;
+                return self::ERROR_CODE_PRODUCT_TO_DEVICE_LINKING_FAILED;
             }
         }
 
@@ -186,7 +197,7 @@ class ImportCommand extends AbstractCommand
                     $this->cliStyle->error('Load device media failed!');
                 }
 
-                return 6;
+                return self::ERROR_CODE_LOAD_DEVICE_MEDIA_FAILED;
             }
         }
 
@@ -200,7 +211,7 @@ class ImportCommand extends AbstractCommand
                         $this->cliStyle->error('Load product information failed!');
                     }
 
-                    return 7;
+                    return self::ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED;
                 }
             } elseif ($cliOptions['isServiceProductInformation'] && $this->verbose) {
                 $this->cliStyle->writeln('You need TopFeed plugin to update product information!');
@@ -214,7 +225,7 @@ class ImportCommand extends AbstractCommand
                         $this->cliStyle->error('Load product information failed!');
                     }
 
-                    return 7;
+                    return self::ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED;
                 }
             } elseif ($this->verbose) {
                 $this->cliStyle->writeln('You need TopFeed plugin to update product information!');
@@ -228,7 +239,7 @@ class ImportCommand extends AbstractCommand
                     $this->cliStyle->error('Set device synonyms failed!');
                 }
 
-                return 8;
+                return self::ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED;
             }
         }
 
@@ -240,7 +251,7 @@ class ImportCommand extends AbstractCommand
                         $this->cliStyle->error('Set device synonyms failed!');
                     }
 
-                    return 9;
+                    return self::ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED_2;
                 }
             } elseif ($this->verbose) {
                 $this->cliStyle->writeln('You need TopFeed plugin to create variated products!');
