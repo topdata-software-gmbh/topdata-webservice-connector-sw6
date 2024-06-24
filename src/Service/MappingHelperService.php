@@ -20,6 +20,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Command\ProductsCommand;
+use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Helper\CliStyle;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
@@ -848,7 +849,7 @@ class MappingHelperService
                     continue;
                 }
 
-                $code = $this->formCode($b->val);
+                $code = self::formCode($b->val);
                 if (isset($duplicates[$code])) {
                     continue;
                 }
@@ -948,7 +949,7 @@ class MappingHelperService
                         }
                     }
 
-                    $code = $brand['code'] . '_' . $s->id . '_' . $this->formCode($s->val);
+                    $code = $brand['code'] . '_' . $s->id . '_' . self::formCode($s->val);
 
                     if (!$serie) {
                         $dataCreate[] = [
@@ -1039,7 +1040,7 @@ class MappingHelperService
                         }
                     }
 
-                    $code = $brand['code'] . '_' . $s->id . '_' . $this->formCode($s->val);
+                    $code = $brand['code'] . '_' . $s->id . '_' . self::formCode($s->val);
 
                     if (!$type) {
                         $dataCreate[] = [
@@ -1162,7 +1163,7 @@ class MappingHelperService
                         continue;
                     }
 
-                    $code = $brandArr['code'] . '_' . $this->formCode($s->val);
+                    $code = $brandArr['code'] . '_' . self::formCode($s->val);
 
                     if (isset($duplicates[$code])) {
                         continue;
@@ -1416,7 +1417,7 @@ class MappingHelperService
                         continue;
                     }
 
-                    $code = $brand['code'] . '_' . $this->formCode($s->val);
+                    $code = $brand['code'] . '_' . self::formCode($s->val);
                     $device = $deviceRepository
                         ->search(
                             (new Criteria())
@@ -1614,12 +1615,12 @@ class MappingHelperService
                     continue;
                 }
 
-                $chunkedDeviceIdsToEnable = array_chunk($deviceIdsToEnable, 100);
+                $chunkedDeviceIdsToEnable = array_chunk($deviceIdsToEnable, BatchSizeConstants::ENABLE_DEVICES);
                 foreach ($chunkedDeviceIdsToEnable as $chunk) {
                     $sql = 'UPDATE topdata_device SET is_enabled = 1 WHERE (is_enabled = 0) AND (ws_id IN (' . implode(',', $chunk) . '))';
                     $cnt = $this->connection->executeStatement($sql);
                     $this->cliStyle->blue("Enabled $cnt devices");
-                    $this->activity();
+                    // $this->activity();
                 }
 
                 /* device_id, product_id, product_version_id, created_at */
@@ -1668,7 +1669,7 @@ class MappingHelperService
             ]);
 
             // ---- enable brands
-            $ArraybrandIds = array_chunk($enabledBrands, 200);
+            $ArraybrandIds = array_chunk($enabledBrands, BatchSizeConstants::ENABLE_BRANDS);
             foreach ($ArraybrandIds as $brandIds) {
                 $cnt = $this->connection->executeStatement('
                     UPDATE topdata_brand SET is_enabled = 1 WHERE id IN (' . implode(',', $brandIds) . ')
@@ -1678,7 +1679,7 @@ class MappingHelperService
             }
 
             // ---- enable series
-            $ArraySeriesIds = array_chunk($enabledSeries, 200);
+            $ArraySeriesIds = array_chunk($enabledSeries, BatchSizeConstants::ENABLE_SERIES);
             foreach ($ArraySeriesIds as $seriesIds) {
                 $cnt = $this->connection->executeStatement('
                     UPDATE topdata_series SET is_enabled = 1 WHERE id IN (' . implode(',', $seriesIds) . ')
@@ -1688,7 +1689,7 @@ class MappingHelperService
             }
 
             // ---- enable device types
-            $ArrayTypeIds = array_chunk($enabledTypes, 200);
+            $ArrayTypeIds = array_chunk($enabledTypes, BatchSizeConstants::ENABLE_DEVICE_TYPES);
             foreach ($ArrayTypeIds as $typeIds) {
                 $cnt = $this->connection->executeStatement('
                     UPDATE topdata_device_type SET is_enabled = 1 WHERE id IN (' . implode(',', $typeIds) . ')
@@ -1710,7 +1711,10 @@ class MappingHelperService
         return false;
     }
 
-    private function formCode($label)
+    /**
+     * 06/2024 made it static
+     */
+    private static function formCode(string $label): string
     {
         $replacement = [
             ' ' => '-',
