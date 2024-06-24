@@ -1076,6 +1076,9 @@ class MappingHelperService
         return false;
     }
 
+    /**
+     * this is called when --device or --device-only CLI options are set
+     */
     public function setDevices(): bool
     {
         try {
@@ -1088,6 +1091,7 @@ class MappingHelperService
             $limit = 5000;
             $SQLlogger = $this->connection->getConfiguration()->getSQLLogger();
             $this->connection->getConfiguration()->setSQLLogger(null);
+            $this->cliStyle->section("Devices");
             $this->activity("Devices begin (Chunk size is $limit devices)\n");
             $this->mem();
             $this->activity("\n");
@@ -1172,14 +1176,15 @@ class MappingHelperService
                         $deviceArr = $rez[0];
                         $deviceArr['id'] = bin2hex($deviceArr['id']);
                         // brand
-                        if(empty($deviceArr['brand_id'])) {
+                        if (empty($deviceArr['brand_id'])) {
                             ImportReport::incCounter('Device Without Brand Id');
                             $deviceArr['brand_id'] = 0x0; // or null?
                         } else {
                             ImportReport::incCounter('Device With Brand Id');
+                            $deviceArr['brand_id'] = bin2hex($deviceArr['brand_id']);
                         }
                         // type
-                        if(empty($deviceArr['type_id'])) {
+                        if (empty($deviceArr['type_id'])) {
                             ImportReport::incCounter('Device Without Type Id');
                             $deviceArr['type_id'] = 0x0; // or null?
                         } else {
@@ -1187,7 +1192,7 @@ class MappingHelperService
                             $deviceArr['type_id'] = bin2hex($deviceArr['type_id']);
                         }
                         // series
-                        if(empty($deviceArr['series_id'])) {
+                        if (empty($deviceArr['series_id'])) {
                             ImportReport::incCounter('Device Without Series Id');
                             $deviceArr['series_id'] = 0x0; // or null?
                         } else {
@@ -1303,13 +1308,19 @@ class MappingHelperService
             $duplicates = null;
             $this->activity("\n");
             $totalSecs = microtime(true) - $functionTimeStart;
-            $this->activity("Devices done: new $created, updated $updated, total time {$totalSecs} sec)\n");
+
+            $this->cliStyle->dumpDict([
+                'created'    => $created,
+                'updated'    => $updated,
+                'total time' => $totalSecs,
+            ], 'Devices Report');
+
             $this->connection->getConfiguration()->setSQLLogger($SQLlogger);
 
             return true;
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
-            $this->activity('Exception abgefangen: ' . $e->getMessage() . "\n");
+            $this->cliStyle->error('Exception abgefangen: ' . $e->getMessage());
         }
 
         return false;
@@ -1459,34 +1470,62 @@ class MappingHelperService
         return false;
     }
 
+
+    /**
+     * The setProducts() method in the MappingHelperService class is responsible for linking devices to products. Here's a step-by-step breakdown of what it does:
+     * It starts by disabling all devices, brands, series, and types in the database. This is done by setting the is_enabled field to 0 for each of these entities.
+     * It unlinks all products by deleting all entries in the topdata_device_to_product table.
+     * It retrieves all the product IDs from the topid_products array.
+     * It then chunks these product IDs into groups of 100 and for each chunk, it does the following:
+     * It makes a call to the remote server to get product data for the current chunk of product IDs.
+     * It processes the returned product data. For each product, if it has associated devices, it adds these devices to the deviceWS array.
+     * It then gets the device data for all the devices in the deviceWS array from the database.
+     * For each device, it checks if the device's brand, series, and type are enabled. If not, it adds them to the respective arrays (enabledBrands, enabledSeries, enabledTypes).
+     * It then checks if the device has associated products in the deviceWS array. If it does, it prepares data for inserting these associations into the topdata_device_to_product table.
+     * It then inserts these associations into the topdata_device_to_product table in chunks of 30.
+     * After all the associations have been inserted, it enables all the brands, series, and types that were added to the enabledBrands, enabledSeries, and enabledTypes arrays.
+     * Finally, it returns true if everything went well, or false if an exception was thrown at any point.
+     * This method is part of a larger process of syncing product and device data between a local database and a remote server. It ensures that the local database has up-to-date associations between products and the devices they are compatible with.
+     */
     public function setProducts(): bool
     {
         //        $this->connection->beginTransaction();
         try {
-            $this->activity('Devices to products linking begin' . "\n");
-            $this->activity('Disabling all devices, brands, series and types, unlinking products, caching products...');
+            $this->cliStyle->yellow('Devices to products linking begin');
+            $this->cliStyle->yellow('Disabling all devices, brands, series and types, unlinking products, caching products...');
             $this->lap(true);
-            $this->connection->createQueryBuilder()
+            $cntA = $this->connection->createQueryBuilder()
                 ->update('topdata_brand')
                 ->set('is_enabled', '0')
-                ->execute();
+                ->executeStatement();
 
-            $this->connection->createQueryBuilder()
+            $cntB = $this->connection->createQueryBuilder()
                 ->update('topdata_device')
                 ->set('is_enabled', '0')
-                ->execute();
+                ->executeStatement();
 
-            $this->connection->createQueryBuilder()
+            $cntC = $this->connection->createQueryBuilder()
                 ->update('topdata_series')
                 ->set('is_enabled', '0')
-                ->execute();
-            $this->connection->createQueryBuilder()
+                ->executeStatement();
+
+            $cntD = $this->connection->createQueryBuilder()
                 ->update('topdata_device_type')
                 ->set('is_enabled', '0')
-                ->execute();
-            $this->connection->createQueryBuilder()
+                ->executeStatement();
+
+            $cntE = $this->connection->createQueryBuilder()
                 ->delete('topdata_device_to_product')
-                ->execute();
+                ->executeStatement();
+
+            // ---- just info
+            $this->cliStyle->dumpDict([
+                'brands disabled'       => $cntA,
+                'devices disabled'      => $cntB,
+                'series disabled'       => $cntC,
+                'device types disabled' => $cntD,
+                'products unlinked'     => $cntE,
+            ]);
 
             $topid_products = $this->getTopids();
             $this->activity($this->lap() . "sec\n");
@@ -1547,9 +1586,9 @@ class MappingHelperService
 
                 $chunkedDeviceIdsToEnable = array_chunk($deviceIdsToEnable, 100);
                 foreach ($chunkedDeviceIdsToEnable as $chunk) {
-                    $this->connection->executeStatement('
-                        UPDATE topdata_device SET is_enabled = 1 WHERE (is_enabled = 0) AND (ws_id IN (' . implode(',', $chunk) . '))
-                    ');
+                    $sql = 'UPDATE topdata_device SET is_enabled = 1 WHERE (is_enabled = 0) AND (ws_id IN (' . implode(',', $chunk) . '))';
+                    $cnt = $this->connection->executeStatement($sql);
+                    $this->cliStyle->blue("Enabled $cnt devices");
                     $this->activity();
                 }
 
@@ -1590,29 +1629,41 @@ class MappingHelperService
                 $this->mem();
             }
 
-            $this->activity("\nActivating brands, series and device types...");
+            $this->cliStyle->yellow("Activating brands, series and device types...");
+            $this->cliStyle->dumpDict([
+                'enabledBrands' => count($enabledBrands),
+                'enabledSeries' => count($enabledSeries),
+                'enabledTypes'  => count($enabledTypes),
 
+            ]);
+
+            // ---- enable brands
             $ArraybrandIds = array_chunk($enabledBrands, 200);
             foreach ($ArraybrandIds as $brandIds) {
-                $this->connection->executeStatement('
+                $cnt = $this->connection->executeStatement('
                     UPDATE topdata_brand SET is_enabled = 1 WHERE id IN (' . implode(',', $brandIds) . ')
                 ');
+                $this->cliStyle->blue("Enabled $cnt brands");
                 $this->activity();
             }
 
+            // ---- enable series
             $ArraySeriesIds = array_chunk($enabledSeries, 200);
             foreach ($ArraySeriesIds as $seriesIds) {
-                $this->connection->executeStatement('
+                $cnt = $this->connection->executeStatement('
                     UPDATE topdata_series SET is_enabled = 1 WHERE id IN (' . implode(',', $seriesIds) . ')
                 ');
+                $this->cliStyle->blue("Enabled $cnt series");
                 $this->activity();
             }
 
+            // ---- enable device types
             $ArrayTypeIds = array_chunk($enabledTypes, 200);
             foreach ($ArrayTypeIds as $typeIds) {
-                $this->connection->executeStatement('
+                $cnt = $this->connection->executeStatement('
                     UPDATE topdata_device_type SET is_enabled = 1 WHERE id IN (' . implode(',', $typeIds) . ')
                 ');
+                $this->cliStyle->blue("Enabled $cnt types");
                 $this->activity();
             }
             $this->activity($this->lap() . "sec\n");
@@ -1623,7 +1674,7 @@ class MappingHelperService
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
             //            $this->connection->rollBack();
-            $this->activity('Exception: ' . $e->getMessage(), true);
+            $this->cliStyle->error('Exception: ' . $e->getMessage());
         }
 
         return false;
@@ -1728,6 +1779,9 @@ class MappingHelperService
         return $this->typesArray;
     }
 
+    /**
+     * helper method for logging stuff to stdout
+     */
     private function activity(string $str = '.', bool $newLine = false): void
     {
         if ($this->verbose) {
@@ -1738,11 +1792,17 @@ class MappingHelperService
         }
     }
 
+    /**
+     * logging helper
+     */
     private function mem(): void
     {
         $this->activity('[' . round(memory_get_usage(true) / 1024 / 1024) . 'Mb]');
     }
 
+    /**
+     * logging helper
+     */
     private function lap($start = false): string
     {
         if ($start) {
