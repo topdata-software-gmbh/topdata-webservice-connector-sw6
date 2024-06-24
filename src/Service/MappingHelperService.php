@@ -98,6 +98,15 @@ class MappingHelperService
     const OPTION_NAME_PRODUCT_COLOR_VARIANT     = 'productColorVariant';
     const OPTION_NAME_PRODUCT_CAPACITY_VARIANT  = 'productCapacityVariant';
 
+    const MAPPING_TYPE_PRODUCT_NUMBER_AS_WS_ID  = 'productNumberAsWsId';
+    const MAPPING_TYPE_DISTRIBUTOR_DEFAULT      = 'distributorDefault';
+    const MAPPING_TYPE_DISTRIBUTOR_CUSTOM       = 'distributorCustom';
+    const MAPPING_TYPE_DISTRIBUTOR_CUSTOM_FIELD = 'distributorCustomField';
+    const MAPPING_TYPE_DEFAULT                  = 'default';
+    const MAPPING_TYPE_CUSTOM                   = 'custom';
+    const MAPPING_TYPE_CUSTOM_FIELD             = 'customField';
+
+
     private array $productImportSettings = [];
     private float $microtime;
     private ?array $brandWsArray = null;
@@ -117,7 +126,7 @@ class MappingHelperService
      *  ].
      */
     private ?array $topidProducts = null;
-    private TopdataWebserviceClient $topDataApi;
+    private TopdataWebserviceClient $topdataWebserviceClient;
     private Connection $connection;
     private LoggerInterface $logger;
     private array $options = [];
@@ -188,7 +197,7 @@ class MappingHelperService
 
     public function setTopdataWebserviceClient(TopdataWebserviceClient $topDataApi): void
     {
-        $this->topDataApi = $topDataApi;
+        $this->topdataWebserviceClient = $topDataApi;
     }
 
     public function setVerbose(bool $verbose): void
@@ -196,6 +205,9 @@ class MappingHelperService
         $this->verbose = $verbose;
     }
 
+    /**
+     * an "option" can be either something from command line or a plugin setting
+     */
     public function setOption($name, $value)
     {
         $this->cliStyle->blue("option: $name = $value");
@@ -209,7 +221,7 @@ class MappingHelperService
         }
     }
 
-    public function getOption(string $name)
+    private function _getOption(string $name)
     {
         return (isset($this->options[$name])) ? $this->options[$name] : false;
     }
@@ -449,27 +461,32 @@ class MappingHelperService
         return $returnArray;
     }
 
-    private function getTopids($forceReload = false): array
+    /**
+     * it populates $this->topidProducts once, unless $forceReload is true
+     */
+    private function _fetchTopidProducts(bool $forceReload = false): array
     {
         if (null === $this->topidProducts || $forceReload) {
-            $ids = $this->connection->fetchAllAssociative('
-    SELECT 
-        topdata_to_product.top_data_id, 
-        LOWER(HEX(topdata_to_product.product_id)) as product_id, 
-        LOWER(HEX(topdata_to_product.product_version_id)) as product_version_id, 
-        LOWER(HEX(product.parent_id)) as parent_id 
-    FROM `topdata_to_product`, product 
-    WHERE topdata_to_product.product_id = product.id 
-        AND topdata_to_product.product_version_id = product.version_id 
-    ORDER BY topdata_to_product.top_data_id
+            $rows = $this->connection->fetchAllAssociative('
+                SELECT 
+                    topdata_to_product.top_data_id, 
+                    LOWER(HEX(topdata_to_product.product_id)) as product_id, 
+                    LOWER(HEX(topdata_to_product.product_version_id)) as product_version_id, 
+                    LOWER(HEX(product.parent_id)) as parent_id 
+                FROM `topdata_to_product`, product 
+                WHERE topdata_to_product.product_id = product.id 
+                    AND topdata_to_product.product_version_id = product.version_id 
+                ORDER BY topdata_to_product.top_data_id
             ');
 
+            $this->cliStyle->info('_fetchTopidProducts :: fetched ' . count($rows) . ' products');
+
             $this->topidProducts = [];
-            foreach ($ids as $id) {
-                $this->topidProducts[$id['top_data_id']][] = [
-                    'product_id'         => $id['product_id'],
-                    'product_version_id' => $id['product_version_id'],
-                    'parent_id'          => $id['parent_id'],
+            foreach ($rows as $row) {
+                $this->topidProducts[$row['top_data_id']][] = [
+                    'product_id'         => $row['product_id'],
+                    'product_version_id' => $row['product_version_id'],
+                    'parent_id'          => $row['parent_id'],
                 ];
             }
         }
@@ -499,15 +516,22 @@ class MappingHelperService
         return $query->execute()->fetchAllAssociative(\PDO::FETCH_KEY_PAIR);
     }
 
-    public function mapProducts()
+
+    /**
+     * This is executed if --mapping option is set
+     */
+    public function mapProducts(): bool
     {
+
+        $this->cliStyle->info('MappingHelperService::mapProducts() - using mapping type: ' . $this->_getOption(self::OPTION_NAME_MAPPING_TYPE));
+
         try {
             $this->connection->executeStatement('
                 TRUNCATE TABLE topdata_to_product;
             ');
             $dataInsert = [];
-            switch ($this->getOption(self::OPTION_NAME_MAPPING_TYPE)) {
-                case 'productNumberAsWsId':
+            switch ($this->_getOption(self::OPTION_NAME_MAPPING_TYPE)) {
+                case self::MAPPING_TYPE_PRODUCT_NUMBER_AS_WS_ID:
                     $artnos = $this->fixMultiArrayBinaryIds(
                         $this->getKeysByOrdernumber()
                     );
@@ -544,15 +568,16 @@ class MappingHelperService
                         $this->activity();
                     }
                     break;
-                case 'distributorDefault':
-                case 'distributorCustom':
-                case 'distributorCustomField':
-                    if ($this->getOption(self::OPTION_NAME_MAPPING_TYPE) == 'distributorCustom' && $this->getOption(self::OPTION_NAME_ATTRIBUTE_ORDERNUMBER) != '') {
+
+                case self::MAPPING_TYPE_DISTRIBUTOR_DEFAULT:
+                case self::MAPPING_TYPE_DISTRIBUTOR_CUSTOM:
+                case self::MAPPING_TYPE_DISTRIBUTOR_CUSTOM_FIELD:
+                    if ($this->_getOption(self::OPTION_NAME_MAPPING_TYPE) == self::MAPPING_TYPE_DISTRIBUTOR_CUSTOM && $this->_getOption(self::OPTION_NAME_ATTRIBUTE_ORDERNUMBER) != '') {
                         $artnos = $this->fixMultiArrayBinaryIds(
-                            $this->getKeysByOptionValueUnique($this->getOption(self::OPTION_NAME_ATTRIBUTE_ORDERNUMBER))
+                            $this->getKeysByOptionValueUnique($this->_getOption(self::OPTION_NAME_ATTRIBUTE_ORDERNUMBER))
                         );
-                    } elseif ($this->getOption(self::OPTION_NAME_MAPPING_TYPE) == 'distributorCustomField' && $this->getOption(self::OPTION_NAME_ATTRIBUTE_ORDERNUMBER) != '') {
-                        $artnos = $this->getKeysByCustomFieldUnique($this->getOption(self::OPTION_NAME_ATTRIBUTE_ORDERNUMBER));
+                    } elseif ($this->_getOption(self::OPTION_NAME_MAPPING_TYPE) == self::MAPPING_TYPE_DISTRIBUTOR_CUSTOM_FIELD && $this->_getOption(self::OPTION_NAME_ATTRIBUTE_ORDERNUMBER) != '') {
+                        $artnos = $this->getKeysByCustomFieldUnique($this->_getOption(self::OPTION_NAME_ATTRIBUTE_ORDERNUMBER));
                     } else {
                         $artnos = $this->fixMultiArrayBinaryIds(
                             $this->getKeysByOrdernumber()
@@ -564,9 +589,9 @@ class MappingHelperService
                     }
 
                     $stored = 0;
-                    $this->activity("\n" . count($artnos) . " - products to ckeck\n");
+                    $this->cliStyle->info(count($artnos) . " products to check ...");
                     for ($i = 1; ; $i++) {
-                        $all_artnr = $this->topDataApi->matchMyDistributer(['page' => $i]);
+                        $all_artnr = $this->topdataWebserviceClient->matchMyDistributer(['page' => $i]);
                         if (!isset($all_artnr->page->available_pages)) {
                             throw new \Exception('distributor webservice no pages');
                         }
@@ -614,29 +639,29 @@ class MappingHelperService
                     unset($artnos);
 
                     break;
-                case 'default':
-                case 'custom':
-                case 'customField':
+                case self::MAPPING_TYPE_DEFAULT:
+                case self::MAPPING_TYPE_CUSTOM:
+                case self::MAPPING_TYPE_CUSTOM_FIELD:
                 default:
                     $oems = [];
                     $eans = [];
-                    if ($this->getOption(self::OPTION_NAME_MAPPING_TYPE) == 'custom') {
-                        if ($this->getOption(self::OPTION_NAME_ATTRIBUTE_OEM) != '') {
+                    if ($this->_getOption(self::OPTION_NAME_MAPPING_TYPE) == self::MAPPING_TYPE_CUSTOM) {
+                        if ($this->_getOption(self::OPTION_NAME_ATTRIBUTE_OEM) != '') {
                             $oems = $this->fixArrayBinaryIds(
-                                $this->getKeysByOptionValue($this->getOption(self::OPTION_NAME_ATTRIBUTE_OEM), 'manufacturer_number')
+                                $this->getKeysByOptionValue($this->_getOption(self::OPTION_NAME_ATTRIBUTE_OEM), 'manufacturer_number')
                             );
                         }
-                        if ($this->getOption(self::OPTION_NAME_ATTRIBUTE_EAN) != '') {
+                        if ($this->_getOption(self::OPTION_NAME_ATTRIBUTE_EAN) != '') {
                             $eans = $this->fixArrayBinaryIds(
-                                $this->getKeysByOptionValue($this->getOption(self::OPTION_NAME_ATTRIBUTE_EAN), 'ean')
+                                $this->getKeysByOptionValue($this->_getOption(self::OPTION_NAME_ATTRIBUTE_EAN), 'ean')
                             );
                         }
-                    } elseif ($this->getOption(self::OPTION_NAME_MAPPING_TYPE) == 'customField') {
-                        if ($this->getOption(self::OPTION_NAME_ATTRIBUTE_OEM) != '') {
-                            $oems = $this->getKeysByCustomFieldUnique($this->getOption(self::OPTION_NAME_ATTRIBUTE_OEM), 'manufacturer_number');
+                    } elseif ($this->_getOption(self::OPTION_NAME_MAPPING_TYPE) == self::MAPPING_TYPE_CUSTOM_FIELD) {
+                        if ($this->_getOption(self::OPTION_NAME_ATTRIBUTE_OEM) != '') {
+                            $oems = $this->getKeysByCustomFieldUnique($this->_getOption(self::OPTION_NAME_ATTRIBUTE_OEM), 'manufacturer_number');
                         }
-                        if ($this->getOption(self::OPTION_NAME_ATTRIBUTE_EAN) != '') {
-                            $eans = $this->getKeysByCustomFieldUnique($this->getOption(self::OPTION_NAME_ATTRIBUTE_EAN), 'ean');
+                        if ($this->_getOption(self::OPTION_NAME_ATTRIBUTE_EAN) != '') {
+                            $eans = $this->getKeysByCustomFieldUnique($this->_getOption(self::OPTION_NAME_ATTRIBUTE_EAN), 'ean');
                         }
                     } else {
                         $oems = $this->fixArrayBinaryIds($this->getKeysBySuppliernumber());
@@ -667,7 +692,7 @@ class MappingHelperService
                     $setted = [];
                     if (count($eanMap) > 0) {
                         for ($i = 1; ; $i++) {
-                            $all_artnr = $this->topDataApi->matchMyEANs(['page' => $i]);
+                            $all_artnr = $this->topdataWebserviceClient->matchMyEANs(['page' => $i]);
                             if (!isset($all_artnr->page->available_pages)) {
                                 throw new \Exception('ean webservice no pages');
                             }
@@ -707,7 +732,7 @@ class MappingHelperService
 
                     if (count($oemMap) > 0) {
                         for ($i = 1; ; $i++) {
-                            $all_artnr = $this->topDataApi->matchMyOems(['page' => $i]);
+                            $all_artnr = $this->topdataWebserviceClient->matchMyOems(['page' => $i]);
                             if (!isset($all_artnr->page->available_pages)) {
                                 throw new \Exception('oem webservice no pages');
                             }
@@ -745,7 +770,7 @@ class MappingHelperService
                         }
 
                         for ($i = 1; ; $i++) {
-                            $all_artnr = $this->topDataApi->matchMyPcds(['page' => $i]);
+                            $all_artnr = $this->topdataWebserviceClient->matchMyPcds(['page' => $i]);
                             if (!isset($all_artnr->page->available_pages)) {
                                 throw new \Exception('pcd webservice no pages');
                             }
@@ -809,7 +834,7 @@ class MappingHelperService
             $this->cliStyle->section("\n\nBrands");
             $this->activity("Getting data from remote server...\n");
             $this->lap(true);
-            $brands = $this->topDataApi->getBrands();
+            $brands = $this->topdataWebserviceClient->getBrands();
             $this->activity('Got ' . count($brands->data) . " brands from remote server\n");
             ImportReport::setCounter('Brands fetched', count($brands->data));
             $brandRepository = $this->brandRepository;
@@ -900,7 +925,7 @@ class MappingHelperService
             $this->cliStyle->section("\n\nSeries");
             $this->activity("Getting data from remote server...\n");
             $this->lap(true);
-            $series = $this->topDataApi->getModelSeriesByBrandId();
+            $series = $this->topdataWebserviceClient->getModelSeriesByBrandId();
             $this->activity('Got ' . count($series->data) . " records from remote server\n");
             ImportReport::setCounter('Series fetched', count($series->data));
             $seriesRepository = $this->seriesRepository;
@@ -992,7 +1017,7 @@ class MappingHelperService
             $this->cliStyle->section("\n\nDevice type");
             $this->activity("Getting data from remote server...\n");
             $this->lap(true);
-            $types = $this->topDataApi->getModelTypeByBrandId();
+            $types = $this->topdataWebserviceClient->getModelTypeByBrandId();
             //            $this->activity("Got ".count($types->data)." records.\n");
             ImportReport::setCounter('DeviceTypes fetched', count($types->data));
             $typeRepository = $this->typeRepository;
@@ -1097,8 +1122,8 @@ class MappingHelperService
             $this->activity("\n");
             $functionTimeStart = microtime(true);
             $chunkNumber = 0;
-            if ((int)$this->getOption(self::OPTION_NAME_START)) {
-                $chunkNumber = (int)$this->getOption(self::OPTION_NAME_START) - 1;
+            if ((int)$this->_getOption(self::OPTION_NAME_START)) {
+                $chunkNumber = (int)$this->_getOption(self::OPTION_NAME_START) - 1;
                 $start = $chunkNumber * $limit;
             }
             $repeat = true;
@@ -1111,12 +1136,12 @@ class MappingHelperService
                     $this->activity($this->lap() . 'sec');
                 }
                 $chunkNumber++;
-                if ((int)$this->getOption(self::OPTION_NAME_END) && ($chunkNumber > (int)$this->getOption(self::OPTION_NAME_END))) {
+                if ((int)$this->_getOption(self::OPTION_NAME_END) && ($chunkNumber > (int)$this->_getOption(self::OPTION_NAME_END))) {
                     break;
                 }
                 $this->activity("\nGetting data chunk $chunkNumber from remote server...");
                 ImportReport::incCounter('Device Chunks');
-                $models = $this->topDataApi->getModels($limit, $start);
+                $models = $this->topdataWebserviceClient->getModels($limit, $start);
                 $this->activity($this->lap() . "sec\n");
                 if (!isset($models->data) || count($models->data) == 0) {
                     $repeat = false;
@@ -1349,20 +1374,20 @@ class MappingHelperService
             $this->activity("Chunk size is $limit devices\n");
             $start = 0;
             $chunkNumber = 0;
-            if ((int)$this->getOption(self::OPTION_NAME_START)) {
-                $chunkNumber = (int)$this->getOption(self::OPTION_NAME_START) - 1;
+            if ((int)$this->_getOption(self::OPTION_NAME_START)) {
+                $chunkNumber = (int)$this->_getOption(self::OPTION_NAME_START) - 1;
                 $start = $chunkNumber * $limit;
             }
             $repeat = true;
             $this->lap(true);
             while ($repeat) {
                 $chunkNumber++;
-                if ((int)$this->getOption(self::OPTION_NAME_END) && ($chunkNumber > (int)$this->getOption(self::OPTION_NAME_END))) {
+                if ((int)$this->_getOption(self::OPTION_NAME_END) && ($chunkNumber > (int)$this->_getOption(self::OPTION_NAME_END))) {
                     break;
                 }
                 $this->activity("\nGetting data chunk $chunkNumber from remote server...");
                 ImportReport::incCounter('Device Media Chunks');
-                $models = $this->topDataApi->getModels($limit, $start);
+                $models = $this->topdataWebserviceClient->getModels($limit, $start);
                 $this->activity($this->lap() . 'sec. ');
                 $this->mem();
                 $this->activity("\n");
@@ -1520,23 +1545,28 @@ class MappingHelperService
 
             // ---- just info
             $this->cliStyle->dumpDict([
-                'brands disabled'       => $cntA,
-                'devices disabled'      => $cntB,
-                'series disabled'       => $cntC,
-                'device types disabled' => $cntD,
-                'products unlinked'     => $cntE,
+                'disabled brands '            => $cntA,
+                'disabled devices '           => $cntB,
+                'disabled series '            => $cntC,
+                'disabled device types '      => $cntD,
+                'unlinked device-to-product ' => $cntE,
             ]);
 
-            $topid_products = $this->getTopids();
+            $topidProducts = $this->_fetchTopidProducts();
+            if(empty($topidProducts)) {
+                // Select how you want our articles to be linked to our product database (mapping) *1
+                $this->cliStyle->warning('No mapped products found in database. Did you set the correct mapping in plugin config?');
+            }
+
             $this->activity($this->lap() . "sec\n");
             $enabledBrands = [];
             $enabledSeries = [];
             $enabledTypes = [];
 
-            $topids = array_chunk(array_keys($topid_products), 100);
+            $topids = array_chunk(array_keys($topidProducts), 100);
             foreach ($topids as $k => $prs) {
                 $this->activity("\nGetting data from remote server part " . ($k + 1) . '/' . count($topids) . '...');
-                $products = $this->topDataApi->myProductList([
+                $products = $this->topdataWebserviceClient->myProductList([
                     'products' => implode(',', $prs),
                     'filter'   => 'product_application_in',
                 ]);
@@ -1549,12 +1579,12 @@ class MappingHelperService
                 $this->activity("\nProcessing data...");
                 $deviceWS = [];
                 foreach ($products->products as $product) {
-                    if (!isset($topid_products[$product->products_id])) {
+                    if (!isset($topidProducts[$product->products_id])) {
                         continue;
                     }
                     if (isset($product->product_application_in->products) && count($product->product_application_in->products)) {
                         foreach ($product->product_application_in->products as $tid) {
-                            foreach ($topid_products[$product->products_id] as $tps) {
+                            foreach ($topidProducts[$product->products_id] as $tps) {
                                 $deviceWS[$tid][] = $tps;
                             }
                         }
@@ -1961,12 +1991,12 @@ class MappingHelperService
 
         if (
             !$onlyMedia
-            && $this->getOption(self::OPTION_NAME_PRODUCT_WAREGROUPS)
+            && $this->_getOption(self::OPTION_NAME_PRODUCT_WAREGROUPS)
             && isset($remoteProductData->waregroups)
         ) {
             foreach ($remoteProductData->waregroups as $waregroupObject) {
                 $categoriesChain = json_decode(json_encode($waregroupObject->waregroup_tree), true);
-                $categoryId = $this->entitiesHelper->getCategoryId($categoriesChain, (string)$this->getOption(self::OPTION_NAME_PRODUCT_WAREGROUPS_PARENT));
+                $categoryId = $this->entitiesHelper->getCategoryId($categoriesChain, (string)$this->_getOption(self::OPTION_NAME_PRODUCT_WAREGROUPS_PARENT));
                 if (!$categoryId) {
                     break;
                 }
@@ -1990,7 +2020,7 @@ class MappingHelperService
     private function findRelatedProducts($remoteProductData): array
     {
         $relatedProducts = [];
-        $topid_products = $this->getTopids();
+        $topid_products = $this->_fetchTopidProducts();
         if (isset($remoteProductData->product_accessories->products) && count($remoteProductData->product_accessories->products)) {
             foreach ($remoteProductData->product_accessories->products as $tid) {
                 if (!isset($topid_products[$tid])) {
@@ -2006,7 +2036,7 @@ class MappingHelperService
     private function findBundledProducts($remoteProductData): array
     {
         $bundledProducts = [];
-        $topid_products = $this->getTopids();
+        $topid_products = $this->_fetchTopidProducts();
         if (isset($remoteProductData->bundle_content->products) && count($remoteProductData->bundle_content->products)) {
             foreach ($remoteProductData->bundle_content->products as $tid) {
                 if (!isset($topid_products[$tid->products_id])) {
@@ -2022,7 +2052,7 @@ class MappingHelperService
     private function findAlternateProducts($remoteProductData): array
     {
         $alternateProducts = [];
-        $topid_products = $this->getTopids();
+        $topid_products = $this->_fetchTopidProducts();
         if (isset($remoteProductData->product_alternates->products) && count($remoteProductData->product_alternates->products)) {
             foreach ($remoteProductData->product_alternates->products as $tid) {
                 if (!isset($topid_products[$tid])) {
@@ -2038,7 +2068,7 @@ class MappingHelperService
     private function findSimilarProducts($remoteProductData): array
     {
         $similarProducts = [];
-        $topid_products = $this->getTopids();
+        $topid_products = $this->_fetchTopidProducts();
 
         if (isset($remoteProductData->product_same_accessories->products) && count($remoteProductData->product_same_accessories->products)) {
             foreach ($remoteProductData->product_same_accessories->products as $tid) {
@@ -2073,7 +2103,7 @@ class MappingHelperService
     private function findColorVariantProducts($remoteProductData): array
     {
         $linkedProducts = [];
-        $topid_products = $this->getTopids();
+        $topid_products = $this->_fetchTopidProducts();
         if (isset($remoteProductData->product_special_variants->color) && count($remoteProductData->product_special_variants->color)) {
             foreach ($remoteProductData->product_special_variants->color as $tid) {
                 if (!isset($topid_products[$tid])) {
@@ -2089,7 +2119,7 @@ class MappingHelperService
     private function findCapacityVariantProducts($remoteProductData): array
     {
         $linkedProducts = [];
-        $topid_products = $this->getTopids();
+        $topid_products = $this->_fetchTopidProducts();
         if (isset($remoteProductData->product_special_variants->capacity) && count($remoteProductData->product_special_variants->capacity)) {
             foreach ($remoteProductData->product_special_variants->capacity as $tid) {
                 if (!isset($topid_products[$tid])) {
@@ -2105,7 +2135,7 @@ class MappingHelperService
     private function findVariantProducts($remoteProductData): array
     {
         $products = [];
-        $topid_products = $this->getTopids();
+        $topid_products = $this->_fetchTopidProducts();
 
         if (isset($remoteProductData->product_variants->products) && count($remoteProductData->product_variants->products)) {
             foreach ($remoteProductData->product_variants->products as $rprod) {
@@ -2130,7 +2160,7 @@ class MappingHelperService
         } else {
             $this->cliStyle->section("\n\nProduct information");
         }
-        $topid_products = $this->getTopids(true);
+        $topid_products = $this->_fetchTopidProducts(true);
         $productDataUpdate = [];
         $productDataUpdateCovers = [];
         $productDataDeleteDuplicateMedia = [];
@@ -2140,16 +2170,16 @@ class MappingHelperService
         $topids = array_chunk(array_keys($topid_products), $chunkSize);
         $this->lap(true);
         foreach ($topids as $k => $prs) {
-            if ($this->getOption(self::OPTION_NAME_START) && ($k + 1 < $this->getOption(self::OPTION_NAME_START))) {
+            if ($this->_getOption(self::OPTION_NAME_START) && ($k + 1 < $this->_getOption(self::OPTION_NAME_START))) {
                 continue;
             }
 
-            if ($this->getOption(self::OPTION_NAME_END) && ($k + 1 > $this->getOption(self::OPTION_NAME_END))) {
+            if ($this->_getOption(self::OPTION_NAME_END) && ($k + 1 > $this->_getOption(self::OPTION_NAME_END))) {
                 break;
             }
 
             $this->activity('Getting data from remote server part ' . ($k + 1) . '/' . count($topids) . ' (' . count($prs) . ' products)...');
-            $products = $this->topDataApi->myProductList([
+            $products = $this->topdataWebserviceClient->myProductList([
                 'products' => implode(',', $prs),
                 'filter'   => 'all',
             ]);
@@ -2303,8 +2333,8 @@ class MappingHelperService
     private function unlinkCategories(array $productIds): void
     {
         if (!count($productIds)
-            || !$this->getOption(self::OPTION_NAME_PRODUCT_WAREGROUPS)
-            || !$this->getOption(self::OPTION_NAME_PRODUCT_WAREGROUPS_DELETE)) {
+            || !$this->_getOption(self::OPTION_NAME_PRODUCT_WAREGROUPS)
+            || !$this->_getOption(self::OPTION_NAME_PRODUCT_WAREGROUPS_DELETE)) {
             return;
         }
 
@@ -2432,7 +2462,7 @@ class MappingHelperService
             return $this->getProductExtraOption($this->mapProductOption($optionName), $productId);
         }
 
-        return $this->getOption($optionName) ? true : false;
+        return $this->_getOption($optionName) ? true : false;
     }
 
     private function filterIdsByConfig(string $optionName, array $productIds): array
@@ -2691,16 +2721,16 @@ class MappingHelperService
         //        return true;
 
         foreach ($chunks as $k => $prs) {
-            if ($this->getOption(self::OPTION_NAME_START) && ($k + 1 < $this->getOption(self::OPTION_NAME_START))) {
+            if ($this->_getOption(self::OPTION_NAME_START) && ($k + 1 < $this->_getOption(self::OPTION_NAME_START))) {
                 continue;
             }
 
-            if ($this->getOption(self::OPTION_NAME_END) && ($k + 1 > $this->getOption(self::OPTION_NAME_END))) {
+            if ($this->_getOption(self::OPTION_NAME_END) && ($k + 1 > $this->_getOption(self::OPTION_NAME_END))) {
                 break;
             }
 
             $this->activity('Getting data from remote server part ' . ($k + 1) . '/' . count($chunks) . '...');
-            $devices = $this->topDataApi->myProductList([
+            $devices = $this->topdataWebserviceClient->myProductList([
                 'products' => implode(',', array_keys($prs)),
                 'filter'   => 'all',
             ]);
@@ -3042,11 +3072,11 @@ SQL;
 
         $invalidProd = true;
         for ($i = 0; $i < count($groups); $i++) {
-            if ($this->getOption(self::OPTION_NAME_START) && ($i + 1 < $this->getOption(self::OPTION_NAME_START))) {
+            if ($this->_getOption(self::OPTION_NAME_START) && ($i + 1 < $this->_getOption(self::OPTION_NAME_START))) {
                 continue;
             }
 
-            if ($this->getOption(self::OPTION_NAME_END) && ($i + 1 > $this->getOption(self::OPTION_NAME_END))) {
+            if ($this->_getOption(self::OPTION_NAME_END) && ($i + 1 > $this->_getOption(self::OPTION_NAME_END))) {
                 break;
             }
 

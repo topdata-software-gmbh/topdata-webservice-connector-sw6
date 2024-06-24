@@ -131,7 +131,7 @@ class ImportCommand extends AbstractCommand
             }
         }
 
-        //mapping
+        // ---- mapping
         if ($option['isServiceAll'] || $option['isServiceMapping']) {
 
             $this->cliStyle->section('Mapping products');
@@ -145,7 +145,7 @@ class ImportCommand extends AbstractCommand
             }
         }
 
-        //set printer infos
+        // ---- set printer infos
         if ($option['isServiceAll'] || $option['isServiceDevice']) {
             if (
                 !$mappingHelperService->setBrands()

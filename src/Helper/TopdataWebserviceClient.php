@@ -215,6 +215,7 @@ class TopdataWebserviceClient
         }
         $p[] = $this->getParams();
         $url = $this->url . '/match/distributor?' . implode('&', $p);
+echo "---- $url\n";
 
         return $this->getCURLResponse($url);
     }
