@@ -180,6 +180,7 @@ class MappingHelperService
     {
         $this->verbose = $verbose;
         $this->progressLoggingService->setVerbose($verbose);
+        $this->productMappingService->setVerbose($verbose);
     }
 
 

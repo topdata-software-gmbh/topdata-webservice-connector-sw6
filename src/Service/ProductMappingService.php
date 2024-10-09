@@ -17,8 +17,7 @@ use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
  */
 class ProductMappingService
 {
-
-    private bool $verbose = false;
+    private bool $verbose;
     private Context $context;
     private CliStyle $cliStyle;
     private TopdataWebserviceClient $topdataWebserviceClient;
@@ -39,297 +38,28 @@ class ProductMappingService
 
     public function mapProducts(): bool
     {
-        $this->cliStyle->info('MappingHelperService::mapProducts() - using mapping type: ' . $this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE));
+        $this->cliStyle->info('ProductMappingService::mapProducts() - using mapping type: ' . $this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE));
 
         try {
             $this->connection->executeStatement('
                 TRUNCATE TABLE topdata_to_product;
             ');
-            $dataInsert = [];
             switch ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE)) {
                 case MappingTypeConstants::MAPPING_TYPE_PRODUCT_NUMBER_AS_WS_ID:
-                    $artnos = $this->fixMultiArrayBinaryIds(
-                        $this->getKeysByOrdernumber()
-                    );
-                    $currentDateTime = date('Y-m-d H:i:s');
-                    foreach ($artnos as $wsid => $prods) {
-                        foreach ($prods as $prodid) {
-                            if (ctype_digit((string)$wsid)) {
-                                $dataInsert[] = '(' .
-                                    '0x' . Uuid::randomHex() . ',' .
-                                    "$wsid," .
-                                    "0x{$prodid['id']}," .
-                                    "0x{$prodid['version_id']}," .
-                                    "'$currentDateTime'" .
-                                    ')';
-                            }
-                            if (count($dataInsert) > 99) {
-                                $this->connection->executeStatement('
-                                INSERT INTO topdata_to_product 
-                                (id, top_data_id, product_id, product_version_id, created_at) 
-                                VALUES ' . implode(',', $dataInsert) . '
-                            ');
-                                $dataInsert = [];
-                                $this->progressLoggingService->activity();
-                            }
-                        }
-                    }
-                    if (count($dataInsert)) {
-                        $this->connection->executeStatement('
-                            INSERT INTO topdata_to_product 
-                            (id, top_data_id, product_id, product_version_id, created_at) 
-                            VALUES ' . implode(',', $dataInsert) . '
-                        ');
-                        $dataInsert = [];
-                        $this->progressLoggingService->activity();
-                    }
+                    $this->mapProductNumberAsWsId();
                     break;
 
                 case MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_DEFAULT:
                 case MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_CUSTOM:
                 case MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_CUSTOM_FIELD:
-                    if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_CUSTOM && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
-                        $artnos = $this->fixMultiArrayBinaryIds(
-                            $this->getKeysByOptionValueUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER))
-                        );
-                    } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_CUSTOM_FIELD && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
-                        $artnos = $this->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER));
-                    } else {
-                        $artnos = $this->fixMultiArrayBinaryIds(
-                            $this->getKeysByOrdernumber()
-                        );
-                    }
-
-                    if (count($artnos) == 0) {
-                        throw new \Exception('distributor mapping 0 products found');
-                    }
-
-                    $stored = 0;
-                    $this->cliStyle->info(count($artnos) . " products to check ...");
-                    for ($i = 1; ; $i++) {
-                        $all_artnr = $this->topdataWebserviceClient->matchMyDistributer(['page' => $i]);
-                        if (!isset($all_artnr->page->available_pages)) {
-                            throw new \Exception('distributor webservice no pages');
-                        }
-                        $available_pages = $all_artnr->page->available_pages;
-                        foreach ($all_artnr->match as $prod) {
-                            foreach ($prod->distributors as $distri) {
-                                //if((int)$s['distributor_id'] != (int)$distri->distributor_id)
-                                //    continue;
-                                foreach ($distri->artnrs as $artnr) {
-                                    $key = (string)$artnr;
-                                    if (isset($artnos[$key])) {
-                                        foreach ($artnos[$key] as $artnosValue) {
-                                            $stored++;
-                                            if (($stored % 50) == 0) {
-                                                $this->progressLoggingService->activity();
-                                            }
-                                            $dataInsert[] = [
-                                                'topDataId'        => $prod->products_id,
-                                                'productId'        => $artnosValue['id'],
-                                                'productVersionId' => $artnosValue['version_id'],
-                                            ];
-                                            if (count($dataInsert) > 500) {
-                                                $this->topdataToProductRepository->create($dataInsert, $this->context);
-                                                $dataInsert = [];
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if ($this->verbose) {
-                            $this->progressLoggingService->activity("\ndistributor $i/$available_pages");
-                            $this->progressLoggingService->mem();
-                            $this->progressLoggingService->activity("\n");
-                        }
-                        if ($i >= $available_pages) {
-                            break;
-                        }
-                    }
-                    if (count($dataInsert) > 0) {
-                        $this->topdataToProductRepository->create($dataInsert, $this->context);
-                        $dataInsert = [];
-                    }
-                    $this->progressLoggingService->activity("\n" . $stored . " - stored topdata products\n");
-                    unset($artnos);
-
+                    $this->mapDistributor();
                     break;
+
                 case MappingTypeConstants::MAPPING_TYPE_DEFAULT:
                 case MappingTypeConstants::MAPPING_TYPE_CUSTOM:
                 case MappingTypeConstants::MAPPING_TYPE_CUSTOM_FIELD:
                 default:
-                    $oems = [];
-                    $eans = [];
-                    if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_CUSTOM) {
-                        if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
-                            $oems = $this->fixArrayBinaryIds(
-                                $this->getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number')
-                            );
-                        }
-                        if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN) != '') {
-                            $eans = $this->fixArrayBinaryIds(
-                                $this->getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean')
-                            );
-                        }
-                    } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_CUSTOM_FIELD) {
-                        if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
-                            $oems = $this->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number');
-                        }
-                        if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN) != '') {
-                            $eans = $this->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean');
-                        }
-                    } else {
-                        $oems = $this->fixArrayBinaryIds($this->getKeysBySuppliernumber());
-                        $eans = $this->fixArrayBinaryIds($this->getKeysByEan());
-                    }
-
-                    $oemMap = [];
-                    foreach ($oems as $oem) {
-                        $oem['manufacturer_number'] = strtolower(ltrim(trim($oem['manufacturer_number']), '0'));
-                        $oemMap[(string)$oem['manufacturer_number']][$oem['id'] . '-' . $oem['version_id']] = [
-                            'id'         => $oem['id'],
-                            'version_id' => $oem['version_id'],
-                        ];
-                    }
-                    unset($oems);
-
-                    $eanMap = [];
-                    foreach ($eans as $ean) {
-                        $ean['ean'] = preg_replace('/[^0-9]/', '', $ean['ean']);
-                        $ean['ean'] = ltrim(trim($ean['ean']), '0');
-                        $eanMap[(string)$ean['ean']][$ean['id'] . '-' . $ean['version_id']] = [
-                            'id'         => $ean['id'],
-                            'version_id' => $ean['version_id'],
-                        ];
-                    }
-                    unset($eans);
-
-                    $setted = [];
-                    if (count($eanMap) > 0) {
-                        for ($i = 1; ; $i++) {
-                            $all_artnr = $this->topdataWebserviceClient->matchMyEANs(['page' => $i]);
-                            if (!isset($all_artnr->page->available_pages)) {
-                                throw new \Exception('ean webservice no pages');
-                            }
-                            $available_pages = $all_artnr->page->available_pages;
-                            foreach ($all_artnr->match as $prod) {
-                                foreach ($prod->values as $ean) {
-                                    $ean = (string)$ean;
-                                    $ean = ltrim(trim($ean), '0');
-                                    if (isset($eanMap[$ean])) {
-                                        foreach ($eanMap[$ean] as $key => $product) {
-                                            if (isset($setted[$key])) {
-                                                continue;
-                                            }
-
-                                            $dataInsert[] = [
-                                                'topDataId'        => $prod->products_id,
-                                                'productId'        => $product['id'],
-                                                'productVersionId' => $product['version_id'],
-                                            ];
-                                            if (count($dataInsert) > 500) {
-                                                $this->topdataToProductRepository->create($dataInsert, $this->context);
-                                                $dataInsert = [];
-                                            }
-                                            $setted[$key] = true;
-                                        }
-                                    }
-                                }
-                            }
-                            if ($this->verbose) {
-                                echo 'ean page' . $i . '/' . $available_pages . "\n";
-                            }
-                            if ($i >= $available_pages) {
-                                break;
-                            }
-                        }
-                    }
-
-                    if (count($oemMap) > 0) {
-                        for ($i = 1; ; $i++) {
-                            $all_artnr = $this->topdataWebserviceClient->matchMyOems(['page' => $i]);
-                            if (!isset($all_artnr->page->available_pages)) {
-                                throw new \Exception('oem webservice no pages');
-                            }
-                            $available_pages = $all_artnr->page->available_pages;
-                            foreach ($all_artnr->match as $prod) {
-                                foreach ($prod->values as $oem) {
-                                    $oem = (string)$oem;
-                                    $oem = strtolower($oem);
-                                    if (isset($oemMap[$oem])) {
-                                        foreach ($oemMap[$oem] as $key => $product) {
-                                            if (isset($setted[$key])) {
-                                                continue;
-                                            }
-                                            $dataInsert[] = [
-                                                'topDataId'        => $prod->products_id,
-                                                'productId'        => $product['id'],
-                                                'productVersionId' => $product['version_id'],
-                                            ];
-                                            if (count($dataInsert) > 500) {
-                                                $this->topdataToProductRepository->create($dataInsert, $this->context);
-                                                $dataInsert = [];
-                                            }
-
-                                            $setted[$key] = true;
-                                        }
-                                    }
-                                }
-                            }
-                            if ($this->verbose) {
-                                echo 'oem page ' . $i . '/' . $available_pages . "\n";
-                            }
-                            if ($i >= $available_pages) {
-                                break;
-                            }
-                        }
-
-                        for ($i = 1; ; $i++) {
-                            $all_artnr = $this->topdataWebserviceClient->matchMyPcds(['page' => $i]);
-                            if (!isset($all_artnr->page->available_pages)) {
-                                throw new \Exception('pcd webservice no pages');
-                            }
-                            $available_pages = $all_artnr->page->available_pages;
-                            foreach ($all_artnr->match as $prod) {
-                                foreach ($prod->values as $oem) {
-                                    $oem = (string)$oem;
-                                    $oem = strtolower($oem);
-                                    if (isset($oemMap[$oem])) {
-                                        foreach ($oemMap[$oem] as $key => $product) {
-                                            if (isset($setted[$key])) {
-                                                continue;
-                                            }
-                                            $dataInsert[] = [
-                                                'topDataId'        => $prod->products_id,
-                                                'productId'        => $product['id'],
-                                                'productVersionId' => $product['version_id'],
-                                            ];
-                                            if (count($dataInsert) > 500) {
-                                                $this->topdataToProductRepository->create($dataInsert, $this->context);
-                                                $dataInsert = [];
-                                            }
-
-                                            $setted[$key] = true;
-                                        }
-                                    }
-                                }
-                            }
-                            if ($this->verbose) {
-                                echo 'pcd page ' . $i . '/' . $available_pages . "\n";
-                            }
-                            if ($i >= $available_pages) {
-                                break;
-                            }
-                        }
-                    }
-                    if (count($dataInsert) > 0) {
-                        $this->topdataToProductRepository->create($dataInsert, $this->context);
-                        $dataInsert = [];
-                    }
-                    unset($setted);
-                    unset($oemMap);
-                    unset($eanMap);
+                    $this->mapDefault();
                     break;
             }
 
@@ -342,7 +72,309 @@ class ProductMappingService
         }
 
         return false;
+    }
 
+    private function mapProductNumberAsWsId(): void
+    {
+        $dataInsert = [];
+
+        $artnos = $this->fixMultiArrayBinaryIds(
+            $this->getKeysByOrdernumber()
+        );
+        $currentDateTime = date('Y-m-d H:i:s');
+        foreach ($artnos as $wsid => $prods) {
+            foreach ($prods as $prodid) {
+                if (ctype_digit((string)$wsid)) {
+                    $dataInsert[] = '(' .
+                        '0x' . Uuid::randomHex() . ',' .
+                        "$wsid," .
+                        "0x{$prodid['id']}," .
+                        "0x{$prodid['version_id']}," .
+                        "'$currentDateTime'" .
+                        ')';
+                }
+                if (count($dataInsert) > 99) {
+                    $this->connection->executeStatement('
+                    INSERT INTO topdata_to_product 
+                    (id, top_data_id, product_id, product_version_id, created_at) 
+                    VALUES ' . implode(',', $dataInsert) . '
+                ');
+                    $dataInsert = [];
+                    $this->progressLoggingService->activity();
+                }
+            }
+        }
+        if (count($dataInsert)) {
+            $this->connection->executeStatement('
+                INSERT INTO topdata_to_product 
+                (id, top_data_id, product_id, product_version_id, created_at) 
+                VALUES ' . implode(',', $dataInsert) . '
+            ');
+            $dataInsert = [];
+            $this->progressLoggingService->activity();
+        }
+    }
+
+    private function mapDistributor(): void
+    {
+        $dataInsert = [];
+
+        if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_CUSTOM && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
+            $artnos = $this->fixMultiArrayBinaryIds(
+                $this->getKeysByOptionValueUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER))
+            );
+        } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_CUSTOM_FIELD && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
+            $artnos = $this->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER));
+        } else {
+            $artnos = $this->fixMultiArrayBinaryIds(
+                $this->getKeysByOrdernumber()
+            );
+        }
+
+        if (count($artnos) == 0) {
+            throw new \Exception('distributor mapping 0 products found');
+        }
+
+        $stored = 0;
+        $this->cliStyle->info(count($artnos) . " products to check ...");
+        for ($i = 1; ; $i++) {
+            $all_artnr = $this->topdataWebserviceClient->matchMyDistributer(['page' => $i]);
+            if (!isset($all_artnr->page->available_pages)) {
+                throw new \Exception('distributor webservice no pages');
+            }
+            $available_pages = $all_artnr->page->available_pages;
+            foreach ($all_artnr->match as $prod) {
+                foreach ($prod->distributors as $distri) {
+                    //if((int)$s['distributor_id'] != (int)$distri->distributor_id)
+                    //    continue;
+                    foreach ($distri->artnrs as $artnr) {
+                        $key = (string)$artnr;
+                        if (isset($artnos[$key])) {
+                            foreach ($artnos[$key] as $artnosValue) {
+                                $stored++;
+                                if (($stored % 50) == 0) {
+                                    $this->progressLoggingService->activity();
+                                }
+                                $dataInsert[] = [
+                                    'topDataId'        => $prod->products_id,
+                                    'productId'        => $artnosValue['id'],
+                                    'productVersionId' => $artnosValue['version_id'],
+                                ];
+                                if (count($dataInsert) > 500) {
+                                    $this->topdataToProductRepository->create($dataInsert, $this->context);
+                                    $dataInsert = [];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if ($this->verbose) {
+                $this->progressLoggingService->activity("\ndistributor $i/$available_pages");
+                $this->progressLoggingService->mem();
+                $this->progressLoggingService->activity("\n");
+            }
+            if ($i >= $available_pages) {
+                break;
+            }
+        }
+        if (count($dataInsert) > 0) {
+            $this->topdataToProductRepository->create($dataInsert, $this->context);
+            $dataInsert = [];
+        }
+        $this->progressLoggingService->activity("\n" . $stored . " - stored topdata products\n");
+        unset($artnos);
+    }
+
+    private function mapDefault(): void
+    {
+        $dataInsert = [];
+
+        $oems = [];
+        $eans = [];
+        if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_CUSTOM) {
+            if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
+                $oems = $this->fixArrayBinaryIds(
+                    $this->getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number')
+                );
+            }
+            if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN) != '') {
+                $eans = $this->fixArrayBinaryIds(
+                    $this->getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean')
+                );
+            }
+        } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_CUSTOM_FIELD) {
+            if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
+                $oems = $this->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number');
+            }
+            if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN) != '') {
+                $eans = $this->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean');
+            }
+        } else {
+            $oems = $this->fixArrayBinaryIds($this->getKeysBySuppliernumber());
+            $eans = $this->fixArrayBinaryIds($this->getKeysByEan());
+        }
+
+        $oemMap = [];
+        foreach ($oems as $oem) {
+            $oem['manufacturer_number'] = strtolower(ltrim(trim($oem['manufacturer_number']), '0'));
+            $oemMap[(string)$oem['manufacturer_number']][$oem['id'] . '-' . $oem['version_id']] = [
+                'id'         => $oem['id'],
+                'version_id' => $oem['version_id'],
+            ];
+        }
+        unset($oems);
+
+        $eanMap = [];
+        foreach ($eans as $ean) {
+            $ean['ean'] = preg_replace('/[^0-9]/', '', $ean['ean']);
+            $ean['ean'] = ltrim(trim($ean['ean']), '0');
+            $eanMap[(string)$ean['ean']][$ean['id'] . '-' . $ean['version_id']] = [
+                'id'         => $ean['id'],
+                'version_id' => $ean['version_id'],
+            ];
+        }
+        unset($eans);
+
+        $setted = [];
+        if (count($eanMap) > 0) {
+            $this->processEANs($eanMap, $setted, $dataInsert);
+        }
+
+        if (count($oemMap) > 0) {
+            $this->processOEMs($oemMap, $setted, $dataInsert);
+            $this->processPCDs($oemMap, $setted, $dataInsert);
+        }
+        if (count($dataInsert) > 0) {
+            $this->topdataToProductRepository->create($dataInsert, $this->context);
+            $dataInsert = [];
+        }
+        unset($setted);
+        unset($oemMap);
+        unset($eanMap);
+    }
+
+    private function processEANs(array $eanMap, array &$setted, array &$dataInsert): void
+    {
+        for ($i = 1; ; $i++) {
+            $all_artnr = $this->topdataWebserviceClient->matchMyEANs(['page' => $i]);
+            if (!isset($all_artnr->page->available_pages)) {
+                throw new \Exception('ean webservice no pages');
+            }
+            $available_pages = $all_artnr->page->available_pages;
+            foreach ($all_artnr->match as $prod) {
+                foreach ($prod->values as $ean) {
+                    $ean = (string)$ean;
+                    $ean = ltrim(trim($ean), '0');
+                    if (isset($eanMap[$ean])) {
+                        foreach ($eanMap[$ean] as $key => $product) {
+                            if (isset($setted[$key])) {
+                                continue;
+                            }
+
+                            $dataInsert[] = [
+                                'topDataId'        => $prod->products_id,
+                                'productId'        => $product['id'],
+                                'productVersionId' => $product['version_id'],
+                            ];
+                            if (count($dataInsert) > 500) {
+                                $this->topdataToProductRepository->create($dataInsert, $this->context);
+                                $dataInsert = [];
+                            }
+                            $setted[$key] = true;
+                        }
+                    }
+                }
+            }
+            if ($this->verbose) {
+                echo 'ean page' . $i . '/' . $available_pages . "\n";
+            }
+            if ($i >= $available_pages) {
+                break;
+            }
+        }
+    }
+
+    private function processOEMs(array $oemMap, array &$setted, array &$dataInsert): void
+    {
+        for ($i = 1; ; $i++) {
+            $all_artnr = $this->topdataWebserviceClient->matchMyOems(['page' => $i]);
+            if (!isset($all_artnr->page->available_pages)) {
+                throw new \Exception('oem webservice no pages');
+            }
+            $available_pages = $all_artnr->page->available_pages;
+            foreach ($all_artnr->match as $prod) {
+                foreach ($prod->values as $oem) {
+                    $oem = (string)$oem;
+                    $oem = strtolower($oem);
+                    if (isset($oemMap[$oem])) {
+                        foreach ($oemMap[$oem] as $key => $product) {
+                            if (isset($setted[$key])) {
+                                continue;
+                            }
+                            $dataInsert[] = [
+                                'topDataId'        => $prod->products_id,
+                                'productId'        => $product['id'],
+                                'productVersionId' => $product['version_id'],
+                            ];
+                            if (count($dataInsert) > 500) {
+                                $this->topdataToProductRepository->create($dataInsert, $this->context);
+                                $dataInsert = [];
+                            }
+
+                            $setted[$key] = true;
+                        }
+                    }
+                }
+            }
+            if ($this->verbose) {
+                echo 'oem page ' . $i . '/' . $available_pages . "\n";
+            }
+            if ($i >= $available_pages) {
+                break;
+            }
+        }
+    }
+
+    private function processPCDs(array $oemMap, array &$setted, array &$dataInsert): void
+    {
+        for ($i = 1; ; $i++) {
+            $all_artnr = $this->topdataWebserviceClient->matchMyPcds(['page' => $i]);
+            if (!isset($all_artnr->page->available_pages)) {
+                throw new \Exception('pcd webservice no pages');
+            }
+            $available_pages = $all_artnr->page->available_pages;
+            foreach ($all_artnr->match as $prod) {
+                foreach ($prod->values as $oem) {
+                    $oem = (string)$oem;
+                    $oem = strtolower($oem);
+                    if (isset($oemMap[$oem])) {
+                        foreach ($oemMap[$oem] as $key => $product) {
+                            if (isset($setted[$key])) {
+                                continue;
+                            }
+                            $dataInsert[] = [
+                                'topDataId'        => $prod->products_id,
+                                'productId'        => $product['id'],
+                                'productVersionId' => $product['version_id'],
+                            ];
+                            if (count($dataInsert) > 500) {
+                                $this->topdataToProductRepository->create($dataInsert, $this->context);
+                                $dataInsert = [];
+                            }
+
+                            $setted[$key] = true;
+                        }
+                    }
+                }
+            }
+            if ($this->verbose) {
+                echo 'pcd page ' . $i . '/' . $available_pages . "\n";
+            }
+            if ($i >= $available_pages) {
+                break;
+            }
+        }
     }
 
 
@@ -541,6 +573,12 @@ class ProductMappingService
     {
         $this->topdataWebserviceClient = $topdataWebserviceClient;
     }
+
+    public function setVerbose(bool $verbose): void
+    {
+        $this->verbose = $verbose;
+    }
+
 
 
 }
