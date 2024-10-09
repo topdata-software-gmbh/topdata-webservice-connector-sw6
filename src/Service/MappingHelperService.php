@@ -26,12 +26,20 @@ use Topdata\TopdataConnectorSW6\Helper\CliStyle;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 
 /**
- * TODO: pretty big class, should be refactored to smaller classes
+ * MappingHelperService class
+ * 
+ * This class is responsible for mapping and synchronizing data between Topdata and Shopware 6.
+ * It handles various operations such as product mapping, device synchronization, and cross-selling setup.
+ * 
+ * TODO: This class is quite large and should be refactored into smaller, more focused classes.
  *
- * 04/2024 MappingHelper --> MappingHelperService
+ * 04/2024 Renamed from MappingHelper to MappingHelperService
  */
 class MappingHelperService
 {
+    /**
+     * Constants for cross-selling types
+     */
     const CROSS_SIMILAR          = 'similar';
     const CROSS_ALTERNATE        = 'alternate';
     const CROSS_RELATED          = 'related';
@@ -40,6 +48,9 @@ class MappingHelperService
     const CROSS_CAPACITY_VARIANT = 'capacityVariant';
     const CROSS_VARIANT          = 'variant';
 
+    /**
+     * List of specifications to ignore during import
+     */
     const IGNORE_SPECS = [
         21  => 'Hersteller-Nr. (intern)',
         24  => 'Product Code (PCD) Intern',
@@ -87,6 +98,9 @@ class MappingHelperService
         30  => 'Marketingtext',
     ];
 
+    /**
+     * Constants for option names
+     */
     const OPTION_NAME_MAPPING_TYPE              = 'mappingType';
     const OPTION_NAME_ATTRIBUTE_OEM             = 'attributeOem';
     const OPTION_NAME_ATTRIBUTE_EAN             = 'attributeEan';
@@ -99,6 +113,9 @@ class MappingHelperService
     const OPTION_NAME_PRODUCT_COLOR_VARIANT     = 'productColorVariant';
     const OPTION_NAME_PRODUCT_CAPACITY_VARIANT  = 'productCapacityVariant';
 
+    /**
+     * Constants for mapping types
+     */
     const MAPPING_TYPE_PRODUCT_NUMBER_AS_WS_ID  = 'productNumberAsWsId';
     const MAPPING_TYPE_DISTRIBUTOR_DEFAULT      = 'distributorDefault';
     const MAPPING_TYPE_DISTRIBUTOR_CUSTOM       = 'distributorCustom';
@@ -115,6 +132,9 @@ class MappingHelperService
     private ?array $typesArray = null;
 
     /**
+     * Array to store mapped products
+     * 
+     * Structure:
      * [
      *      ws_id1 => [
      *          'product_id' => hexid1,
@@ -124,7 +144,7 @@ class MappingHelperService
      *          'product_id' => hexid2,
      *          'product_version_id' => hexversionid2
      *      ]
-     *  ].
+     *  ]
      */
     private ?array $topidProducts = null;
     private TopdataWebserviceClient $topdataWebserviceClient;
@@ -149,6 +169,25 @@ class MappingHelperService
     private string $systemDefaultLocaleCode;
     private CliStyle $cliStyle;
 
+    /**
+     * Constructor for MappingHelperService
+     *
+     * @param LoggerInterface $logger
+     * @param Connection $connection
+     * @param EntityRepository $brandRepository
+     * @param EntityRepository $deviceRepository
+     * @param EntityRepository $seriesRepository
+     * @param EntityRepository $typeRepository
+     * @param EntityRepository $topdataToProductRepository
+     * @param EntityRepository $mediaRepository
+     * @param MediaService $mediaService
+     * @param EntityRepository $productRepository
+     * @param ProductsCommand $productCommand
+     * @param EntityRepository $propertyGroupRepository
+     * @param EntitiesHelperService $entitiesHelper
+     * @param EntityRepository $productCrossSellingRepository
+     * @param EntityRepository $productCrossSellingAssignedProductsRepository
+     */
     public function __construct(
         LoggerInterface       $logger,
         Connection            $connection,
@@ -187,6 +226,11 @@ class MappingHelperService
         $this->context = Context::createDefaultContext();
     }
 
+    /**
+     * Get the locale code of the system language
+     *
+     * @return string The locale code
+     */
     private function getLocaleCodeOfSystemLanguage(): string
     {
         return $this->connection
@@ -196,18 +240,33 @@ class MappingHelperService
             );
     }
 
+    /**
+     * Set the Topdata webservice client
+     *
+     * @param TopdataWebserviceClient $topDataApi The webservice client
+     */
     public function setTopdataWebserviceClient(TopdataWebserviceClient $topDataApi): void
     {
         $this->topdataWebserviceClient = $topDataApi;
     }
 
+    /**
+     * Set the verbose mode
+     *
+     * @param bool $verbose Whether to enable verbose mode
+     */
     public function setVerbose(bool $verbose): void
     {
         $this->verbose = $verbose;
     }
 
     /**
-     * an "option" can be either something from command line or a plugin setting
+     * Set an option
+     *
+     * An "option" can be either something from command line or a plugin setting
+     *
+     * @param string $name The option name
+     * @param mixed $value The option value
      */
     public function setOption($name, $value): void
     {
@@ -215,10 +274,15 @@ class MappingHelperService
         $this->options[$name] = $value;
     }
 
+    /**
+     * Set multiple options at once
+     *
+     * @param array $keyValueArray An array of option name-value pairs
+     */
     public function setOptions(array $keyValueArray): void
     {
         foreach ($keyValueArray as $key => $value) {
-            $this->options[$key] = $value;
+            $this->setOption($key, $value);
         }
     }
 
