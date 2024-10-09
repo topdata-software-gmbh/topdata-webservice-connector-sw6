@@ -7,3 +7,4 @@ var
 # |    Keep .gitkeep files     |
 # +----------------------------+
 !/**/.gitkeep
+.aider*
