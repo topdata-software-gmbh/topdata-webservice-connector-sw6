@@ -140,10 +140,9 @@ class MappingHelperService
         private readonly EntityRepository       $productCrossSellingAssignedProductsRepository,
         private readonly ProductMappingService  $productMappingService,
         private readonly OptionsHelperService   $optionsHelperService,
-        private readonly progressLoggingService $progressLoggingService
+        private readonly ProgressLoggingService $progressLoggingService
     )
     {
-        $this->microtime = microtime(true);
         $this->systemDefaultLocaleCode = $this->getLocaleCodeOfSystemLanguage();
         $this->context = Context::createDefaultContext();
     }
@@ -180,6 +179,7 @@ class MappingHelperService
     public function setVerbose(bool $verbose): void
     {
         $this->verbose = $verbose;
+        $this->progressLoggingService->setVerbose($verbose);
     }
 
 

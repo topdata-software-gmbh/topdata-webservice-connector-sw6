@@ -10,6 +10,12 @@ class ProgressLoggingService
     private bool $verbose;
     private float $microtime;
 
+    public function __construct()
+    {
+        $this->microtime = microtime(true);
+    }
+
+
     /**
      * helper method for logging stuff to stdout
      */
@@ -46,5 +52,12 @@ class ProgressLoggingService
 
         return (string)round($lapTime, 3);
     }
+
+    public function setVerbose(bool $verbose): void
+    {
+        $this->verbose = $verbose;
+    }
+
+
 
 }

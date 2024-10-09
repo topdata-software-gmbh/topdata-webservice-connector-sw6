@@ -99,7 +99,7 @@
 
         <service id="Topdata\TopdataConnectorSW6\Service\OptionsHelperService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ProductMappingService" autowire="true"/>
-
+        <service id="Topdata\TopdataConnectorSW6\Service\ProgressLoggingService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\MappingHelperService" autowire="true">
 <!--            <argument type="service" id="logger" />-->
 <!--            <argument type="service" id="Doctrine\DBAL\Connection" />-->
