@@ -96,22 +96,23 @@
             <argument type="service" id="media_folder.repository"/>
             <argument type="service" id="property_group_option.repository"/>
         </service>
-        <service id="Topdata\TopdataConnectorSW6\Service\MappingHelperService">
-            <argument type="service" id="logger" />
-            <argument type="service" id="Doctrine\DBAL\Connection" />
-            <argument type="service" id="topdata_brand.repository"/>
-            <argument type="service" id="topdata_device.repository"/>
-            <argument type="service" id="topdata_series.repository"/>
-            <argument type="service" id="topdata_device_type.repository"/>
-            <argument type="service" id="topdata_to_product.repository"/>
-            <argument type="service" id="media.repository"/>
-            <argument type="service" id="Shopware\Core\Content\Media\MediaService"/>
-            <argument type="service" id="product.repository"/>
-            <argument type="service" id="Topdata\TopdataConnectorSW6\Command\ProductsCommand"/>
-            <argument type="service" id="property_group.repository"/>
-            <argument type="service" id="Topdata\TopdataConnectorSW6\Service\EntitiesHelperService"/>
-            <argument type="service" id="product_cross_selling.repository"/>
-            <argument type="service" id="product_cross_selling_assigned_products.repository"/>
+
+        <service id="Topdata\TopdataConnectorSW6\Service\MappingHelperService" autowire="true">
+<!--            <argument type="service" id="logger" />-->
+<!--            <argument type="service" id="Doctrine\DBAL\Connection" />-->
+<!--            <argument type="service" id="topdata_brand.repository"/>-->
+<!--            <argument type="service" id="topdata_device.repository"/>-->
+<!--            <argument type="service" id="topdata_series.repository"/>-->
+<!--            <argument type="service" id="topdata_device_type.repository"/>-->
+<!--            <argument type="service" id="topdata_to_product.repository"/>-->
+<!--            <argument type="service" id="media.repository"/>-->
+<!--            <argument type="service" id="Shopware\Core\Content\Media\MediaService"/>-->
+<!--            <argument type="service" id="product.repository"/>-->
+<!--            <argument type="service" id="Topdata\TopdataConnectorSW6\Command\ProductsCommand"/>-->
+<!--            <argument type="service" id="property_group.repository"/>-->
+<!--            <argument type="service" id="Topdata\TopdataConnectorSW6\Service\EntitiesHelperService"/>-->
+<!--            <argument type="service" id="product_cross_selling.repository"/>-->
+<!--            <argument type="service" id="product_cross_selling_assigned_products.repository"/>-->
         </service>
         
         <!-- Controllers -->

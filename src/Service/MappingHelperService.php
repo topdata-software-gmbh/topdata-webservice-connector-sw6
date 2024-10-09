@@ -27,10 +27,10 @@ use Topdata\TopdataConnectorSW6\Util\ImportReport;
 
 /**
  * MappingHelperService class
- * 
+ *
  * This class is responsible for mapping and synchronizing data between Topdata and Shopware 6.
  * It handles various operations such as product mapping, device synchronization, and cross-selling setup.
- * 
+ *
  * TODO: This class is quite large and should be refactored into smaller, more focused classes.
  *
  * 04/2024 Renamed from MappingHelper to MappingHelperService
@@ -130,10 +130,9 @@ class MappingHelperService
     private ?array $brandWsArray = null;
     private ?array $seriesArray = null;
     private ?array $typesArray = null;
-
     /**
      * Array to store mapped products
-     * 
+     *
      * Structure:
      * [
      *      ws_id1 => [
@@ -148,80 +147,28 @@ class MappingHelperService
      */
     private ?array $topidProducts = null;
     private TopdataWebserviceClient $topdataWebserviceClient;
-    private Connection $connection;
-    private LoggerInterface $logger;
     private array $options = [];
     private bool $verbose = false;
-    private EntityRepository $brandRepository;
-    private EntityRepository $deviceRepository;
-    private EntityRepository $seriesRepository;
-    private EntityRepository $typeRepository;
-    private EntityRepository $topdataToProductRepository;
-    private MediaService $mediaService;
-    private EntityRepository $mediaRepository;
     private Context $context;
-    private EntityRepository $productRepository;
-    private ProductsCommand $productCommand; // ???
-    private EntityRepository $propertyGroupRepository;
-    private EntitiesHelperService $entitiesHelper;
-    private EntityRepository $productCrossSellingRepository;
-    private EntityRepository $productCrossSellingAssignedProductsRepository;
     private string $systemDefaultLocaleCode;
     private CliStyle $cliStyle;
 
-    /**
-     * Constructor for MappingHelperService
-     *
-     * @param LoggerInterface $logger
-     * @param Connection $connection
-     * @param EntityRepository $brandRepository
-     * @param EntityRepository $deviceRepository
-     * @param EntityRepository $seriesRepository
-     * @param EntityRepository $typeRepository
-     * @param EntityRepository $topdataToProductRepository
-     * @param EntityRepository $mediaRepository
-     * @param MediaService $mediaService
-     * @param EntityRepository $productRepository
-     * @param ProductsCommand $productCommand
-     * @param EntityRepository $propertyGroupRepository
-     * @param EntitiesHelperService $entitiesHelper
-     * @param EntityRepository $productCrossSellingRepository
-     * @param EntityRepository $productCrossSellingAssignedProductsRepository
-     */
     public function __construct(
-        LoggerInterface       $logger,
-        Connection            $connection,
-        EntityRepository      $brandRepository,
-        EntityRepository      $deviceRepository,
-        EntityRepository      $seriesRepository,
-        EntityRepository      $typeRepository,
-        EntityRepository      $topdataToProductRepository,
-        EntityRepository      $mediaRepository,
-        MediaService          $mediaService,
-        EntityRepository      $productRepository,
-        ProductsCommand       $productCommand,
-        EntityRepository      $propertyGroupRepository,
-        EntitiesHelperService $entitiesHelper,
-        EntityRepository      $productCrossSellingRepository,
-        EntityRepository      $productCrossSellingAssignedProductsRepository
+        private readonly LoggerInterface       $logger,
+        private readonly Connection            $connection,
+        private readonly EntityRepository      $topdataBrandRepository,
+        private readonly EntityRepository      $topdataDeviceRepository,
+        private readonly EntityRepository      $topdataSeriesRepository,
+        private readonly EntityRepository      $topdataDeviceTypeRepository,
+        private readonly EntityRepository      $topdataToProductRepository,
+        private readonly EntityRepository      $productRepository,
+        private readonly ProductsCommand       $productCommand, // TODO: remove this dependency
+        private readonly EntitiesHelperService $entitiesHelperService,
+        private readonly EntityRepository      $productCrossSellingRepository,
+        private readonly EntityRepository      $productCrossSellingAssignedProductsRepository
     )
     {
         $this->microtime = microtime(true);
-        $this->connection = $connection;
-        $this->logger = $logger;
-        $this->brandRepository = $brandRepository;
-        $this->deviceRepository = $deviceRepository;
-        $this->seriesRepository = $seriesRepository;
-        $this->typeRepository = $typeRepository;
-        $this->topdataToProductRepository = $topdataToProductRepository;
-        $this->mediaRepository = $mediaRepository;
-        $this->mediaService = $mediaService;
-        $this->productRepository = $productRepository;
-        $this->productCommand = $productCommand;
-        $this->propertyGroupRepository = $propertyGroupRepository;
-        $this->entitiesHelper = $entitiesHelper;
-        $this->productCrossSellingRepository = $productCrossSellingRepository;
-        $this->productCrossSellingAssignedProductsRepository = $productCrossSellingAssignedProductsRepository;
         $this->systemDefaultLocaleCode = $this->getLocaleCodeOfSystemLanguage();
         $this->context = Context::createDefaultContext();
     }
@@ -905,7 +852,7 @@ class MappingHelperService
             $brands = $this->topdataWebserviceClient->getBrands();
             $this->activity('Got ' . count($brands->data) . " brands from remote server\n");
             ImportReport::setCounter('Brands fetched', count($brands->data));
-            $brandRepository = $this->brandRepository;
+            $brandRepository = $this->topdataBrandRepository;
 
             $duplicates = [];
             $dataCreate = [];
@@ -996,7 +943,7 @@ class MappingHelperService
             $series = $this->topdataWebserviceClient->getModelSeriesByBrandId();
             $this->activity('Got ' . count($series->data) . " records from remote server\n");
             ImportReport::setCounter('Series fetched', count($series->data));
-            $seriesRepository = $this->seriesRepository;
+            $seriesRepository = $this->topdataSeriesRepository;
             $dataCreate = [];
             $dataUpdate = [];
             $this->activity('Processing data');
@@ -1088,7 +1035,7 @@ class MappingHelperService
             $types = $this->topdataWebserviceClient->getModelTypeByBrandId();
             //            $this->activity("Got ".count($types->data)." records.\n");
             ImportReport::setCounter('DeviceTypes fetched', count($types->data));
-            $typeRepository = $this->typeRepository;
+            $typeRepository = $this->topdataDeviceTypeRepository;
             $dataCreate = [];
             $dataUpdate = [];
             $this->activity('Processing data...');
@@ -1365,27 +1312,27 @@ class MappingHelperService
 
                     if (count($dataCreate) > 50) {
                         $created += count($dataCreate);
-                        $this->deviceRepository->create($dataCreate, $this->context);
+                        $this->topdataDeviceRepository->create($dataCreate, $this->context);
                         $dataCreate = [];
                         $this->activity('+');
                     }
 
                     if (count($dataUpdate) > 50) {
                         $updated += count($dataUpdate);
-                        $this->deviceRepository->update($dataUpdate, $this->context);
+                        $this->topdataDeviceRepository->update($dataUpdate, $this->context);
                         $dataUpdate = [];
                         $this->activity('*');
                     }
                 }
                 if (count($dataCreate)) {
                     $created += count($dataCreate);
-                    $this->deviceRepository->create($dataCreate, $this->context);
+                    $this->topdataDeviceRepository->create($dataCreate, $this->context);
                     $dataCreate = [];
                     $this->activity('+');
                 }
                 if (count($dataUpdate)) {
                     $updated += count($dataUpdate);
-                    $this->deviceRepository->update($dataUpdate, $this->context);
+                    $this->topdataDeviceRepository->update($dataUpdate, $this->context);
                     $dataUpdate = [];
                     $this->activity('*');
                 }
@@ -1430,7 +1377,7 @@ class MappingHelperService
         $this->activity('Devices Media start' . "\n");
         $this->brandWsArray = null;
         try {
-            $deviceRepository = $this->deviceRepository;
+            $deviceRepository = $this->topdataDeviceRepository;
 
             $available_Printers = [];
             foreach ($this->getEnabledDevices() as $pr) {
@@ -1529,7 +1476,7 @@ class MappingHelperService
                     $imageDate = strtotime(explode(' ', $s->img_date)[0]);
 
                     try {
-                        $mediaId = $this->entitiesHelper->getMediaId($s->img, $imageDate, 'td-');
+                        $mediaId = $this->entitiesHelperService->getMediaId($s->img, $imageDate, 'td-');
                         if ($mediaId) {
                             $deviceRepository->update([
                                 [
@@ -1621,7 +1568,7 @@ class MappingHelperService
             ]);
 
             $topidProducts = $this->_fetchTopidProducts();
-            if(empty($topidProducts)) {
+            if (empty($topidProducts)) {
                 // Select how you want our articles to be linked to our product database (mapping) *1
                 $this->cliStyle->warning('No mapped products found in database. Did you set the correct mapping in plugin config?');
             }
@@ -1965,7 +1912,7 @@ class MappingHelperService
 
                     try {
                         $echoMediaDownload = $this->verbose ? 'd' : '';
-                        $mediaId = $this->entitiesHelper->getMediaId(
+                        $mediaId = $this->entitiesHelperService->getMediaId(
                             $imageUrl,
                             $imageDate,
                             $k . '-' . $remoteProductData->products_id . '-',
@@ -2002,7 +1949,7 @@ class MappingHelperService
                 if ($propValue == '') {
                     continue;
                 }
-                $propertyId = $this->entitiesHelper->getPropertyId($propGroupName, $propValue);
+                $propertyId = $this->entitiesHelperService->getPropertyId($propGroupName, $propValue);
 
                 if (!isset($productData['properties'])) {
                     $productData['properties'] = [];
@@ -2023,7 +1970,7 @@ class MappingHelperService
                 if ($propValue == '') {
                     continue;
                 }
-                $propertyId = $this->entitiesHelper->getPropertyId($propGroupName, $propValue);
+                $propertyId = $this->entitiesHelperService->getPropertyId($propGroupName, $propValue);
                 if (!isset($productData['properties'])) {
                     $productData['properties'] = [];
                 }
@@ -2051,7 +1998,7 @@ class MappingHelperService
                     continue;
                 }
 
-                $propertyId = $this->entitiesHelper->getPropertyId($propGroupName, $propValue);
+                $propertyId = $this->entitiesHelperService->getPropertyId($propGroupName, $propValue);
                 if (!isset($productData['properties'])) {
                     $productData['properties'] = [];
                 }
@@ -2067,7 +2014,7 @@ class MappingHelperService
         ) {
             foreach ($remoteProductData->waregroups as $waregroupObject) {
                 $categoriesChain = json_decode(json_encode($waregroupObject->waregroup_tree), true);
-                $categoryId = $this->entitiesHelper->getCategoryId($categoriesChain, (string)$this->_getOption(self::OPTION_NAME_PRODUCT_WAREGROUPS_PARENT));
+                $categoryId = $this->entitiesHelperService->getCategoryId($categoriesChain, (string)$this->_getOption(self::OPTION_NAME_PRODUCT_WAREGROUPS_PARENT));
                 if (!$categoryId) {
                     break;
                 }
