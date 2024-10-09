@@ -35,27 +35,16 @@ class ImportCommand extends AbstractCommand
 
 
     private bool $verbose = true;
-    private SystemConfigService $systemConfigService;
-    private ContainerBagInterface $containerBag;
-    private LoggerInterface $logger;
-    private MappingHelperService $mappingHelperService;
-    private ConfigCheckerService $configCheckerService;
-
 
     public function __construct(
-        SystemConfigService   $systemConfigService,
-        ContainerBagInterface $ContainerBag,
-        LoggerInterface       $logger,
-        MappingHelperService  $mappingHelperService,
-        ConfigCheckerService  $configCheckerService
+        private readonly SystemConfigService   $systemConfigService,
+        private readonly ContainerBagInterface $containerBag,
+        private readonly LoggerInterface       $logger,
+        private readonly MappingHelperService  $mappingHelperService,
+        private readonly ConfigCheckerService  $configCheckerService
     )
     {
         parent::__construct();
-        $this->systemConfigService = $systemConfigService;
-        $this->containerBag = $ContainerBag;
-        $this->logger = $logger;
-        $this->mappingHelperService = $mappingHelperService;
-        $this->configCheckerService = $configCheckerService;
     }
 
     /**
@@ -245,7 +234,7 @@ class ImportCommand extends AbstractCommand
                     return self::ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED_2;
                 }
             } elseif ($this->verbose) {
-                $this->cliStyle->writeln('You need TopFeed plugin to create variated products!');
+                $this->cliStyle->warning('You need TopFeed plugin to create variated products!');
             }
         }
 
