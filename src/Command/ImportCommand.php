@@ -12,6 +12,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
+use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
 use Topdata\TopdataConnectorSW6\Service\MappingHelperService;
@@ -91,20 +92,11 @@ class ImportCommand extends AbstractCommand
         }
 
         // ---- cli options
-        $cliOptions = [
-            'isServiceAll'                => $input->getOption('all'), // full update with webservice
-            'isServiceMapping'            => $input->getOption('mapping'), // Mapping all existing products to webservice
-            'isServiceDevice'             => $input->getOption('device'), // add devices from webservice
-            'isServiceDeviceOnly'         => $input->getOption('device-only'), // add devices from webservice (no brands/series/types are fetched);
-            'isServiceDeviceMedia'        => $input->getOption('device-media'), // update device media data
-            'isServiceDeviceSynonyms'     => $input->getOption('device-synonyms'), // link active devices to synonyms
-            'isServiceProduct'            => $input->getOption('product'), // link devices to products on the store
-            'isServiceProductInformation' => $input->getOption('product-info'), // update product information from webservice (TopFeed plugin needed)
-            'isServiceProductMedia'       => $input->getOption('product-media-only'), // update only product media from webservice (TopFeed plugin needed)
-            'isProductVariations'         => $input->getOption('product-variated'), // Generate variated products based on color and capacity information (Import variants with other colors, Import variants with other capacities should be enabled in TopFeed plugin, product information should be already imported)
-        ];
+        $cliOptionsDto = new ImportCommandCliOptionsDTO($input);
 
-        //        if($option['isServiceAll']) {
+        $this->cliStyle->dumpDict($cliOptionsDto->toDict(), 'CLI Options DTO');
+
+        //        if($cliOptionsDto->isServiceAll()) {
         //            $this->cliStyle->writeln('Option "all" is currently disabled. Use partial service options instead.');
         //            return ['success' => true];
         //        }
@@ -132,7 +124,7 @@ class ImportCommand extends AbstractCommand
         $this->mappingHelperService->setOption(MappingHelperService::OPTION_NAME_ATTRIBUTE_EAN, $pluginConfig['attributeEan']);
         $this->mappingHelperService->setOption(MappingHelperService::OPTION_NAME_ATTRIBUTE_ORDERNUMBER, $pluginConfig['attributeOrdernumber']);
 
-        if (!$cliOptions['isServiceAll']) {
+        if (!$cliOptionsDto->isServiceAll()) {
             if ($input->getOption('start')) {
                 $this->mappingHelperService->setOption(MappingHelperService::OPTION_NAME_START, (int)$input->getOption('start'));
             }
@@ -142,7 +134,7 @@ class ImportCommand extends AbstractCommand
         }
 
         // ---- mapping
-        if ($cliOptions['isServiceAll'] || $cliOptions['isServiceMapping']) {
+        if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceMapping()) {
 
             $this->cliStyle->section('Mapping Products');
 
@@ -156,7 +148,7 @@ class ImportCommand extends AbstractCommand
         }
 
         // ---- set printer infos
-        if ($cliOptions['isServiceAll'] || $cliOptions['isServiceDevice']) {
+        if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceDevice()) {
             if (
                 !$this->mappingHelperService->setBrands()
                 || !$this->mappingHelperService->setSeries()
@@ -169,7 +161,7 @@ class ImportCommand extends AbstractCommand
 
                 return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
             }
-        } elseif ($cliOptions['isServiceDeviceOnly']) {
+        } elseif ($cliOptionsDto->isServiceDeviceOnly()) {
             if (!$this->mappingHelperService->setDevices()) {
                 if ($this->verbose) {
                     $this->cliStyle->error('Device import failed!');
@@ -180,18 +172,17 @@ class ImportCommand extends AbstractCommand
         }
 
         //set printer to products
-        if ($cliOptions['isServiceAll'] || $cliOptions['isServiceProduct']) {
+        if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceProduct()) {
             if (!$this->mappingHelperService->setProducts()) {
                 if ($this->verbose) {
                     $this->cliStyle->error('Set products to devices failed!');
                 }
-
                 return self::ERROR_CODE_PRODUCT_TO_DEVICE_LINKING_FAILED;
             }
         }
 
         //set device media
-        if ($cliOptions['isServiceAll'] || $cliOptions['isServiceDeviceMedia']) {
+        if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceDeviceMedia()) {
             if (!$this->mappingHelperService->setDeviceMedia()) {
                 if ($this->verbose) {
                     $this->cliStyle->error('Load device media failed!');
@@ -202,7 +193,7 @@ class ImportCommand extends AbstractCommand
         }
 
         //set product information
-        if ($cliOptions['isServiceAll'] || $cliOptions['isServiceProductInformation']) {
+        if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceProductInformation()) {
             if (isset($activePlugins['Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6'])) {
                 /* TopFeed plugin is enabled */
                 $this->_loadTopdataTopFeedPluginConfig();
@@ -213,10 +204,10 @@ class ImportCommand extends AbstractCommand
 
                     return self::ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED;
                 }
-            } elseif ($cliOptions['isServiceProductInformation'] && $this->verbose) {
+            } elseif ($cliOptionsDto->isServiceProductInformation() && $this->verbose) {
                 $this->cliStyle->writeln('You need TopFeed plugin to update product information!');
             }
-        } elseif ($cliOptions['isServiceProductMedia']) {
+        } elseif ($cliOptionsDto->isServiceProductMedia()) {
             if (isset($activePlugins['Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6'])) {
                 /* TopFeed plugin is enabled */
                 $this->_loadTopdataTopFeedPluginConfig();
@@ -233,7 +224,7 @@ class ImportCommand extends AbstractCommand
         }
 
         //set device synonyms
-        if ($cliOptions['isServiceAll'] || $cliOptions['isServiceDeviceSynonyms']) {
+        if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceDeviceSynonyms()) {
             if (!$this->mappingHelperService->setDeviceSynonyms()) {
                 if ($this->verbose) {
                     $this->cliStyle->error('Set device synonyms failed!');
@@ -244,7 +235,7 @@ class ImportCommand extends AbstractCommand
         }
 
         //set variated products
-        if ($cliOptions['isProductVariations']) {
+        if ($cliOptionsDto->isProductVariations()) {
             if (isset($activePlugins['Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6'])) {
                 if (!$this->mappingHelperService->setProductColorCapacityVariants()) {
                     if ($this->verbose) {
