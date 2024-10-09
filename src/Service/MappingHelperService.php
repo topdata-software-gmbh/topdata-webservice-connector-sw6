@@ -100,7 +100,7 @@ class MappingHelperService
 
 
     private array $productImportSettings = [];
-    private ?array $brandWsArray = null;
+    private ?array $brandWsArray = null; // aka mapWsIdToBrand
     private ?array $seriesArray = null;
     private ?array $typesArray = null;
     /**
@@ -1208,12 +1208,10 @@ class MappingHelperService
         if (!count($wsIds)) {
             return [];
         }
-        $result = [];
+        $result = []; // a list of devices
 
-        $this->brandWsArray = [];
-        $queryRez = $this
-            ->connection
-            ->createQueryBuilder()
+        // $this->brandWsArray = []; // FIXME: why is this here?
+        $queryRez = $this->connection->createQueryBuilder()
             ->select('*')
             ->from('topdata_device')
             ->where('ws_id IN (' . implode(',', $wsIds) . ')')

@@ -75,7 +75,6 @@ class ImportCommand extends AbstractCommand
         }
 
         // ---- check if plugin is configured
-        $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
         if ($this->configCheckerService->isConfigEmpty()) {
             if ($this->verbose) {
                 $this->cliStyle->writeln('Fill in the connection parameters in admin: Extensions > My Extensions > Topdata Webservice Connector > [...] > Configure');
@@ -86,15 +85,10 @@ class ImportCommand extends AbstractCommand
 
         // ---- cli options
         $cliOptionsDto = new ImportCommandCliOptionsDTO($input);
-
         $this->cliStyle->dumpDict($cliOptionsDto->toDict(), 'CLI Options DTO');
 
-        //        if($cliOptionsDto->isServiceAll()) {
-        //            $this->cliStyle->writeln('Option "all" is currently disabled. Use partial service options instead.');
-        //            return ['success' => true];
-        //        }
-
         // ---- init webservice client
+        $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
         $topdataWebserviceClient = new TopdataWebserviceClient(
             $this->logger,
             $pluginConfig['apiUsername'],
@@ -189,7 +183,7 @@ class ImportCommand extends AbstractCommand
         if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceProductInformation()) {
             if (isset($activePlugins['Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6'])) {
                 /* TopFeed plugin is enabled */
-                $this->_loadTopdataTopFeedPluginConfig();
+                $this->optionsHelperService->loadTopdataTopFeedPluginConfig();
                 if (!$this->mappingHelperService->setProductInformation()) {
                     if ($this->verbose) {
                         $this->cliStyle->error('Load product information failed!');
@@ -203,7 +197,7 @@ class ImportCommand extends AbstractCommand
         } elseif ($cliOptionsDto->isServiceProductMedia()) {
             if (isset($activePlugins['Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6'])) {
                 /* TopFeed plugin is enabled */
-                $this->_loadTopdataTopFeedPluginConfig();
+                $this->optionsHelperService->loadTopdataTopFeedPluginConfig();
                 if (!$this->mappingHelperService->setProductInformation(true)) {
                     if ($this->verbose) {
                         $this->cliStyle->error('Load product information failed!');
@@ -255,89 +249,21 @@ class ImportCommand extends AbstractCommand
         return Command::SUCCESS;
     }
 
-    /**
-     * it copies settings from Topdata's Topfeed plugin config to MappingHelperService's options
-     *
-     * 06/2024 created
-     */
-    private function _loadTopdataTopFeedPluginConfig(): void
-    {
-        $pluginConfig = $this->systemConfigService->get('TopdataTopFeedSW6.config');
-        $this->optionsHelperService->setOptions($pluginConfig);
-        $this->optionsHelperService->setOption(OptionConstants::PRODUCT_COLOR_VARIANT, $pluginConfig['productVariantColor']); // FIXME? 'productColorVariant' != 'productVariantColor'
-        $this->optionsHelperService->setOption(OptionConstants::PRODUCT_CAPACITY_VARIANT, $pluginConfig['productVariantCapacity']); // FIXME? 'productCapacityVariant' != 'productVariantCapacity'
-    }
-
     protected function configure(): void
     {
         $this->setName('topdata:connector:import');
         $this->setDescription('Import data from the TopData Webservice');
-        $this->addOption(
-            'test',
-            null,
-            InputOption::VALUE_NONE,
-            'for developer tests'
-        );
-        $this->addOption(
-            'all',
-            null,
-            InputOption::VALUE_NONE,
-            'full update with webservice'
-        );
-        $this->addOption(
-            'mapping',
-            null,
-            InputOption::VALUE_NONE,
-            'Mapping all existing products to webservice'
-        );
-        $this->addOption(
-            'device',
-            null,
-            InputOption::VALUE_NONE,
-            'add devices from webservice'
-        );
-        $this->addOption(
-            'device-only',
-            null,
-            InputOption::VALUE_NONE,
-            'add devices from webservice (no brands/series/types are fetched);'
-        );
-        $this->addOption(
-            'product',
-            null,
-            InputOption::VALUE_NONE,
-            'link devices to products on the store'
-        );
-        $this->addOption(
-            'device-media',
-            null,
-            InputOption::VALUE_NONE,
-            'update device media data'
-        );
-        $this->addOption(
-            'device-synonyms',
-            null,
-            InputOption::VALUE_NONE,
-            'link active devices to synonyms'
-        );
-        $this->addOption(
-            'product-info',
-            null,
-            InputOption::VALUE_NONE,
-            'update product information from webservice (TopFeed plugin needed);'
-        );
-        $this->addOption(
-            'product-media-only',
-            null,
-            InputOption::VALUE_NONE,
-            'update only product media from webservice (TopFeed plugin needed);'
-        );
-        $this->addOption(
-            'product-variated',
-            null,
-            InputOption::VALUE_NONE,
-            'Generate variated products based on color and capacity information (Import variants with other colors, Import variants with other capacities should be enabled in TopFeed plugin, product information should be already imported);'
-        );
+        $this->addOption('test', null, InputOption::VALUE_NONE, 'for developer tests');
+        $this->addOption('all', null, InputOption::VALUE_NONE, 'full update with webservice');
+        $this->addOption('mapping', null, InputOption::VALUE_NONE, 'Mapping all existing products to webservice');
+        $this->addOption('device', null, InputOption::VALUE_NONE, 'add devices from webservice');
+        $this->addOption('device-only', null, InputOption::VALUE_NONE, 'add devices from webservice (no brands/series/types are fetched);');
+        $this->addOption('product', null, InputOption::VALUE_NONE, 'link devices to products on the store');
+        $this->addOption('device-media', null, InputOption::VALUE_NONE, 'update device media data');
+        $this->addOption('device-synonyms', null, InputOption::VALUE_NONE, 'link active devices to synonyms');
+        $this->addOption('product-info', null, InputOption::VALUE_NONE, 'update product information from webservice (TopFeed plugin needed);');
+        $this->addOption('product-media-only', null, InputOption::VALUE_NONE, 'update only product media from webservice (TopFeed plugin needed);');
+        $this->addOption('product-variated', null, InputOption::VALUE_NONE, 'Generate variated products based on color and capacity information (Import variants with other colors, Import variants with other capacities should be enabled in TopFeed plugin, product information should be already imported);');
         $this->addOption('start', null, InputOption::VALUE_OPTIONAL, 'First piece of data to handle');
         $this->addOption('end', null, InputOption::VALUE_OPTIONAL, 'Last piece of data to handle');
     }
