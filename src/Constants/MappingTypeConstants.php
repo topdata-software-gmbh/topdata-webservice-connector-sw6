@@ -2,11 +2,14 @@
 
 namespace Topdata\TopdataConnectorSW6\Constants;
 
+
+/**
+ * Constants for mapping types
+ *
+ * 10/2024 created (extracted from MappingHelperService)
+ */
 class MappingTypeConstants
 {
-    /**
-     * Constants for mapping types
-     */
     const MAPPING_TYPE_PRODUCT_NUMBER_AS_WS_ID  = 'productNumberAsWsId';
     const MAPPING_TYPE_DISTRIBUTOR_DEFAULT      = 'distributorDefault';
     const MAPPING_TYPE_DISTRIBUTOR_CUSTOM       = 'distributorCustom';

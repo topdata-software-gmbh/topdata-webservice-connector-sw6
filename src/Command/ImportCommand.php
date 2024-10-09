@@ -12,10 +12,12 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
+use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
 use Topdata\TopdataConnectorSW6\Service\MappingHelperService;
+use Topdata\TopdataConnectorSW6\Service\OptionsHelperService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 
 /**
@@ -36,12 +38,14 @@ class ImportCommand extends AbstractCommand
 
     private bool $verbose = true;
 
+
     public function __construct(
         private readonly SystemConfigService   $systemConfigService,
         private readonly ContainerBagInterface $containerBag,
         private readonly LoggerInterface       $logger,
         private readonly MappingHelperService  $mappingHelperService,
-        private readonly ConfigCheckerService  $configCheckerService
+        private readonly ConfigCheckerService  $configCheckerService,
+        private readonly OptionsHelperService  $optionsHelperService,
     )
     {
         parent::__construct();
@@ -108,17 +112,17 @@ class ImportCommand extends AbstractCommand
 
         $pluginConfig = array_merge($configDefaults, $pluginConfig);
 
-        $this->mappingHelperService->setOption(MappingHelperService::OPTION_NAME_MAPPING_TYPE, $pluginConfig['mappingType']);
-        $this->mappingHelperService->setOption(MappingHelperService::OPTION_NAME_ATTRIBUTE_OEM, $pluginConfig['attributeOem']);
-        $this->mappingHelperService->setOption(MappingHelperService::OPTION_NAME_ATTRIBUTE_EAN, $pluginConfig['attributeEan']);
-        $this->mappingHelperService->setOption(MappingHelperService::OPTION_NAME_ATTRIBUTE_ORDERNUMBER, $pluginConfig['attributeOrdernumber']);
+        $this->optionsHelperService->setOption(OptionConstants::MAPPING_TYPE, $pluginConfig['mappingType']);
+        $this->optionsHelperService->setOption(OptionConstants::ATTRIBUTE_OEM, $pluginConfig['attributeOem']);
+        $this->optionsHelperService->setOption(OptionConstants::ATTRIBUTE_EAN, $pluginConfig['attributeEan']);
+        $this->optionsHelperService->setOption(OptionConstants::ATTRIBUTE_ORDERNUMBER, $pluginConfig['attributeOrdernumber']);
 
         if (!$cliOptionsDto->isServiceAll()) {
             if ($input->getOption('start')) {
-                $this->mappingHelperService->setOption(MappingHelperService::OPTION_NAME_START, (int)$input->getOption('start'));
+                $this->optionsHelperService->setOption(OptionConstants::START, (int)$input->getOption('start'));
             }
             if ($input->getOption('end')) {
-                $this->mappingHelperService->setOption(MappingHelperService::OPTION_NAME_END, (int)$input->getOption('end'));
+                $this->optionsHelperService->setOption(OptionConstants::END, (int)$input->getOption('end'));
             }
         }
 
@@ -259,9 +263,9 @@ class ImportCommand extends AbstractCommand
     private function _loadTopdataTopFeedPluginConfig(): void
     {
         $pluginConfig = $this->systemConfigService->get('TopdataTopFeedSW6.config');
-        $this->mappingHelperService->setOptions($pluginConfig);
-        $this->mappingHelperService->setOption(MappingHelperService::OPTION_NAME_PRODUCT_COLOR_VARIANT, $pluginConfig['productVariantColor']); // FIXME? 'productColorVariant' != 'productVariantColor'
-        $this->mappingHelperService->setOption(MappingHelperService::OPTION_NAME_PRODUCT_CAPACITY_VARIANT, $pluginConfig['productVariantCapacity']); // FIXME? 'productCapacityVariant' != 'productVariantCapacity'
+        $this->optionsHelperService->setOptions($pluginConfig);
+        $this->optionsHelperService->setOption(OptionConstants::PRODUCT_COLOR_VARIANT, $pluginConfig['productVariantColor']); // FIXME? 'productColorVariant' != 'productVariantColor'
+        $this->optionsHelperService->setOption(OptionConstants::PRODUCT_CAPACITY_VARIANT, $pluginConfig['productVariantCapacity']); // FIXME? 'productCapacityVariant' != 'productVariantCapacity'
     }
 
     protected function configure(): void

@@ -9,7 +9,6 @@ namespace Topdata\TopdataConnectorSW6\Service;
 
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
-use Shopware\Core\Content\Media\MediaService;
 use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingDefinition;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Defaults;
@@ -21,9 +20,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Command\ProductsCommand;
 use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
-use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
-use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Helper\CliStyle;
+use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 
 /**
@@ -99,35 +98,8 @@ class MappingHelperService
         30  => 'Marketingtext',
     ];
 
-    /**
-     * Constants for option names
-     */
-    const OPTION_NAME_MAPPING_TYPE              = 'mappingType';
-    const OPTION_NAME_ATTRIBUTE_OEM             = 'attributeOem';
-    const OPTION_NAME_ATTRIBUTE_EAN             = 'attributeEan';
-    const OPTION_NAME_ATTRIBUTE_ORDERNUMBER     = 'attributeOrdernumber';
-    const OPTION_NAME_START                     = 'start';
-    const OPTION_NAME_END                       = 'end';
-    const OPTION_NAME_PRODUCT_WAREGROUPS        = 'productWaregroups'; // unused?
-    const OPTION_NAME_PRODUCT_WAREGROUPS_DELETE = 'productWaregroupsDelete'; // unused?
-    const OPTION_NAME_PRODUCT_WAREGROUPS_PARENT = 'productWaregroupsParent'; // unused?
-    const OPTION_NAME_PRODUCT_COLOR_VARIANT     = 'productColorVariant';
-    const OPTION_NAME_PRODUCT_CAPACITY_VARIANT  = 'productCapacityVariant';
-
-    /**
-     * Constants for mapping types
-     */
-    const MAPPING_TYPE_PRODUCT_NUMBER_AS_WS_ID  = 'productNumberAsWsId';
-    const MAPPING_TYPE_DISTRIBUTOR_DEFAULT      = 'distributorDefault';
-    const MAPPING_TYPE_DISTRIBUTOR_CUSTOM       = 'distributorCustom';
-    const MAPPING_TYPE_DISTRIBUTOR_CUSTOM_FIELD = 'distributorCustomField';
-    const MAPPING_TYPE_DEFAULT                  = 'default';
-    const MAPPING_TYPE_CUSTOM                   = 'custom';
-    const MAPPING_TYPE_CUSTOM_FIELD             = 'customField';
-
 
     private array $productImportSettings = [];
-    private float $microtime;
     private ?array $brandWsArray = null;
     private ?array $seriesArray = null;
     private ?array $typesArray = null;
@@ -148,25 +120,27 @@ class MappingHelperService
      */
     private ?array $topidProducts = null;
     private TopdataWebserviceClient $topdataWebserviceClient;
-    private array $options = [];
     private bool $verbose = false;
     private Context $context;
     private string $systemDefaultLocaleCode;
     private CliStyle $cliStyle;
 
+
     public function __construct(
-        private readonly LoggerInterface       $logger,
-        private readonly Connection            $connection,
-        private readonly EntityRepository      $topdataBrandRepository,
-        private readonly EntityRepository      $topdataDeviceRepository,
-        private readonly EntityRepository      $topdataSeriesRepository,
-        private readonly EntityRepository      $topdataDeviceTypeRepository,
-        private readonly EntityRepository      $topdataToProductRepository,
-        private readonly EntityRepository      $productRepository,
-        private readonly ProductsCommand       $productCommand, // TODO: remove this dependency
-        private readonly EntitiesHelperService $entitiesHelperService,
-        private readonly EntityRepository      $productCrossSellingRepository,
-        private readonly EntityRepository      $productCrossSellingAssignedProductsRepository
+        private readonly LoggerInterface        $logger,
+        private readonly Connection             $connection,
+        private readonly EntityRepository       $topdataBrandRepository,
+        private readonly EntityRepository       $topdataDeviceRepository,
+        private readonly EntityRepository       $topdataSeriesRepository,
+        private readonly EntityRepository       $topdataDeviceTypeRepository,
+        private readonly EntityRepository       $productRepository,
+        private readonly ProductsCommand        $productCommand, // TODO: remove this dependency
+        private readonly EntitiesHelperService  $entitiesHelperService,
+        private readonly EntityRepository       $productCrossSellingRepository,
+        private readonly EntityRepository       $productCrossSellingAssignedProductsRepository,
+        private readonly ProductMappingService  $productMappingService,
+        private readonly OptionsHelperService   $optionsHelperService,
+        private readonly progressLoggingService $progressLoggingService
     )
     {
         $this->microtime = microtime(true);
@@ -208,80 +182,6 @@ class MappingHelperService
         $this->verbose = $verbose;
     }
 
-    /**
-     * Set an option
-     *
-     * An "option" can be either something from command line or a plugin setting
-     *
-     * @param string $name The option name
-     * @param mixed $value The option value
-     */
-    public function setOption($name, $value): void
-    {
-        $this->cliStyle->blue("option: $name = $value");
-        $this->options[$name] = $value;
-    }
-
-    /**
-     * Set multiple options at once
-     *
-     * @param array $keyValueArray An array of option name-value pairs
-     */
-    public function setOptions(array $keyValueArray): void
-    {
-        foreach ($keyValueArray as $key => $value) {
-            $this->setOption($key, $value);
-        }
-    }
-
-    private function _getOption(string $name)
-    {
-        return (isset($this->options[$name])) ? $this->options[$name] : false;
-    }
-
-    /**
-     * FIXME? ordernumber?
-     */
-    private function getKeysByOrdernumber(): array
-    {
-        $query = $this->connection->createQueryBuilder();
-        $query->select(['p.product_number', 'p.id', 'p.version_id'])
-            ->from('product', 'p');
-
-        $results = $query->execute()->fetchAllAssociative();
-        $returnArray = [];
-        foreach ($results as $res) {
-            $returnArray[(string)$res['product_number']][] = [
-                'id'         => $res['id'],
-                'version_id' => $res['version_id'],
-            ];
-        }
-
-        return $returnArray;
-    }
-
-    /*
-     * Gets product id and variant_id by MANUFACTURER NUMBER
-     */
-    private function getKeysBySuppliernumber()
-    {
-        $query = $this->connection->createQueryBuilder();
-        $query->select(['p.manufacturer_number', 'p.id', 'p.version_id'])
-            ->from('product', 'p')
-            ->where('(p.manufacturer_number != \'\') AND (p.manufacturer_number IS NOT NULL)');
-
-        return $query->execute()->fetchAllAssociative();
-    }
-
-    private function getKeysByEan()
-    {
-        $query = $this->connection->createQueryBuilder();
-        $query->select(['p.ean', 'p.id', 'p.version_id'])
-            ->from('product', 'p')
-            ->where('(p.ean != \'\') AND (p.ean IS NOT NULL)');
-
-        return $query->execute()->fetchAllAssociative();
-    }
 
     private function getAlbumByNameAndParent($name, $parentID = null)
     {
@@ -305,39 +205,6 @@ class MappingHelperService
         }
     }
 
-    private function getKeysByOptionValue(string $optionName, string $colName = 'name'): array
-    {
-        $query = $this->connection->createQueryBuilder();
-
-        //        $query->select(['val.value', 'det.id'])
-        //            ->from('s_filter_articles', 'art')
-        //            ->innerJoin('art', 's_articles_details','det', 'det.articleID = art.articleID')
-        //            ->innerJoin('art', 's_filter_values','val', 'art.valueID = val.id')
-        //            ->innerJoin('val', 's_filter_options', 'opt', 'opt.id = val.optionID')
-        //            ->where('opt.name = :option')
-        //            ->setParameter(':option', $optionName)
-        //        ;
-
-        $query->select(['pgot.name ' . $colName, 'p.id', 'p.version_id'])
-            ->from('product', 'p')
-            ->innerJoin('p', 'product_property', 'pp', '(pp.product_id = p.id) AND (pp.product_version_id = p.version_id)')
-            ->innerJoin('pp', 'property_group_option_translation', 'pgot', 'pgot.property_group_option_id = pp.property_group_option_id')
-            ->innerJoin('pp', 'property_group_option', 'pgo', 'pgo.id = pp.property_group_option_id')
-            ->innerJoin('pgo', 'property_group_translation', 'pgt', 'pgt.property_group_id = pgo.property_group_id')
-            ->where('pgt.name = :option')
-            ->setParameter(':option', $optionName);
-        //print_r($query->getSQL());die();
-        $returnArray = $query->execute()->fetchAllAssociative();
-
-        //        foreach ($returnArray as $key=>$val) {
-        //            $returnArray[$key] = [
-        //                $colName => $val[$colName],
-        //                'id' => bin2hex($val['id']),
-        //                'version_id' => bin2hex($val['version_id']),
-        //            ];
-        //        }
-        return $returnArray;
-    }
 
     private function getKeysByCustomField(string $optionName, string $colName = 'name'): array
     {
@@ -373,109 +240,6 @@ class MappingHelperService
         return $returnArray;
     }
 
-    private function fixArrayBinaryIds(array $arr): array
-    {
-        foreach ($arr as $key => $val) {
-            if (isset($arr[$key]['id'])) {
-                $arr[$key]['id'] = bin2hex($arr[$key]['id']);
-            }
-            if (isset($arr[$key]['version_id'])) {
-                $arr[$key]['version_id'] = bin2hex($arr[$key]['version_id']);
-            }
-        }
-
-        return $arr;
-    }
-
-    private function fixMultiArrayBinaryIds(array $arr): array
-    {
-        foreach ($arr as $no => $vals) {
-            foreach ($vals as $key => $val) {
-                if (isset($arr[$no][$key]['id'])) {
-                    $arr[$no][$key]['id'] = bin2hex($arr[$no][$key]['id']);
-                }
-                if (isset($arr[$no][$key]['version_id'])) {
-                    $arr[$no][$key]['version_id'] = bin2hex($arr[$no][$key]['version_id']);
-                }
-            }
-        }
-
-        return $arr;
-    }
-
-    private function getKeysByOptionValueUnique($optionName)
-    {
-        $query = $this->connection->createQueryBuilder();
-        $query->select(['pgot.name', 'p.id', 'p.version_id'])
-            ->from('product', 'p')
-            ->innerJoin('p', 'product_property', 'pp', '(pp.product_id = p.id) AND (pp.product_version_id = p.version_id)')
-            ->innerJoin('pp', 'property_group_option_translation', 'pgot', 'pgot.property_group_option_id = pp.property_group_option_id')
-            ->innerJoin('pp', 'property_group_option', 'pgo', 'pgo.id = pp.property_group_option_id')
-            ->innerJoin('pgo', 'property_group_translation', 'pgt', 'pgt.property_group_id = pgo.property_group_id')
-            ->where('pgt.name = :option')
-            ->setParameter(':option', $optionName);
-
-        $results = $query->execute()->fetchAllAssociative();
-        $returnArray = [];
-        foreach ($results as $res) {
-            $returnArray[(string)$res['name']][] = [
-                'id'         => $res['id'],
-                'version_id' => $res['version_id'],
-            ];
-        }
-
-        return $returnArray;
-    }
-
-    public function getCutomFieldTechnicalName(string $name): ?string
-    {
-        $rez = $this->connection
-            ->prepare('SELECT name FROM custom_field'
-                . ' WHERE config LIKE :term LIMIT 1');
-        $rez->bindValue('term', '%":"' . $name . '"}%');
-        $rez->execute();
-        $result = $rez->fetchOne();
-
-        return $result ?: null;
-    }
-
-    public function getKeysByCustomFieldUnique(string $technicalName, ?string $fieldName = null)
-    {
-        //$technicalName = $this->getCutomFieldTechnicalName($optionName);
-        $rez = $this->connection
-            ->prepare('SELECT '
-                . ' custom_fields, '
-                . ' LOWER(HEX(product_id)) as `id`, '
-                . ' LOWER(HEX(product_version_id)) as version_id'
-                . ' FROM product_translation ');
-        $rez->execute();
-        $results = $rez->fetchAllAssociative();
-        $returnArray = [];
-        foreach ($results as $val) {
-            if (!$val['custom_fields']) {
-                continue;
-            }
-            $cf = json_decode($val['custom_fields'], true);
-            if (empty($cf[$technicalName])) {
-                continue;
-            }
-
-            if (!empty($fieldName)) {
-                $returnArray[] = [
-                    $fieldName   => (string)$cf[$technicalName],
-                    'id'         => $val['id'],
-                    'version_id' => $val['version_id'],
-                ];
-            } else {
-                $returnArray[(string)$cf[$technicalName]][] = [
-                    'id'         => $val['id'],
-                    'version_id' => $val['version_id'],
-                ];
-            }
-        }
-
-        return $returnArray;
-    }
 
     /**
      * it populates $this->topidProducts once, unless $forceReload is true
@@ -538,327 +302,28 @@ class MappingHelperService
      */
     public function mapProducts(): bool
     {
+        $this->productMappingService->setCliStyle($this->cliStyle);
+        $this->productMappingService->setTopdataWebserviceClient($this->topdataWebserviceClient);
 
-        $this->cliStyle->info('MappingHelperService::mapProducts() - using mapping type: ' . $this->_getOption(self::OPTION_NAME_MAPPING_TYPE));
-
-        try {
-            $this->connection->executeStatement('
-                TRUNCATE TABLE topdata_to_product;
-            ');
-            $dataInsert = [];
-            switch ($this->_getOption(self::OPTION_NAME_MAPPING_TYPE)) {
-                case MappingTypeConstants::MAPPING_TYPE_PRODUCT_NUMBER_AS_WS_ID:
-                    $artnos = $this->fixMultiArrayBinaryIds(
-                        $this->getKeysByOrdernumber()
-                    );
-                    $currentDateTime = date('Y-m-d H:i:s');
-                    foreach ($artnos as $wsid => $prods) {
-                        foreach ($prods as $prodid) {
-                            if (ctype_digit((string)$wsid)) {
-                                $dataInsert[] = '(' .
-                                    '0x' . Uuid::randomHex() . ',' .
-                                    "$wsid," .
-                                    "0x{$prodid['id']}," .
-                                    "0x{$prodid['version_id']}," .
-                                    "'$currentDateTime'" .
-                                    ')';
-                            }
-                            if (count($dataInsert) > 99) {
-                                $this->connection->executeStatement('
-                                INSERT INTO topdata_to_product 
-                                (id, top_data_id, product_id, product_version_id, created_at) 
-                                VALUES ' . implode(',', $dataInsert) . '
-                            ');
-                                $dataInsert = [];
-                                $this->activity();
-                            }
-                        }
-                    }
-                    if (count($dataInsert)) {
-                        $this->connection->executeStatement('
-                            INSERT INTO topdata_to_product 
-                            (id, top_data_id, product_id, product_version_id, created_at) 
-                            VALUES ' . implode(',', $dataInsert) . '
-                        ');
-                        $dataInsert = [];
-                        $this->activity();
-                    }
-                    break;
-
-                case MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_DEFAULT:
-                case MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_CUSTOM:
-                case MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_CUSTOM_FIELD:
-                    if ($this->_getOption(self::OPTION_NAME_MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_CUSTOM && $this->_getOption(self::OPTION_NAME_ATTRIBUTE_ORDERNUMBER) != '') {
-                        $artnos = $this->fixMultiArrayBinaryIds(
-                            $this->getKeysByOptionValueUnique($this->_getOption(self::OPTION_NAME_ATTRIBUTE_ORDERNUMBER))
-                        );
-                    } elseif ($this->_getOption(self::OPTION_NAME_MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_CUSTOM_FIELD && $this->_getOption(self::OPTION_NAME_ATTRIBUTE_ORDERNUMBER) != '') {
-                        $artnos = $this->getKeysByCustomFieldUnique($this->_getOption(self::OPTION_NAME_ATTRIBUTE_ORDERNUMBER));
-                    } else {
-                        $artnos = $this->fixMultiArrayBinaryIds(
-                            $this->getKeysByOrdernumber()
-                        );
-                    }
-
-                    if (count($artnos) == 0) {
-                        throw new \Exception('distributor mapping 0 products found');
-                    }
-
-                    $stored = 0;
-                    $this->cliStyle->info(count($artnos) . " products to check ...");
-                    for ($i = 1; ; $i++) {
-                        $all_artnr = $this->topdataWebserviceClient->matchMyDistributer(['page' => $i]);
-                        if (!isset($all_artnr->page->available_pages)) {
-                            throw new \Exception('distributor webservice no pages');
-                        }
-                        $available_pages = $all_artnr->page->available_pages;
-                        foreach ($all_artnr->match as $prod) {
-                            foreach ($prod->distributors as $distri) {
-                                //if((int)$s['distributor_id'] != (int)$distri->distributor_id)
-                                //    continue;
-                                foreach ($distri->artnrs as $artnr) {
-                                    $key = (string)$artnr;
-                                    if (isset($artnos[$key])) {
-                                        foreach ($artnos[$key] as $artnosValue) {
-                                            $stored++;
-                                            if (($stored % 50) == 0) {
-                                                $this->activity();
-                                            }
-                                            $dataInsert[] = [
-                                                'topDataId'        => $prod->products_id,
-                                                'productId'        => $artnosValue['id'],
-                                                'productVersionId' => $artnosValue['version_id'],
-                                            ];
-                                            if (count($dataInsert) > 500) {
-                                                $this->topdataToProductRepository->create($dataInsert, $this->context);
-                                                $dataInsert = [];
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if ($this->verbose) {
-                            $this->activity("\ndistributor $i/$available_pages");
-                            $this->mem();
-                            $this->activity("\n");
-                        }
-                        if ($i >= $available_pages) {
-                            break;
-                        }
-                    }
-                    if (count($dataInsert) > 0) {
-                        $this->topdataToProductRepository->create($dataInsert, $this->context);
-                        $dataInsert = [];
-                    }
-                    $this->activity("\n" . $stored . " - stored topdata products\n");
-                    unset($artnos);
-
-                    break;
-                case MappingTypeConstants::MAPPING_TYPE_DEFAULT:
-                case MappingTypeConstants::MAPPING_TYPE_CUSTOM:
-                case MappingTypeConstants::MAPPING_TYPE_CUSTOM_FIELD:
-                default:
-                    $oems = [];
-                    $eans = [];
-                    if ($this->_getOption(self::OPTION_NAME_MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_CUSTOM) {
-                        if ($this->_getOption(self::OPTION_NAME_ATTRIBUTE_OEM) != '') {
-                            $oems = $this->fixArrayBinaryIds(
-                                $this->getKeysByOptionValue($this->_getOption(self::OPTION_NAME_ATTRIBUTE_OEM), 'manufacturer_number')
-                            );
-                        }
-                        if ($this->_getOption(self::OPTION_NAME_ATTRIBUTE_EAN) != '') {
-                            $eans = $this->fixArrayBinaryIds(
-                                $this->getKeysByOptionValue($this->_getOption(self::OPTION_NAME_ATTRIBUTE_EAN), 'ean')
-                            );
-                        }
-                    } elseif ($this->_getOption(self::OPTION_NAME_MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_CUSTOM_FIELD) {
-                        if ($this->_getOption(self::OPTION_NAME_ATTRIBUTE_OEM) != '') {
-                            $oems = $this->getKeysByCustomFieldUnique($this->_getOption(self::OPTION_NAME_ATTRIBUTE_OEM), 'manufacturer_number');
-                        }
-                        if ($this->_getOption(self::OPTION_NAME_ATTRIBUTE_EAN) != '') {
-                            $eans = $this->getKeysByCustomFieldUnique($this->_getOption(self::OPTION_NAME_ATTRIBUTE_EAN), 'ean');
-                        }
-                    } else {
-                        $oems = $this->fixArrayBinaryIds($this->getKeysBySuppliernumber());
-                        $eans = $this->fixArrayBinaryIds($this->getKeysByEan());
-                    }
-
-                    $oemMap = [];
-                    foreach ($oems as $oem) {
-                        $oem['manufacturer_number'] = strtolower(ltrim(trim($oem['manufacturer_number']), '0'));
-                        $oemMap[(string)$oem['manufacturer_number']][$oem['id'] . '-' . $oem['version_id']] = [
-                            'id'         => $oem['id'],
-                            'version_id' => $oem['version_id'],
-                        ];
-                    }
-                    unset($oems);
-
-                    $eanMap = [];
-                    foreach ($eans as $ean) {
-                        $ean['ean'] = preg_replace('/[^0-9]/', '', $ean['ean']);
-                        $ean['ean'] = ltrim(trim($ean['ean']), '0');
-                        $eanMap[(string)$ean['ean']][$ean['id'] . '-' . $ean['version_id']] = [
-                            'id'         => $ean['id'],
-                            'version_id' => $ean['version_id'],
-                        ];
-                    }
-                    unset($eans);
-
-                    $setted = [];
-                    if (count($eanMap) > 0) {
-                        for ($i = 1; ; $i++) {
-                            $all_artnr = $this->topdataWebserviceClient->matchMyEANs(['page' => $i]);
-                            if (!isset($all_artnr->page->available_pages)) {
-                                throw new \Exception('ean webservice no pages');
-                            }
-                            $available_pages = $all_artnr->page->available_pages;
-                            foreach ($all_artnr->match as $prod) {
-                                foreach ($prod->values as $ean) {
-                                    $ean = (string)$ean;
-                                    $ean = ltrim(trim($ean), '0');
-                                    if (isset($eanMap[$ean])) {
-                                        foreach ($eanMap[$ean] as $key => $product) {
-                                            if (isset($setted[$key])) {
-                                                continue;
-                                            }
-
-                                            $dataInsert[] = [
-                                                'topDataId'        => $prod->products_id,
-                                                'productId'        => $product['id'],
-                                                'productVersionId' => $product['version_id'],
-                                            ];
-                                            if (count($dataInsert) > 500) {
-                                                $this->topdataToProductRepository->create($dataInsert, $this->context);
-                                                $dataInsert = [];
-                                            }
-                                            $setted[$key] = true;
-                                        }
-                                    }
-                                }
-                            }
-                            if ($this->verbose) {
-                                echo 'ean page' . $i . '/' . $available_pages . "\n";
-                            }
-                            if ($i >= $available_pages) {
-                                break;
-                            }
-                        }
-                    }
-
-                    if (count($oemMap) > 0) {
-                        for ($i = 1; ; $i++) {
-                            $all_artnr = $this->topdataWebserviceClient->matchMyOems(['page' => $i]);
-                            if (!isset($all_artnr->page->available_pages)) {
-                                throw new \Exception('oem webservice no pages');
-                            }
-                            $available_pages = $all_artnr->page->available_pages;
-                            foreach ($all_artnr->match as $prod) {
-                                foreach ($prod->values as $oem) {
-                                    $oem = (string)$oem;
-                                    $oem = strtolower($oem);
-                                    if (isset($oemMap[$oem])) {
-                                        foreach ($oemMap[$oem] as $key => $product) {
-                                            if (isset($setted[$key])) {
-                                                continue;
-                                            }
-                                            $dataInsert[] = [
-                                                'topDataId'        => $prod->products_id,
-                                                'productId'        => $product['id'],
-                                                'productVersionId' => $product['version_id'],
-                                            ];
-                                            if (count($dataInsert) > 500) {
-                                                $this->topdataToProductRepository->create($dataInsert, $this->context);
-                                                $dataInsert = [];
-                                            }
-
-                                            $setted[$key] = true;
-                                        }
-                                    }
-                                }
-                            }
-                            if ($this->verbose) {
-                                echo 'oem page ' . $i . '/' . $available_pages . "\n";
-                            }
-                            if ($i >= $available_pages) {
-                                break;
-                            }
-                        }
-
-                        for ($i = 1; ; $i++) {
-                            $all_artnr = $this->topdataWebserviceClient->matchMyPcds(['page' => $i]);
-                            if (!isset($all_artnr->page->available_pages)) {
-                                throw new \Exception('pcd webservice no pages');
-                            }
-                            $available_pages = $all_artnr->page->available_pages;
-                            foreach ($all_artnr->match as $prod) {
-                                foreach ($prod->values as $oem) {
-                                    $oem = (string)$oem;
-                                    $oem = strtolower($oem);
-                                    if (isset($oemMap[$oem])) {
-                                        foreach ($oemMap[$oem] as $key => $product) {
-                                            if (isset($setted[$key])) {
-                                                continue;
-                                            }
-                                            $dataInsert[] = [
-                                                'topDataId'        => $prod->products_id,
-                                                'productId'        => $product['id'],
-                                                'productVersionId' => $product['version_id'],
-                                            ];
-                                            if (count($dataInsert) > 500) {
-                                                $this->topdataToProductRepository->create($dataInsert, $this->context);
-                                                $dataInsert = [];
-                                            }
-
-                                            $setted[$key] = true;
-                                        }
-                                    }
-                                }
-                            }
-                            if ($this->verbose) {
-                                echo 'pcd page ' . $i . '/' . $available_pages . "\n";
-                            }
-                            if ($i >= $available_pages) {
-                                break;
-                            }
-                        }
-                    }
-                    if (count($dataInsert) > 0) {
-                        $this->topdataToProductRepository->create($dataInsert, $this->context);
-                        $dataInsert = [];
-                    }
-                    unset($setted);
-                    unset($oemMap);
-                    unset($eanMap);
-                    break;
-            }
-
-            return true;
-        } catch (\Exception $e) {
-            $this->logger->error($e->getMessage());
-            if ($this->verbose) {
-                echo 'Exception abgefangen: ', $e->getMessage(), "\n";
-            }
-        }
-
-        return false;
+        return $this->productMappingService->mapProducts();
     }
+
 
     public function setBrands(): bool
     {
         try {
             $this->cliStyle->section("\n\nBrands");
-            $this->activity("Getting data from remote server...\n");
-            $this->lap(true);
+            $this->progressLoggingService->activity("Getting data from remote server...\n");
+            $this->progressLoggingService->lap(true);
             $brands = $this->topdataWebserviceClient->getBrands();
-            $this->activity('Got ' . count($brands->data) . " brands from remote server\n");
+            $this->progressLoggingService->activity('Got ' . count($brands->data) . " brands from remote server\n");
             ImportReport::setCounter('Brands fetched', count($brands->data));
             $brandRepository = $this->topdataBrandRepository;
 
             $duplicates = [];
             $dataCreate = [];
             $dataUpdate = [];
-            $this->activity('Processing data');
+            $this->progressLoggingService->activity('Processing data');
             foreach ($brands->data as $b) {
                 if ($b->main == 0) {
                     continue;
@@ -902,26 +367,26 @@ class MappingHelperService
                 if (count($dataCreate) > 100) {
                     $brandRepository->create($dataCreate, $this->context);
                     $dataCreate = [];
-                    $this->activity();
+                    $this->progressLoggingService->activity();
                 }
 
                 if (count($dataUpdate) > 100) {
                     $brandRepository->update($dataUpdate, $this->context);
                     $dataUpdate = [];
-                    $this->activity();
+                    $this->progressLoggingService->activity();
                 }
             }
 
             if (count($dataCreate)) {
                 $brandRepository->create($dataCreate, $this->context);
-                $this->activity();
+                $this->progressLoggingService->activity();
             }
 
             if (count($dataUpdate)) {
                 $brandRepository->update($dataUpdate, $this->context);
-                $this->activity();
+                $this->progressLoggingService->activity();
             }
-            $this->activity("\nBrands done " . $this->lap() . "sec\n");
+            $this->progressLoggingService->activity("\nBrands done " . $this->progressLoggingService->lap() . "sec\n");
             $brandRepository = null;
             $duplicates = null;
             $brands = null;
@@ -929,7 +394,7 @@ class MappingHelperService
             return true;
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
-            $this->activity('Exception abgefangen: ' . $e->getMessage() . "\n");
+            $this->progressLoggingService->activity('Exception abgefangen: ' . $e->getMessage() . "\n");
         }
 
         return false;
@@ -939,15 +404,15 @@ class MappingHelperService
     {
         try {
             $this->cliStyle->section("\n\nSeries");
-            $this->activity("Getting data from remote server...\n");
-            $this->lap(true);
+            $this->progressLoggingService->activity("Getting data from remote server...\n");
+            $this->progressLoggingService->lap(true);
             $series = $this->topdataWebserviceClient->getModelSeriesByBrandId();
-            $this->activity('Got ' . count($series->data) . " records from remote server\n");
+            $this->progressLoggingService->activity('Got ' . count($series->data) . " records from remote server\n");
             ImportReport::setCounter('Series fetched', count($series->data));
             $seriesRepository = $this->topdataSeriesRepository;
             $dataCreate = [];
             $dataUpdate = [];
-            $this->activity('Processing data');
+            $this->progressLoggingService->activity('Processing data');
             $allSeries = $this->getSeriesArray(true);
             foreach ($series->data as $s) {
                 foreach ($s->brandIds as $brandWsId) {
@@ -994,34 +459,34 @@ class MappingHelperService
                     if (count($dataCreate) > 100) {
                         $seriesRepository->create($dataCreate, $this->context);
                         $dataCreate = [];
-                        $this->activity();
+                        $this->progressLoggingService->activity();
                     }
 
                     if (count($dataUpdate) > 100) {
                         $seriesRepository->update($dataUpdate, $this->context);
                         $dataUpdate = [];
-                        $this->activity();
+                        $this->progressLoggingService->activity();
                     }
                 }
             }
 
             if (count($dataCreate)) {
                 $seriesRepository->create($dataCreate, $this->context);
-                $this->activity();
+                $this->progressLoggingService->activity();
             }
 
             if (count($dataUpdate)) {
                 $seriesRepository->update($dataUpdate, $this->context);
-                $this->activity();
+                $this->progressLoggingService->activity();
             }
-            $this->activity("\nSeries done " . $this->lap() . "sec\n");
+            $this->progressLoggingService->activity("\nSeries done " . $this->progressLoggingService->lap() . "sec\n");
             $series = null;
             $seriesRepository = null;
 
             return true;
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
-            $this->activity('Exception abgefangen: ' . $e->getMessage() . "\n");
+            $this->progressLoggingService->activity('Exception abgefangen: ' . $e->getMessage() . "\n");
         }
 
         return false;
@@ -1031,15 +496,15 @@ class MappingHelperService
     {
         try {
             $this->cliStyle->section("\n\nDevice type");
-            $this->activity("Getting data from remote server...\n");
-            $this->lap(true);
+            $this->progressLoggingService->activity("Getting data from remote server...\n");
+            $this->progressLoggingService->lap(true);
             $types = $this->topdataWebserviceClient->getModelTypeByBrandId();
-            //            $this->activity("Got ".count($types->data)." records.\n");
+            //            $this->progressLoggingService->activity("Got ".count($types->data)." records.\n");
             ImportReport::setCounter('DeviceTypes fetched', count($types->data));
             $typeRepository = $this->topdataDeviceTypeRepository;
             $dataCreate = [];
             $dataUpdate = [];
-            $this->activity('Processing data...');
+            $this->progressLoggingService->activity('Processing data...');
             $allTypes = $this->getTypesArray(true);
             foreach ($types->data as $s) {
                 foreach ($s->brandIds as $brandWsId) {
@@ -1084,34 +549,34 @@ class MappingHelperService
                     if (count($dataCreate) > 100) {
                         $typeRepository->create($dataCreate, $this->context);
                         $dataCreate = [];
-                        $this->activity();
+                        $this->progressLoggingService->activity();
                     }
 
                     if (count($dataUpdate) > 100) {
                         $typeRepository->update($dataUpdate, $this->context);
                         $dataUpdate = [];
-                        $this->activity();
+                        $this->progressLoggingService->activity();
                     }
                 }
             }
 
             if (count($dataCreate)) {
                 $typeRepository->create($dataCreate, $this->context);
-                $this->activity();
+                $this->progressLoggingService->activity();
             }
 
             if (count($dataUpdate)) {
                 $typeRepository->update($dataUpdate, $this->context);
-                $this->activity();
+                $this->progressLoggingService->activity();
             }
 
             $types = null;
-            $this->activity("\nDeviceType done " . $this->lap() . "sec\n");
+            $this->progressLoggingService->activity("\nDeviceType done " . $this->progressLoggingService->lap() . "sec\n");
 
             return true;
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
-            $this->activity("\n" . 'Exception occured: ' . $e->getMessage() . "\n");
+            $this->progressLoggingService->activity("\n" . 'Exception occured: ' . $e->getMessage() . "\n");
         }
 
         return false;
@@ -1133,43 +598,43 @@ class MappingHelperService
             $SQLlogger = $this->connection->getConfiguration()->getSQLLogger();
             $this->connection->getConfiguration()->setSQLLogger(null);
             $this->cliStyle->section("Devices");
-            $this->activity("Devices begin (Chunk size is $limit devices)\n");
-            $this->mem();
-            $this->activity("\n");
+            $this->progressLoggingService->activity("Devices begin (Chunk size is $limit devices)\n");
+            $this->progressLoggingService->mem();
+            $this->progressLoggingService->activity("\n");
             $functionTimeStart = microtime(true);
             $chunkNumber = 0;
-            if ((int)$this->_getOption(self::OPTION_NAME_START)) {
-                $chunkNumber = (int)$this->_getOption(self::OPTION_NAME_START) - 1;
+            if ((int)$this->optionsHelperService->getOption(OptionConstants::START)) {
+                $chunkNumber = (int)$this->optionsHelperService->getOption(OptionConstants::START) - 1;
                 $start = $chunkNumber * $limit;
             }
             $repeat = true;
-            $this->lap(true);
+            $this->progressLoggingService->lap(true);
             $seriesArray = $this->getSeriesArray(true);
             $typesArray = $this->getTypesArray(true);
             while ($repeat) {
                 if ($start) {
-                    $this->mem();
-                    $this->activity($this->lap() . 'sec');
+                    $this->progressLoggingService->mem();
+                    $this->progressLoggingService->activity($this->progressLoggingService->lap() . 'sec');
                 }
                 $chunkNumber++;
-                if ((int)$this->_getOption(self::OPTION_NAME_END) && ($chunkNumber > (int)$this->_getOption(self::OPTION_NAME_END))) {
+                if ((int)$this->optionsHelperService->getOption(OptionConstants::END) && ($chunkNumber > (int)$this->optionsHelperService->getOption(OptionConstants::END))) {
                     break;
                 }
-                $this->activity("\nGetting data chunk $chunkNumber from remote server...");
+                $this->progressLoggingService->activity("\nGetting data chunk $chunkNumber from remote server...");
                 ImportReport::incCounter('Device Chunks');
                 $models = $this->topdataWebserviceClient->getModels($limit, $start);
-                $this->activity($this->lap() . "sec\n");
+                $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
                 if (!isset($models->data) || count($models->data) == 0) {
                     $repeat = false;
                     break;
                 }
-                $this->activity("Processing data chunk $chunkNumber");
+                $this->progressLoggingService->activity("Processing data chunk $chunkNumber");
                 $i = 1;
                 foreach ($models->data as $s) {
                     $i++;
                     if ($i > 500) {
                         $i = 1;
-                        $this->activity();
+                        $this->progressLoggingService->activity();
                     }
 
                     $brandArr = $this->getBrandByWsIdArray((int)$s->bId);
@@ -1315,27 +780,27 @@ class MappingHelperService
                         $created += count($dataCreate);
                         $this->topdataDeviceRepository->create($dataCreate, $this->context);
                         $dataCreate = [];
-                        $this->activity('+');
+                        $this->progressLoggingService->activity('+');
                     }
 
                     if (count($dataUpdate) > 50) {
                         $updated += count($dataUpdate);
                         $this->topdataDeviceRepository->update($dataUpdate, $this->context);
                         $dataUpdate = [];
-                        $this->activity('*');
+                        $this->progressLoggingService->activity('*');
                     }
                 }
                 if (count($dataCreate)) {
                     $created += count($dataCreate);
                     $this->topdataDeviceRepository->create($dataCreate, $this->context);
                     $dataCreate = [];
-                    $this->activity('+');
+                    $this->progressLoggingService->activity('+');
                 }
                 if (count($dataUpdate)) {
                     $updated += count($dataUpdate);
                     $this->topdataDeviceRepository->update($dataUpdate, $this->context);
                     $dataUpdate = [];
-                    $this->activity('*');
+                    $this->progressLoggingService->activity('*');
                 }
 
                 $start += $limit;
@@ -1347,7 +812,7 @@ class MappingHelperService
 
             $models = null;
             $duplicates = null;
-            $this->activity("\n");
+            $this->progressLoggingService->activity("\n");
             $totalSecs = microtime(true) - $functionTimeStart;
 
             $this->cliStyle->dumpDict([
@@ -1375,7 +840,7 @@ class MappingHelperService
      */
     public function setDeviceMedia(): bool
     {
-        $this->activity('Devices Media start' . "\n");
+        $this->progressLoggingService->activity('Devices Media start' . "\n");
         $this->brandWsArray = null;
         try {
             $deviceRepository = $this->topdataDeviceRepository;
@@ -1387,31 +852,31 @@ class MappingHelperService
             $availablePrintersCount = count($available_Printers);
             $processedPrintarsCount = 0;
             $limit = 5000;
-            $this->activity("Chunk size is $limit devices\n");
+            $this->progressLoggingService->activity("Chunk size is $limit devices\n");
             $start = 0;
             $chunkNumber = 0;
-            if ((int)$this->_getOption(self::OPTION_NAME_START)) {
-                $chunkNumber = (int)$this->_getOption(self::OPTION_NAME_START) - 1;
+            if ((int)$this->optionsHelperService->getOption(OptionConstants::START)) {
+                $chunkNumber = (int)$this->optionsHelperService->getOption(OptionConstants::START) - 1;
                 $start = $chunkNumber * $limit;
             }
             $repeat = true;
-            $this->lap(true);
+            $this->progressLoggingService->lap(true);
             while ($repeat) {
                 $chunkNumber++;
-                if ((int)$this->_getOption(self::OPTION_NAME_END) && ($chunkNumber > (int)$this->_getOption(self::OPTION_NAME_END))) {
+                if ((int)$this->optionsHelperService->getOption(OptionConstants::END) && ($chunkNumber > (int)$this->optionsHelperService->getOption(OptionConstants::END))) {
                     break;
                 }
-                $this->activity("\nGetting data chunk $chunkNumber from remote server...");
+                $this->progressLoggingService->activity("\nGetting data chunk $chunkNumber from remote server...");
                 ImportReport::incCounter('Device Media Chunks');
                 $models = $this->topdataWebserviceClient->getModels($limit, $start);
-                $this->activity($this->lap() . 'sec. ');
-                $this->mem();
-                $this->activity("\n");
+                $this->progressLoggingService->activity($this->progressLoggingService->lap() . 'sec. ');
+                $this->progressLoggingService->mem();
+                $this->progressLoggingService->activity("\n");
                 if (!isset($models->data) || count($models->data) == 0) {
                     $repeat = false;
                     break;
                 }
-                $this->activity("Processing data chunk $chunkNumber");
+                $this->progressLoggingService->activity("Processing data chunk $chunkNumber");
 
                 $processCounter = 1;
                 foreach ($models->data as $s) {
@@ -1424,7 +889,7 @@ class MappingHelperService
                     $processCounter++;
                     if ($processCounter >= 4) {
                         $processCounter = 1;
-                        $this->activity();
+                        $this->progressLoggingService->activity();
                     }
 
                     $brand = $this->getBrandByWsIdArray($s->bId);
@@ -1488,10 +953,10 @@ class MappingHelperService
                         }
                     } catch (\Exception $e) {
                         $this->logger->error($e->getMessage());
-                        $this->activity('Exception: ' . $e->getMessage() . "\n");
+                        $this->progressLoggingService->activity('Exception: ' . $e->getMessage() . "\n");
                     }
                 }
-                $this->activity("processed $processedPrintarsCount of $availablePrintersCount devices " . $this->lap() . "sec. \n");
+                $this->progressLoggingService->activity("processed $processedPrintarsCount of $availablePrintersCount devices " . $this->progressLoggingService->lap() . "sec. \n");
                 $start += $limit;
                 if (count($models->data) < $limit) {
                     $repeat = false;
@@ -1499,13 +964,13 @@ class MappingHelperService
                 }
             }
 
-            $this->activity("\n");
-            $this->activity('Devices Media done' . "\n");
+            $this->progressLoggingService->activity("\n");
+            $this->progressLoggingService->activity('Devices Media done' . "\n");
 
             return true;
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
-            $this->activity('Exception: ' . $e->getMessage() . "\n");
+            $this->progressLoggingService->activity('Exception: ' . $e->getMessage() . "\n");
         }
 
         return false;
@@ -1534,7 +999,7 @@ class MappingHelperService
         try {
             $this->cliStyle->yellow('Devices to products linking begin');
             $this->cliStyle->yellow('Disabling all devices, brands, series and types, unlinking products, caching products...');
-            $this->lap(true);
+            $this->progressLoggingService->lap(true);
             $cntA = $this->connection->createQueryBuilder()
                 ->update('topdata_brand')
                 ->set('is_enabled', '0')
@@ -1574,25 +1039,25 @@ class MappingHelperService
                 $this->cliStyle->warning('No mapped products found in database. Did you set the correct mapping in plugin config?');
             }
 
-            $this->activity($this->lap() . "sec\n");
+            $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
             $enabledBrands = [];
             $enabledSeries = [];
             $enabledTypes = [];
 
             $topids = array_chunk(array_keys($topidProducts), 100);
             foreach ($topids as $k => $prs) {
-                $this->activity("\nGetting data from remote server part " . ($k + 1) . '/' . count($topids) . '...');
+                $this->progressLoggingService->activity("\nGetting data from remote server part " . ($k + 1) . '/' . count($topids) . '...');
                 $products = $this->topdataWebserviceClient->myProductList([
                     'products' => implode(',', $prs),
                     'filter'   => 'product_application_in',
                 ]);
-                $this->activity($this->lap() . "sec\n");
+                $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
 
                 if (!isset($products->page->available_pages)) {
                     throw new \Exception($products->error[0]->error_message . 'webservice no pages');
                 }
-                $this->mem();
-                $this->activity("\nProcessing data...");
+                $this->progressLoggingService->mem();
+                $this->progressLoggingService->activity("\nProcessing data...");
                 $deviceWS = [];
                 foreach ($products->products as $product) {
                     if (!isset($topidProducts[$product->products_id])) {
@@ -1625,7 +1090,7 @@ class MappingHelperService
 
                 $deviceIdsToEnable = array_keys($deviceWS);
                 $devices = $this->getDeviceArrayByWsIdArray($deviceIdsToEnable);
-                $this->activity();
+                $this->progressLoggingService->activity();
                 if (!count($devices)) {
                     continue;
                 }
@@ -1635,7 +1100,7 @@ class MappingHelperService
                     $sql = 'UPDATE topdata_device SET is_enabled = 1 WHERE (is_enabled = 0) AND (ws_id IN (' . implode(',', $chunk) . '))';
                     $cnt = $this->connection->executeStatement($sql);
                     $this->cliStyle->blue("Enabled $cnt devices");
-                    // $this->activity();
+                    // $this->progressLoggingService->activity();
                 }
 
                 /* device_id, product_id, product_version_id, created_at */
@@ -1668,11 +1133,11 @@ class MappingHelperService
                     $this->connection->executeStatement('
                         INSERT INTO topdata_device_to_product (device_id, product_id, product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
                     ');
-                    $this->activity();
+                    $this->progressLoggingService->activity();
                 }
 
-                $this->activity($this->lap() . "sec\n");
-                $this->mem();
+                $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
+                $this->progressLoggingService->mem();
             }
 
             $this->cliStyle->yellow("Activating brands, series and device types...");
@@ -1690,7 +1155,7 @@ class MappingHelperService
                     UPDATE topdata_brand SET is_enabled = 1 WHERE id IN (' . implode(',', $brandIds) . ')
                 ');
                 $this->cliStyle->blue("Enabled $cnt brands");
-                $this->activity();
+                $this->progressLoggingService->activity();
             }
 
             // ---- enable series
@@ -1700,7 +1165,7 @@ class MappingHelperService
                     UPDATE topdata_series SET is_enabled = 1 WHERE id IN (' . implode(',', $seriesIds) . ')
                 ');
                 $this->cliStyle->blue("Enabled $cnt series");
-                $this->activity();
+                $this->progressLoggingService->activity();
             }
 
             // ---- enable device types
@@ -1710,11 +1175,11 @@ class MappingHelperService
                     UPDATE topdata_device_type SET is_enabled = 1 WHERE id IN (' . implode(',', $typeIds) . ')
                 ');
                 $this->cliStyle->blue("Enabled $cnt types");
-                $this->activity();
+                $this->progressLoggingService->activity();
             }
-            $this->activity($this->lap() . "sec\n");
+            $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
             //            $this->connection->commit();
-            $this->activity("Devices to products linking done.\n");
+            $this->progressLoggingService->activity("Devices to products linking done.\n");
 
             return true;
         } catch (\Exception $e) {
@@ -1828,42 +1293,6 @@ class MappingHelperService
         return $this->typesArray;
     }
 
-    /**
-     * helper method for logging stuff to stdout
-     */
-    private function activity(string $str = '.', bool $newLine = false): void
-    {
-        if ($this->verbose) {
-            echo $str;
-            if ($newLine) {
-                echo "\n";
-            }
-        }
-    }
-
-    /**
-     * logging helper
-     */
-    private function mem(): void
-    {
-        $this->activity('[' . round(memory_get_usage(true) / 1024 / 1024) . 'Mb]');
-    }
-
-    /**
-     * logging helper
-     */
-    private function lap($start = false): string
-    {
-        if ($start) {
-            $this->microtime = microtime(true);
-
-            return '';
-        }
-        $lapTime = microtime(true) - $this->microtime;
-        $this->microtime = microtime(true);
-
-        return (string)round($lapTime, 3);
-    }
 
     private function prepareProduct(array $productId_versionId, $remoteProductData, $onlyMedia = false): array
     {
@@ -1928,14 +1357,14 @@ class MappingHelperService
                         }
                     } catch (\Exception $e) {
                         $this->logger->error($e->getMessage());
-                        $this->activity('Exception: ' . $e->getMessage() . "\n");
+                        $this->progressLoggingService->activity('Exception: ' . $e->getMessage() . "\n");
                     }
                 }
                 if (count($media)) {
                     $productData['media'] = $media;
                     //                    $productData['coverId'] = $media[0]['id'];
                 }
-                $this->activity();
+                $this->progressLoggingService->activity();
             }
         }
 
@@ -1957,7 +1386,7 @@ class MappingHelperService
                 }
                 $productData['properties'][] = ['id' => $propertyId];
             }
-            $this->activity();
+            $this->progressLoggingService->activity();
         }
 
         if (!$onlyMedia
@@ -1977,7 +1406,7 @@ class MappingHelperService
                 }
                 $productData['properties'][] = ['id' => $propertyId];
             }
-            $this->activity();
+            $this->progressLoggingService->activity();
         }
 
         if (!$onlyMedia
@@ -2005,17 +1434,17 @@ class MappingHelperService
                 }
                 $productData['properties'][] = ['id' => $propertyId];
             }
-            $this->activity();
+            $this->progressLoggingService->activity();
         }
 
         if (
             !$onlyMedia
-            && $this->_getOption(self::OPTION_NAME_PRODUCT_WAREGROUPS)
+            && $this->optionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS)
             && isset($remoteProductData->waregroups)
         ) {
             foreach ($remoteProductData->waregroups as $waregroupObject) {
                 $categoriesChain = json_decode(json_encode($waregroupObject->waregroup_tree), true);
-                $categoryId = $this->entitiesHelperService->getCategoryId($categoriesChain, (string)$this->_getOption(self::OPTION_NAME_PRODUCT_WAREGROUPS_PARENT));
+                $categoryId = $this->entitiesHelperService->getCategoryId($categoriesChain, (string)$this->optionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS_PARENT));
                 if (!$categoryId) {
                     break;
                 }
@@ -2032,7 +1461,7 @@ class MappingHelperService
 
         $productData['id'] = $productId;
 
-        //$this->activity('-'.$productId_versionId['product_id'].'-');
+        //$this->progressLoggingService->activity('-'.$productId_versionId['product_id'].'-');
         return $productData;
     }
 
@@ -2187,29 +1616,29 @@ class MappingHelperService
         $chunkSize = 50;
 
         $topids = array_chunk(array_keys($topid_products), $chunkSize);
-        $this->lap(true);
+        $this->progressLoggingService->lap(true);
         foreach ($topids as $k => $prs) {
-            if ($this->_getOption(self::OPTION_NAME_START) && ($k + 1 < $this->_getOption(self::OPTION_NAME_START))) {
+            if ($this->optionsHelperService->getOption(OptionConstants::START) && ($k + 1 < $this->optionsHelperService->getOption(OptionConstants::START))) {
                 continue;
             }
 
-            if ($this->_getOption(self::OPTION_NAME_END) && ($k + 1 > $this->_getOption(self::OPTION_NAME_END))) {
+            if ($this->optionsHelperService->getOption(OptionConstants::END) && ($k + 1 > $this->optionsHelperService->getOption(OptionConstants::END))) {
                 break;
             }
 
-            $this->activity('Getting data from remote server part ' . ($k + 1) . '/' . count($topids) . ' (' . count($prs) . ' products)...');
+            $this->progressLoggingService->activity('Getting data from remote server part ' . ($k + 1) . '/' . count($topids) . ' (' . count($prs) . ' products)...');
             $products = $this->topdataWebserviceClient->myProductList([
                 'products' => implode(',', $prs),
                 'filter'   => 'all',
             ]);
-            $this->activity($this->lap() . "sec\n");
+            $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
 
             //            $this->debug(implode(',', $prs), true);
 
             if (!isset($products->page->available_pages)) {
                 throw new \Exception($products->error[0]->error_message . 'webservice no pages');
             }
-            $this->activity('Processing data...');
+            $this->progressLoggingService->activity('Processing data...');
 
             $temp = array_slice($topid_products, $k * $chunkSize, $chunkSize);
             $currentChunkProductIds = [];
@@ -2253,11 +1682,11 @@ class MappingHelperService
                 if (count($productDataUpdate) > 10) {
                     $this->productRepository->update($productDataUpdate, $this->context);
                     $productDataUpdate = [];
-                    $this->activity();
+                    $this->progressLoggingService->activity();
 
                     if (count($productDataUpdateCovers)) {
                         $this->productRepository->update($productDataUpdateCovers, $this->context);
-                        $this->activity();
+                        $this->progressLoggingService->activity();
                         $productDataUpdateCovers = [];
                     }
                 }
@@ -2266,26 +1695,26 @@ class MappingHelperService
                     $this->linkProducts($topid_products[$product->products_id][0], $product);
                 }
             }
-            $this->mem();
-            $this->activity(' ' . $this->lap() . "sec\n");
+            $this->progressLoggingService->mem();
+            $this->progressLoggingService->activity(' ' . $this->progressLoggingService->lap() . "sec\n");
         }
 
         if (count($productDataUpdate)) {
-            $this->activity('Updating last ' . count($productDataUpdate) . ' products...');
+            $this->progressLoggingService->activity('Updating last ' . count($productDataUpdate) . ' products...');
             $this->productRepository->update($productDataUpdate, $this->context);
-            $this->mem();
-            $this->activity(' ' . $this->lap() . "sec\n");
+            $this->progressLoggingService->mem();
+            $this->progressLoggingService->activity(' ' . $this->progressLoggingService->lap() . "sec\n");
         }
 
         if (count($productDataUpdateCovers)) {
-            //            $this->activity("\nHas covers!");
-            $this->activity("\nUpdating last product covers...");
+            //            $this->progressLoggingService->activity("\nHas covers!");
+            $this->progressLoggingService->activity("\nUpdating last product covers...");
             $this->productRepository->update($productDataUpdateCovers, $this->context);
-            $this->activity(' ' . $this->lap() . "sec\n");
+            $this->progressLoggingService->activity(' ' . $this->progressLoggingService->lap() . "sec\n");
         }
 
         if (count($productDataDeleteDuplicateMedia)) {
-            $this->activity("\nDeleting product media duplicates...");
+            $this->progressLoggingService->activity("\nDeleting product media duplicates...");
             $chunks = array_chunk($productDataDeleteDuplicateMedia, 100);
             foreach ($chunks as $chunk) {
                 $productIds = [];
@@ -2306,13 +1735,13 @@ class MappingHelperService
                         AND (media_id IN ($mediaIds)) 
                         AND(id NOT IN ($pmIds))
                 ");
-                $this->activity();
+                $this->progressLoggingService->activity();
             }
-            $this->mem();
-            $this->activity(' ' . $this->lap() . "sec\n");
+            $this->progressLoggingService->mem();
+            $this->progressLoggingService->activity(' ' . $this->progressLoggingService->lap() . "sec\n");
         }
 
-        $this->activity("\nProduct information done!", true);
+        $this->progressLoggingService->activity("\nProduct information done!", true);
 
         return true;
     }
@@ -2352,8 +1781,8 @@ class MappingHelperService
     private function unlinkCategories(array $productIds): void
     {
         if (!count($productIds)
-            || !$this->_getOption(self::OPTION_NAME_PRODUCT_WAREGROUPS)
-            || !$this->_getOption(self::OPTION_NAME_PRODUCT_WAREGROUPS_DELETE)) {
+            || !$this->optionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS)
+            || !$this->optionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS_DELETE)) {
             return;
         }
 
@@ -2481,7 +1910,7 @@ class MappingHelperService
             return $this->getProductExtraOption($this->mapProductOption($optionName), $productId);
         }
 
-        return $this->_getOption($optionName) ? true : false;
+        return $this->optionsHelperService->getOption($optionName) ? true : false;
     }
 
     private function filterIdsByConfig(string $optionName, array $productIds): array
@@ -2563,7 +1992,7 @@ class MappingHelperService
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_similar (product_id, product_version_id, similar_product_id, similar_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
                     ');
-                    $this->activity();
+                    $this->progressLoggingService->activity();
                 }
 
                 if ($this->getProductOption('productSimilarCross', $productId)) {
@@ -2585,7 +2014,7 @@ class MappingHelperService
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_alternate (product_id, product_version_id, alternate_product_id, alternate_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
                     ');
-                    $this->activity();
+                    $this->progressLoggingService->activity();
                 }
 
                 if ($this->getProductOption('productAlternateCross', $productId)) {
@@ -2607,7 +2036,7 @@ class MappingHelperService
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_related (product_id, product_version_id, related_product_id, related_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
                     ');
-                    $this->activity();
+                    $this->progressLoggingService->activity();
                 }
 
                 if ($this->getProductOption('productRelatedCross', $productId)) {
@@ -2629,7 +2058,7 @@ class MappingHelperService
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_bundled (product_id, product_version_id, bundled_product_id, bundled_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
                     ');
-                    $this->activity();
+                    $this->progressLoggingService->activity();
                 }
 
                 if ($this->getProductOption('productBundledCross', $productId)) {
@@ -2653,7 +2082,7 @@ class MappingHelperService
                         (product_id, product_version_id, color_variant_product_id, color_variant_product_version_id, created_at) 
                         VALUES ' . implode(',', $chunk) . '
                     ');
-                    $this->activity();
+                    $this->progressLoggingService->activity();
                 }
 
                 if ($this->getProductOption('productVariantColorCross', $productId)) {
@@ -2677,7 +2106,7 @@ class MappingHelperService
                         (product_id, product_version_id, capacity_variant_product_id, capacity_variant_product_version_id, created_at) 
                         VALUES ' . implode(',', $chunk) . '
                     ');
-                    $this->activity();
+                    $this->progressLoggingService->activity();
                 }
 
                 if ($this->getProductOption('productVariantCapacityCross', $productId)) {
@@ -2701,7 +2130,7 @@ class MappingHelperService
                         (product_id, product_version_id, variant_product_id, variant_product_version_id, created_at) 
                         VALUES ' . implode(',', $chunk) . '
                     ');
-                    $this->activity();
+                    $this->progressLoggingService->activity();
                 }
 
                 if ($this->getProductOption('productVariantCross', $productId)) {
@@ -2734,32 +2163,32 @@ class MappingHelperService
         $chunkSize = 50;
 
         $chunks = array_chunk($availableDevices, $chunkSize, true);
-        $this->lap(true);
+        $this->progressLoggingService->lap(true);
 
-        //        $this->activity(print_r([$topids[0], $topids[1]], true), true);
+        //        $this->progressLoggingService->activity(print_r([$topids[0], $topids[1]], true), true);
         //        return true;
 
         foreach ($chunks as $k => $prs) {
-            if ($this->_getOption(self::OPTION_NAME_START) && ($k + 1 < $this->_getOption(self::OPTION_NAME_START))) {
+            if ($this->optionsHelperService->getOption(OptionConstants::START) && ($k + 1 < $this->optionsHelperService->getOption(OptionConstants::START))) {
                 continue;
             }
 
-            if ($this->_getOption(self::OPTION_NAME_END) && ($k + 1 > $this->_getOption(self::OPTION_NAME_END))) {
+            if ($this->optionsHelperService->getOption(OptionConstants::END) && ($k + 1 > $this->optionsHelperService->getOption(OptionConstants::END))) {
                 break;
             }
 
-            $this->activity('Getting data from remote server part ' . ($k + 1) . '/' . count($chunks) . '...');
+            $this->progressLoggingService->activity('Getting data from remote server part ' . ($k + 1) . '/' . count($chunks) . '...');
             $devices = $this->topdataWebserviceClient->myProductList([
                 'products' => implode(',', array_keys($prs)),
                 'filter'   => 'all',
             ]);
-            $this->activity($this->lap() . "sec\n");
+            $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
 
             if (!isset($devices->page->available_pages)) {
                 throw new \Exception($devices->error[0]->error_message . ' webservice no pages');
             }
-            //            $this->mem();
-            $this->activity("\nProcessing data...");
+            //            $this->progressLoggingService->mem();
+            $this->progressLoggingService->activity("\nProcessing data...");
 
             $this->connection->executeStatement('DELETE FROM topdata_device_to_synonym WHERE device_id IN (0x' . implode(', 0x', $prs) . ')');
 
@@ -2795,12 +2224,12 @@ class MappingHelperService
                     $this->connection->executeStatement(
                         'INSERT INTO topdata_device_to_synonym (device_id, synonym_id, created_at) VALUES ' . implode(',', $dataChunk)
                     );
-                    $this->activity();
+                    $this->progressLoggingService->activity();
                 }
             }
-            $this->activity($this->lap() . 'sec ');
-            $this->mem();
-            $this->activity("\n");
+            $this->progressLoggingService->activity($this->progressLoggingService->lap() . 'sec ');
+            $this->progressLoggingService->mem();
+            $this->progressLoggingService->activity("\n");
         }
 
         return true;
@@ -2914,7 +2343,7 @@ class MappingHelperService
                 'topdataExtension' => ['type' => $crossType],
             ];
             $this->productCrossSellingRepository->create([$data], $this->context);
-            $this->activity();
+            $this->progressLoggingService->activity();
         }
 
         $i = 1;
@@ -2929,7 +2358,7 @@ class MappingHelperService
         }
 
         $this->productCrossSellingAssignedProductsRepository->create($data, $this->context);
-        $this->activity();
+        $this->progressLoggingService->activity();
     }
 
     private function capacityNames(): array
@@ -3079,27 +2508,27 @@ SQL;
 
     public function setProductColorCapacityVariants(): bool
     {
-        $this->activity("\nBegin generating variated products based on color and capacity information (Import variants with other colors, Import variants with other capacities should be enabled in TopFeed plugin, product information should be already imported)\n");
+        $this->progressLoggingService->activity("\nBegin generating variated products based on color and capacity information (Import variants with other colors, Import variants with other capacities should be enabled in TopFeed plugin, product information should be already imported)\n");
         $groups = [];
-        $this->lap(true);
+        $this->progressLoggingService->lap(true);
         $groups = $this->collectColorVariants($groups);
         //        echo "\nColor groups:".count($groups)."\n";
         $groups = $this->collectCapacityVariants($groups);
         //        echo "\nColor+capacity groups:".count($groups)."\n";
         $groups = $this->mergeIntersectedGroups($groups);
-        $this->activity('Found ' . count($groups) . ' groups to generate variated products', true);
+        $this->progressLoggingService->activity('Found ' . count($groups) . ' groups to generate variated products', true);
 
         $invalidProd = true;
         for ($i = 0; $i < count($groups); $i++) {
-            if ($this->_getOption(self::OPTION_NAME_START) && ($i + 1 < $this->_getOption(self::OPTION_NAME_START))) {
+            if ($this->optionsHelperService->getOption(OptionConstants::START) && ($i + 1 < $this->optionsHelperService->getOption(OptionConstants::START))) {
                 continue;
             }
 
-            if ($this->_getOption(self::OPTION_NAME_END) && ($i + 1 > $this->_getOption(self::OPTION_NAME_END))) {
+            if ($this->optionsHelperService->getOption(OptionConstants::END) && ($i + 1 > $this->optionsHelperService->getOption(OptionConstants::END))) {
                 break;
             }
 
-            $this->activity('Group ' . ($i + 1) . '...');
+            $this->progressLoggingService->activity('Group ' . ($i + 1) . '...');
 
             //            print_r($groups[$i]);
             //            echo "\n";
@@ -3118,7 +2547,7 @@ SQL;
                     $product = $products->get($productId);
                     if (!$product) {
                         $invalidProd = true;
-                        $this->activity("\nProduct id=$productId not found!\n");
+                        $this->progressLoggingService->activity("\nProduct id=$productId not found!\n");
                         break;
                     }
 
@@ -3128,13 +2557,13 @@ SQL;
                         }
                         if ($parentId != $product->getParentId()) {
                             $invalidProd = true;
-                            $this->activity("\nMany parent products error (last checked product id=$productId)!\n");
+                            $this->progressLoggingService->activity("\nMany parent products error (last checked product id=$productId)!\n");
                             break;
                         }
                     }
 
                     if ($product->getChildCount() > 0) {
-                        $this->activity("\nProduct id=$productId has childs!\n");
+                        $this->progressLoggingService->activity("\nProduct id=$productId has childs!\n");
                         $invalidProd = true;
                         break;
                     }
@@ -3168,7 +2597,7 @@ SQL;
                         $prodOptions['skip'] = (bool)($product->getParentId());
                         $groups[$i]['options'][$productId] = $prodOptions;
                     } else {
-                        $this->activity("\nProduct id=$productId has no valid properties!\n");
+                        $this->progressLoggingService->activity("\nProduct id=$productId has no valid properties!\n");
                         $invalidProd = true;
                         break;
                     }
@@ -3187,19 +2616,19 @@ SQL;
             }
 
             if ($invalidProd) {
-                $this->activity('Variated product for group will be skip, product ids: ');
-                $this->activity(implode(', ', $groups[$i]['ids']), true);
+                $this->progressLoggingService->activity('Variated product for group will be skip, product ids: ');
+                $this->progressLoggingService->activity(implode(', ', $groups[$i]['ids']), true);
             }
 
             if ($groups[$i]['referenceProduct'] && !$invalidProd) {
                 $this->createVariatedProduct($groups[$i], $parentId);
             }
-            $this->activity('done', true);
+            $this->progressLoggingService->activity('done', true);
         }
 
-        $this->activity($this->lap() . 'sec ');
-        $this->mem();
-        $this->activity("Generating variated products done\n");
+        $this->progressLoggingService->activity($this->progressLoggingService->lap() . 'sec ');
+        $this->progressLoggingService->mem();
+        $this->progressLoggingService->activity("Generating variated products done\n");
 
         return true;
     }
