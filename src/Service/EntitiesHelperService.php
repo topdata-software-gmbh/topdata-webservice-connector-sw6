@@ -13,6 +13,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Topdata\TopdataConnectorSW6\Util\UtilUuid;
 
 /**
  * Note: this is also used by the TopdataTopfinderProSW6 plugin
@@ -712,15 +713,6 @@ SELECT DISTINCT LOWER(HEX(a.id)) a_id, LOWER(HEX(a.version_id)) a_version_id
          */
     }
 
-    public static function isValidUuid($uuid): bool
-    {
-        if (!is_string($uuid)) {
-            return false;
-        }
-
-        return (bool) preg_match('/^[0-9a-f]{32}$/', $uuid);
-    }
-
     protected function getLanguageId(string $languageName = ''): string
     {
         if ($languageName === '') {
@@ -788,7 +780,7 @@ SELECT LOWER(HEX(pg.id)) pg_id, pgt.name pg_name, LOWER(HEX(pgo.id)) pgo_id, pgo
 
     public function productAlternatesCount(string $productId)
     {
-        if (!$this->isValidUuid($productId)) {
+        if (!UtilUuid::isValidUuid($productId)) {
             return 0;
         }
         /*
@@ -807,7 +799,7 @@ SELECT COUNT(*) as cnt
     {
         $xids = [];
 
-        if (!$this->isValidUuid($deviceId)) {
+        if (!UtilUuid::isValidUuid($deviceId)) {
             return $xids;
         }
 
