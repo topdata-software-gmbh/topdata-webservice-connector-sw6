@@ -23,7 +23,6 @@ class ProductMappingService
     private TopdataWebserviceClient $topdataWebserviceClient;
 
 
-
     public function __construct(
         private readonly LoggerInterface        $logger,
         private readonly Connection             $connection,
@@ -254,6 +253,15 @@ class ProductMappingService
         unset($eanMap);
     }
 
+    /**
+     * Processes EANs (European Article Numbers) by fetching data from the web service and mapping them to products.
+     *
+     * @param array $eanMap An associative array mapping EANs to product data.
+     * @param array &$setted A reference to an array that keeps track of already processed products.
+     * @param array &$dataInsert A reference to an array that accumulates data to be inserted into the repository.
+     *
+     * @throws \Exception If the web service does not return the expected number of pages.
+     */
     private function processEANs(array $eanMap, array &$setted, array &$dataInsert): void
     {
         for ($i = 1; ; $i++) {
@@ -295,6 +303,15 @@ class ProductMappingService
         }
     }
 
+    /**
+     * Processes OEMs (Original Equipment Manufacturer numbers) by fetching data from the web service and mapping them to products.
+     *
+     * @param array $oemMap An associative array mapping OEMs to product data.
+     * @param array &$setted A reference to an array that keeps track of already processed products.
+     * @param array &$dataInsert A reference to an array that accumulates data to be inserted into the repository.
+     *
+     * @throws \Exception If the web service does not return the expected number of pages.
+     */
     private function processOEMs(array $oemMap, array &$setted, array &$dataInsert): void
     {
         for ($i = 1; ; $i++) {
@@ -336,6 +353,15 @@ class ProductMappingService
         }
     }
 
+    /**
+     * Processes PCDs (Product Category Descriptions) by fetching data from the web service and mapping them to products.
+     *
+     * @param array $oemMap An associative array mapping OEMs to product data.
+     * @param array &$setted A reference to an array that keeps track of already processed products.
+     * @param array &$dataInsert A reference to an array that accumulates data to be inserted into the repository.
+     *
+     * @throws \Exception If the web service does not return the expected number of pages.
+     */
     private function processPCDs(array $oemMap, array &$setted, array &$dataInsert): void
     {
         for ($i = 1; ; $i++) {
@@ -376,7 +402,6 @@ class ProductMappingService
             }
         }
     }
-
 
     private function getKeysByOptionValue(string $optionName, string $colName = 'name'): array
     {
@@ -578,7 +603,6 @@ class ProductMappingService
     {
         $this->verbose = $verbose;
     }
-
 
 
 }
