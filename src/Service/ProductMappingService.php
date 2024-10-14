@@ -66,7 +66,7 @@ class ProductMappingService
             return true;
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
-            $this->progressLoggingService->activity("\nException abgefangen: " . $e->getMessage() . "\n");
+            $this->progressLoggingService->writeln("\nException abgefangen: " . $e->getMessage() . "");
         }
 
         return false;
@@ -170,7 +170,7 @@ class ProductMappingService
 
             $this->progressLoggingService->activity("\ndistributor $i/$available_pages");
             $this->progressLoggingService->mem();
-            $this->progressLoggingService->activity("\n");
+            $this->progressLoggingService->writeln("");
 
             if ($i >= $available_pages) {
                 break;
@@ -180,7 +180,7 @@ class ProductMappingService
             $this->topdataToProductRepository->create($dataInsert, $this->context);
             $dataInsert = [];
         }
-        $this->progressLoggingService->activity("\n" . $stored . " - stored topdata products\n");
+        $this->progressLoggingService->writeln("\n" . $stored . " - stored topdata products");
         unset($artnos);
     }
 
@@ -282,7 +282,7 @@ class ProductMappingService
      */
     private function processEANs(array $eanMap, array &$setted, array &$dataInsert): void
     {
-        $this->progressLoggingService->activity("fetching EANs from Webservice...\n");
+        $this->progressLoggingService->writeln("fetching EANs from Webservice...");
         $total = 0;
         for ($i = 1; ; $i++) {
             $all_artnr = $this->topdataWebserviceClient->matchMyEANs(['page' => $i]);
@@ -315,12 +315,12 @@ class ProductMappingService
                     }
                 }
             }
-            $this->progressLoggingService->activity('fetched EANs page ' . $i . '/' . $available_pages . "\n");
+            $this->progressLoggingService->writeln('fetched EANs page ' . $i . '/' . $available_pages);
             if ($i >= $available_pages) {
                 break;
             }
         }
-        $this->progressLoggingService->activity("DONE. fetched {$total} EANs from Webservice\n");
+        $this->progressLoggingService->writeln("DONE. fetched {$total} EANs from Webservice");
         ImportReport::setCounter('Fetched EANs', $total);
     }
 
@@ -335,7 +335,7 @@ class ProductMappingService
      */
     private function processOEMs(array $oemMap, array &$setted, array &$dataInsert): void
     {
-        $this->progressLoggingService->activity("fetching OEMs from Webservice...\n");
+        $this->progressLoggingService->writeln("fetching OEMs from Webservice...");
         $total = 0;
         for ($i = 1; ; $i++) {
             $all_artnr = $this->topdataWebserviceClient->matchMyOems(['page' => $i]);
@@ -368,12 +368,12 @@ class ProductMappingService
                     }
                 }
             }
-            $this->progressLoggingService->activity('fetched OEMs page ' . $i . '/' . $available_pages . "\n");
+            $this->progressLoggingService->writeln('fetched OEMs page ' . $i . '/' . $available_pages);
             if ($i >= $available_pages) {
                 break;
             }
         }
-        $this->progressLoggingService->activity("DONE. fetched {$total} OEMs from Webservice\n");
+        $this->progressLoggingService->writeln("DONE. fetched {$total} OEMs from Webservice");
         ImportReport::setCounter('Fetched OEMs', $total);
     }
 
@@ -420,12 +420,12 @@ class ProductMappingService
                     }
                 }
             }
-            $this->progressLoggingService->activity('fetched PCDs page ' . $i . '/' . $available_pages . "\n");
+            $this->progressLoggingService->writeln('fetched PCDs page ' . $i . '/' . $available_pages);
             if ($i >= $available_pages) {
                 break;
             }
         }
-        $this->progressLoggingService->activity("DONE. fetched {$total} PCDs from Webservice\n");
+        $this->progressLoggingService->writeln("DONE. fetched {$total} PCDs from Webservice");
         ImportReport::setCounter('Fetched PCDs', $total);
     }
 

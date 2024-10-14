@@ -4,6 +4,7 @@ namespace Topdata\TopdataConnectorSW6\Service;
 
 /**
  * 10/2024 created (extracted from MappingHelperService)
+ * TODO: merge this into CliStyle
  */
 class ProgressLoggingService
 {
@@ -58,6 +59,16 @@ class ProgressLoggingService
         $this->verbose = $verbose;
     }
 
+    /**
+     * 10/2024 created
+     */
+    public function writeln(string $string): void
+    {
+        if(!$this->verbose) {
+            return;
+        }
+        echo $string . "\n";
+    }
 
 
 }
