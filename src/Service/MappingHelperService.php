@@ -492,26 +492,52 @@ class MappingHelperService
         return false;
     }
 
+    /**
+     * Sets the device types by fetching data from the remote server and updating the local database.
+     *
+     * This method retrieves device types from the remote server, processes the data, and updates the local database
+     * by creating new entries or updating existing ones. It uses the `TopdataWebserviceClient` to fetch the data and
+     * the `EntityRepository` to perform database operations.
+     *
+     * @return bool Returns true if the operation is successful, false otherwise.
+     */
     public function setDeviceTypes()
     {
         try {
+            // Start a new section in the CLI output for device types
             $this->cliStyle->section("\n\nDevice type");
+
+            // Log the activity of getting data from the remote server
             $this->progressLoggingService->activity("Getting data from remote server...\n");
             $this->progressLoggingService->lap(true);
+
+            // Fetch device types from the remote server
             $types = $this->topdataWebserviceClient->getModelTypeByBrandId();
-            //            $this->progressLoggingService->activity("Got ".count($types->data)." records.\n");
+
+            // Log the number of fetched device types
             ImportReport::setCounter('Fetched DeviceTypes', count($types->data));
+
+            // Initialize the repository and data arrays
             $typeRepository = $this->topdataDeviceTypeRepository;
             $dataCreate = [];
             $dataUpdate = [];
+
+            // Log the activity of processing data
             $this->progressLoggingService->activity('Processing data...');
+
+            // Get all existing types from the local database
             $allTypes = $this->getTypesArray(true);
+
+            // Process each fetched device type
             foreach ($types->data as $s) {
                 foreach ($s->brandIds as $brandWsId) {
+                    // Get the brand by its web service ID
                     $brand = $this->getBrandByWsIdArray($brandWsId);
                     if (!$brand) {
                         continue;
                     }
+
+                    // Check if the type already exists in the local database
                     $type = false;
                     foreach ($allTypes as $typeItem) {
                         if ($typeItem['ws_id'] == $s->id && $typeItem['brand_id'] == $brand['id']) {
@@ -520,8 +546,10 @@ class MappingHelperService
                         }
                     }
 
+                    // Generate a unique code for the type
                     $code = $brand['code'] . '_' . $s->id . '_' . self::formCode($s->val);
 
+                    // Prepare data for creating or updating the type
                     if (!$type) {
                         $dataCreate[] = [
                             'code'    => $code,
@@ -546,12 +574,14 @@ class MappingHelperService
                         ];
                     }
 
+                    // Create new types in batches of 100
                     if (count($dataCreate) > 100) {
                         $typeRepository->create($dataCreate, $this->context);
                         $dataCreate = [];
                         $this->progressLoggingService->activity();
                     }
 
+                    // Update existing types in batches of 100
                     if (count($dataUpdate) > 100) {
                         $typeRepository->update($dataUpdate, $this->context);
                         $dataUpdate = [];
@@ -560,21 +590,27 @@ class MappingHelperService
                 }
             }
 
+            // Create any remaining new types
             if (count($dataCreate)) {
                 $typeRepository->create($dataCreate, $this->context);
                 $this->progressLoggingService->activity();
             }
 
+            // Update any remaining existing types
             if (count($dataUpdate)) {
                 $typeRepository->update($dataUpdate, $this->context);
                 $this->progressLoggingService->activity();
             }
 
+            // Clear the fetched types data
             $types = null;
+
+            // Log the completion of the device type processing
             $this->progressLoggingService->activity("\nDeviceType done " . $this->progressLoggingService->lap() . "sec\n");
 
             return true;
         } catch (\Exception $e) {
+            // Log any exceptions that occur during the process
             $this->logger->error($e->getMessage());
             $this->progressLoggingService->activity("\n" . 'Exception occured: ' . $e->getMessage() . "\n");
         }
