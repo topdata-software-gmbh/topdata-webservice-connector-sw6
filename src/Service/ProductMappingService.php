@@ -65,9 +65,7 @@ class ProductMappingService
             return true;
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
-            if ($this->verbose) {
-                echo 'Exception abgefangen: ', $e->getMessage(), "\n";
-            }
+            $this->progressLoggingService->activity("\nException abgefangen: " . $e->getMessage() . "\n");
         }
 
         return false;
@@ -168,11 +166,11 @@ class ProductMappingService
                     }
                 }
             }
-            if ($this->verbose) {
-                $this->progressLoggingService->activity("\ndistributor $i/$available_pages");
-                $this->progressLoggingService->mem();
-                $this->progressLoggingService->activity("\n");
-            }
+
+            $this->progressLoggingService->activity("\ndistributor $i/$available_pages");
+            $this->progressLoggingService->mem();
+            $this->progressLoggingService->activity("\n");
+
             if ($i >= $available_pages) {
                 break;
             }
@@ -185,12 +183,24 @@ class ProductMappingService
         unset($artnos);
     }
 
+    /**
+     * Maps products using the default mapping strategy.
+     *
+     * This method handles the mapping of products based on different criteria such as OEM (Original Equipment Manufacturer) numbers
+     * and EAN (European Article Numbers). It supports different mapping types defined in `MappingTypeConstants` and uses options
+     * from `OptionConstants` to determine the mapping strategy.
+     *
+     * The method fetches product data from the database, processes it, and inserts the mapped data into the `topdata_to_product` repository.
+     *
+     * @throws \Exception If any error occurs during the mapping process.
+     */
     private function mapDefault(): void
     {
         $dataInsert = [];
 
         $oems = [];
         $eans = [];
+        // Determine the mapping type and fetch the corresponding product data
         if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_CUSTOM) {
             if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
                 $oems = $this->fixArrayBinaryIds(
@@ -214,6 +224,7 @@ class ProductMappingService
             $eans = $this->fixArrayBinaryIds($this->getKeysByEan());
         }
 
+        // Map OEM numbers to product data
         $oemMap = [];
         foreach ($oems as $oem) {
             $oem['manufacturer_number'] = strtolower(ltrim(trim($oem['manufacturer_number']), '0'));
@@ -224,6 +235,7 @@ class ProductMappingService
         }
         unset($oems);
 
+        // Map EAN numbers to product data
         $eanMap = [];
         foreach ($eans as $ean) {
             $ean['ean'] = preg_replace('/[^0-9]/', '', $ean['ean']);
@@ -236,14 +248,18 @@ class ProductMappingService
         unset($eans);
 
         $setted = [];
+        // Process EAN mappings
         if (count($eanMap) > 0) {
             $this->processEANs($eanMap, $setted, $dataInsert);
         }
 
+        // Process OEM and PCD mappings
         if (count($oemMap) > 0) {
             $this->processOEMs($oemMap, $setted, $dataInsert);
             $this->processPCDs($oemMap, $setted, $dataInsert);
         }
+
+        // Insert the mapped data into the repository
         if (count($dataInsert) > 0) {
             $this->topdataToProductRepository->create($dataInsert, $this->context);
             $dataInsert = [];
@@ -264,8 +280,11 @@ class ProductMappingService
      */
     private function processEANs(array $eanMap, array &$setted, array &$dataInsert): void
     {
+        $this->progressLoggingService->activity("fetching EANs from Webservice...\n");
+        $total = 0;
         for ($i = 1; ; $i++) {
             $all_artnr = $this->topdataWebserviceClient->matchMyEANs(['page' => $i]);
+            $total += count($all_artnr->match);
             if (!isset($all_artnr->page->available_pages)) {
                 throw new \Exception('ean webservice no pages');
             }
@@ -294,13 +313,12 @@ class ProductMappingService
                     }
                 }
             }
-            if ($this->verbose) {
-                echo 'fetching EANs page ' . $i . '/' . $available_pages . "\n";
-            }
+            $this->progressLoggingService->activity('fetched EANs page ' . $i . '/' . $available_pages . "\n");
             if ($i >= $available_pages) {
                 break;
             }
         }
+        $this->progressLoggingService->activity("DONE. fetched {$total} EANs from Webservice\n");
     }
 
     /**
@@ -314,8 +332,11 @@ class ProductMappingService
      */
     private function processOEMs(array $oemMap, array &$setted, array &$dataInsert): void
     {
+        $this->progressLoggingService->activity("fetching OEMs from Webservice...\n");
+        $total = 0;
         for ($i = 1; ; $i++) {
             $all_artnr = $this->topdataWebserviceClient->matchMyOems(['page' => $i]);
+            $total += count($all_artnr->match);
             if (!isset($all_artnr->page->available_pages)) {
                 throw new \Exception('oem webservice no pages');
             }
@@ -344,13 +365,12 @@ class ProductMappingService
                     }
                 }
             }
-            if ($this->verbose) {
-                echo 'fetching OEMs page ' . $i . '/' . $available_pages . "\n";
-            }
+            $this->progressLoggingService->activity('fetched OEMs page ' . $i . '/' . $available_pages . "\n");
             if ($i >= $available_pages) {
                 break;
             }
         }
+        $this->progressLoggingService->activity("DONE. fetched {$total} OEMs from Webservice\n");
     }
 
     /**
@@ -364,8 +384,10 @@ class ProductMappingService
      */
     private function processPCDs(array $oemMap, array &$setted, array &$dataInsert): void
     {
+        $total = 0;
         for ($i = 1; ; $i++) {
             $all_artnr = $this->topdataWebserviceClient->matchMyPcds(['page' => $i]);
+            $total += count($all_artnr->match);
             if (!isset($all_artnr->page->available_pages)) {
                 throw new \Exception('pcd webservice no pages');
             }
@@ -394,13 +416,12 @@ class ProductMappingService
                     }
                 }
             }
-            if ($this->verbose) {
-                echo 'fetching PCDs page ' . $i . '/' . $available_pages . "\n";
-            }
+            $this->progressLoggingService->activity('fetched PCDs page ' . $i . '/' . $available_pages . "\n");
             if ($i >= $available_pages) {
                 break;
             }
         }
+        $this->progressLoggingService->activity("DONE. fetched {$total} PCDs from Webservice\n");
     }
 
     private function getKeysByOptionValue(string $optionName, string $colName = 'name'): array
@@ -598,11 +619,5 @@ class ProductMappingService
     {
         $this->topdataWebserviceClient = $topdataWebserviceClient;
     }
-
-    public function setVerbose(bool $verbose): void
-    {
-        $this->verbose = $verbose;
-    }
-
 
 }
