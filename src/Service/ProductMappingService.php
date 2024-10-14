@@ -197,6 +197,7 @@ class ProductMappingService
      */
     private function mapDefault(): void
     {
+        $this->cliStyle->section('ProductMappingService::mapDefault()');
         $dataInsert = [];
 
         $oems = [];

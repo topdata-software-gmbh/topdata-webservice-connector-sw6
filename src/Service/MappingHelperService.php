@@ -317,7 +317,7 @@ class MappingHelperService
             $this->progressLoggingService->lap(true);
             $brands = $this->topdataWebserviceClient->getBrands();
             $this->progressLoggingService->activity('Got ' . count($brands->data) . " brands from remote server\n");
-            ImportReport::setCounter('Brands fetched', count($brands->data));
+            ImportReport::setCounter('Fetched Brands', count($brands->data));
             $brandRepository = $this->topdataBrandRepository;
 
             $duplicates = [];
@@ -408,7 +408,7 @@ class MappingHelperService
             $this->progressLoggingService->lap(true);
             $series = $this->topdataWebserviceClient->getModelSeriesByBrandId();
             $this->progressLoggingService->activity('Got ' . count($series->data) . " records from remote server\n");
-            ImportReport::setCounter('Series fetched', count($series->data));
+            ImportReport::setCounter('Fetched Series', count($series->data));
             $seriesRepository = $this->topdataSeriesRepository;
             $dataCreate = [];
             $dataUpdate = [];
@@ -500,7 +500,7 @@ class MappingHelperService
             $this->progressLoggingService->lap(true);
             $types = $this->topdataWebserviceClient->getModelTypeByBrandId();
             //            $this->progressLoggingService->activity("Got ".count($types->data)." records.\n");
-            ImportReport::setCounter('DeviceTypes fetched', count($types->data));
+            ImportReport::setCounter('Fetched DeviceTypes', count($types->data));
             $typeRepository = $this->topdataDeviceTypeRepository;
             $dataCreate = [];
             $dataUpdate = [];
