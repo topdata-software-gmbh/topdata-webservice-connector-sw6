@@ -244,7 +244,7 @@ class ImportCommand extends AbstractCommand
 
 
         // ---- dump report
-        $this->cliStyle->dumpDict(ImportReport::getCountersSorted(), 'Report');
+        $this->cliStyle->dumpCounters(ImportReport::getCountersSorted(), 'Report');
 
         return Command::SUCCESS;
     }

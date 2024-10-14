@@ -517,5 +517,26 @@ class CliStyle extends SymfonyStyle
         "));
     }
 
+    /**
+     * it right-aligns all numbers and adds thousand separators
+     *
+     * 10/2024 created
+     */
+    public function dumpCounters(array $countersDict, string $title): void
+    {
+        // number format to all numbers
+        foreach($countersDict as $key => $val) {
+            $countersDict[$key] = number_format($val);
+        }
+
+        // right align all numbers
+        $maxLength = array_reduce(array_values($countersDict), fn($carry, $item) => max($carry, strlen($item)), 0);
+        foreach($countersDict as $key => $val) {
+            $countersDict[$key] = str_pad($val, $maxLength, ' ', STR_PAD_LEFT);
+        }
+
+        $this->dumpDict($countersDict, $title);
+    }
+
 
 }
