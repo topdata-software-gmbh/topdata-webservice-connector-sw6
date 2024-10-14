@@ -287,7 +287,7 @@ class ProductMappingService
                 }
             }
             if ($this->verbose) {
-                echo 'ean page' . $i . '/' . $available_pages . "\n";
+                echo 'fetching EANs page ' . $i . '/' . $available_pages . "\n";
             }
             if ($i >= $available_pages) {
                 break;
@@ -328,7 +328,7 @@ class ProductMappingService
                 }
             }
             if ($this->verbose) {
-                echo 'oem page ' . $i . '/' . $available_pages . "\n";
+                echo 'fetching OEMs page ' . $i . '/' . $available_pages . "\n";
             }
             if ($i >= $available_pages) {
                 break;
@@ -369,7 +369,7 @@ class ProductMappingService
                 }
             }
             if ($this->verbose) {
-                echo 'pcd page ' . $i . '/' . $available_pages . "\n";
+                echo 'fetching PCDs page ' . $i . '/' . $available_pages . "\n";
             }
             if ($i >= $available_pages) {
                 break;
