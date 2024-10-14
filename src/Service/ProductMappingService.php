@@ -11,6 +11,7 @@ use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Helper\CliStyle;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Util\ImportReport;
 
 /**
  * 10/2024 created (extracted from MappingHelperService)
@@ -319,6 +320,7 @@ class ProductMappingService
             }
         }
         $this->progressLoggingService->activity("DONE. fetched {$total} EANs from Webservice\n");
+        ImportReport::setCounter('Fetched EANs', $total);
     }
 
     /**
@@ -371,6 +373,7 @@ class ProductMappingService
             }
         }
         $this->progressLoggingService->activity("DONE. fetched {$total} OEMs from Webservice\n");
+        ImportReport::setCounter('Fetched OEMs', $total);
     }
 
     /**
@@ -422,6 +425,7 @@ class ProductMappingService
             }
         }
         $this->progressLoggingService->activity("DONE. fetched {$total} PCDs from Webservice\n");
+        ImportReport::setCounter('Fetched PCDs', $total);
     }
 
     private function getKeysByOptionValue(string $optionName, string $colName = 'name'): array
