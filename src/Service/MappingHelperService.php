@@ -183,62 +183,68 @@ class MappingHelperService
     }
 
 
-    private function getAlbumByNameAndParent($name, $parentID = null)
-    {
-        $query = $this->connection->createQueryBuilder();
-        $query->select('*')
-            ->from('s_media_album', 'alb')
-            ->where('alb.name = :name')
-            ->setParameter(':name', $name);
-        if (is_null($parentID)) {
-            $query->andWhere('alb.parentID is null');
-        } else {
-            $query->andWhere('alb.parentID = :parentID')
-                ->setParameter(':parentID', ($parentID));
-        }
+//    /**
+//     * 10/2024 UNUSED --> commented out
+//     */
+//    private function getAlbumByNameAndParent($name, $parentID = null)
+//    {
+//        $query = $this->connection->createQueryBuilder();
+//        $query->select('*')
+//            ->from('s_media_album', 'alb')
+//            ->where('alb.name = :name')
+//            ->setParameter(':name', $name);
+//        if (is_null($parentID)) {
+//            $query->andWhere('alb.parentID is null');
+//        } else {
+//            $query->andWhere('alb.parentID = :parentID')
+//                ->setParameter(':parentID', ($parentID));
+//        }
+//
+//        $return = $query->execute()->fetchAllAssociative();
+//        if (isset($return[0])) {
+//            return $return[0];
+//        } else {
+//            return false;
+//        }
+//    }
 
-        $return = $query->execute()->fetchAllAssociative();
-        if (isset($return[0])) {
-            return $return[0];
-        } else {
-            return false;
-        }
-    }
 
-
-    private function getKeysByCustomField(string $optionName, string $colName = 'name'): array
-    {
-        $query = $this->connection->createQueryBuilder();
-
-        //        $query->select(['val.value', 'det.id'])
-        //            ->from('s_filter_articles', 'art')
-        //            ->innerJoin('art', 's_articles_details','det', 'det.articleID = art.articleID')
-        //            ->innerJoin('art', 's_filter_values','val', 'art.valueID = val.id')
-        //            ->innerJoin('val', 's_filter_options', 'opt', 'opt.id = val.optionID')
-        //            ->where('opt.name = :option')
-        //            ->setParameter(':option', $optionName)
-        //        ;
-
-        $query->select(['pgot.name ' . $colName, 'p.id', 'p.version_id'])
-            ->from('product', 'p')
-            ->innerJoin('p', 'product_property', 'pp', '(pp.product_id = p.id) AND (pp.product_version_id = p.version_id)')
-            ->innerJoin('pp', 'property_group_option_translation', 'pgot', 'pgot.property_group_option_id = pp.property_group_option_id')
-            ->innerJoin('pp', 'property_group_option', 'pgo', 'pgo.id = pp.property_group_option_id')
-            ->innerJoin('pgo', 'property_group_translation', 'pgt', 'pgt.property_group_id = pgo.property_group_id')
-            ->where('pgt.name = :option')
-            ->setParameter(':option', $optionName);
-        //print_r($query->getSQL());die();
-        $returnArray = $query->execute()->fetchAllAssociative();
-
-        //        foreach ($returnArray as $key=>$val) {
-        //            $returnArray[$key] = [
-        //                $colName => $val[$colName],
-        //                'id' => bin2hex($val['id']),
-        //                'version_id' => bin2hex($val['version_id']),
-        //            ];
-        //        }
-        return $returnArray;
-    }
+//    /**
+//     * 10/2024 UNUSED --> commented out
+//     */
+//    private function getKeysByCustomField(string $optionName, string $colName = 'name'): array
+//    {
+//        $query = $this->connection->createQueryBuilder();
+//
+//        //        $query->select(['val.value', 'det.id'])
+//        //            ->from('s_filter_articles', 'art')
+//        //            ->innerJoin('art', 's_articles_details','det', 'det.articleID = art.articleID')
+//        //            ->innerJoin('art', 's_filter_values','val', 'art.valueID = val.id')
+//        //            ->innerJoin('val', 's_filter_options', 'opt', 'opt.id = val.optionID')
+//        //            ->where('opt.name = :option')
+//        //            ->setParameter(':option', $optionName)
+//        //        ;
+//
+//        $query->select(['pgot.name ' . $colName, 'p.id', 'p.version_id'])
+//            ->from('product', 'p')
+//            ->innerJoin('p', 'product_property', 'pp', '(pp.product_id = p.id) AND (pp.product_version_id = p.version_id)')
+//            ->innerJoin('pp', 'property_group_option_translation', 'pgot', 'pgot.property_group_option_id = pp.property_group_option_id')
+//            ->innerJoin('pp', 'property_group_option', 'pgo', 'pgo.id = pp.property_group_option_id')
+//            ->innerJoin('pgo', 'property_group_translation', 'pgt', 'pgt.property_group_id = pgo.property_group_id')
+//            ->where('pgt.name = :option')
+//            ->setParameter(':option', $optionName);
+//        //print_r($query->getSQL());die();
+//        $returnArray = $query->execute()->fetchAllAssociative();
+//
+//        //        foreach ($returnArray as $key=>$val) {
+//        //            $returnArray[$key] = [
+//        //                $colName => $val[$colName],
+//        //                'id' => bin2hex($val['id']),
+//        //                'version_id' => bin2hex($val['version_id']),
+//        //            ];
+//        //        }
+//        return $returnArray;
+//    }
 
 
     /**
@@ -274,7 +280,7 @@ class MappingHelperService
         return $this->topidProducts;
     }
 
-    private function getEnabledDevices()
+    private function _getEnabledDevices(): array
     {
         $query = $this->connection->createQueryBuilder();
         $query->select(['*'])
@@ -874,15 +880,28 @@ class MappingHelperService
      *
      * chunk 6 finished
      */
+
+
+    /**
+     * Sets the device media by fetching data from the remote server and updating the local database.
+     *
+     * This method retrieves device media information from the remote server, processes the data, and updates the local database
+     * by creating new entries or updating existing ones. It uses the `TopdataWebserviceClient` to fetch the data and
+     * the `EntityRepository` to perform database operations.
+     *
+     * @return bool Returns true if the operation is successful, false otherwise.
+     */
     public function setDeviceMedia(): bool
     {
+        // Log the start of the device media process
         $this->progressLoggingService->activity('Devices Media start' . "\n");
         $this->brandWsArray = null;
         try {
             $deviceRepository = $this->topdataDeviceRepository;
 
+            // Fetch enabled devices
             $available_Printers = [];
-            foreach ($this->getEnabledDevices() as $pr) {
+            foreach ($this->_getEnabledDevices() as $pr) {
                 $available_Printers[$pr['ws_id']] = true;
             }
             $availablePrintersCount = count($available_Printers);
@@ -895,9 +914,8 @@ class MappingHelperService
                 $chunkNumber = (int)$this->optionsHelperService->getOption(OptionConstants::START) - 1;
                 $start = $chunkNumber * $limit;
             }
-            $repeat = true;
             $this->progressLoggingService->lap(true);
-            while ($repeat) {
+            while (true) {
                 $chunkNumber++;
                 if ((int)$this->optionsHelperService->getOption(OptionConstants::END) && ($chunkNumber > (int)$this->optionsHelperService->getOption(OptionConstants::END))) {
                     break;
@@ -909,7 +927,6 @@ class MappingHelperService
                 $this->progressLoggingService->mem();
                 $this->progressLoggingService->activity("\n");
                 if (!isset($models->data) || count($models->data) == 0) {
-                    $repeat = false;
                     break;
                 }
                 $this->progressLoggingService->activity("Processing data chunk $chunkNumber");
@@ -950,7 +967,7 @@ class MappingHelperService
 
                     $currentMedia = $device->getMedia();
 
-                    //delete media
+                    // Delete media if the image is null
                     if (is_null($s->img) && $currentMedia) {
                         $deviceRepository->update([
                             [
@@ -961,7 +978,7 @@ class MappingHelperService
 
                         /*
                          * @todo Use \Shopware\Core\Content\Media\DataAbstractionLayer\MediaRepositoryDecorator
-                         * for deleting file phisicaly?
+                         * for deleting file physically?
                          */
 
                         continue;
@@ -971,6 +988,7 @@ class MappingHelperService
                         continue;
                     }
 
+                    // Skip if the current media is newer than the fetched media
                     if ($currentMedia && (date_timestamp_get($currentMedia->getCreatedAt()) > strtotime($s->img_date))) {
                         continue;
                     }
@@ -1011,7 +1029,6 @@ class MappingHelperService
 
         return false;
     }
-
 
     /**
      * The setProducts() method in the MappingHelperService class is responsible for linking devices to products. Here's a step-by-step breakdown of what it does:
@@ -2191,7 +2208,7 @@ class MappingHelperService
     {
         $this->cliStyle->section("\n\nDevice synonyms");
         $availableDevices = [];
-        foreach ($this->getEnabledDevices() as $pr) {
+        foreach ($this->_getEnabledDevices() as $pr) {
             $availableDevices[$pr['ws_id']] = bin2hex($pr['id']);
         }
         $chunkSize = 50;
