@@ -415,7 +415,7 @@ class MappingHelperService
             $series = $this->topdataWebserviceClient->getModelSeriesByBrandId();
             $this->progressLoggingService->activity('Got ' . count($series->data) . " records from remote server\n");
             ImportReport::setCounter('Fetched Series', count($series->data));
-            $seriesRepository = $this->topdataSeriesRepository;
+            $topdataSeriesRepository = $this->topdataSeriesRepository;
             $dataCreate = [];
             $dataUpdate = [];
             $this->progressLoggingService->activity('Processing data');
@@ -463,13 +463,13 @@ class MappingHelperService
                     }
 
                     if (count($dataCreate) > 100) {
-                        $seriesRepository->create($dataCreate, $this->context);
+                        $topdataSeriesRepository->create($dataCreate, $this->context);
                         $dataCreate = [];
                         $this->progressLoggingService->activity();
                     }
 
                     if (count($dataUpdate) > 100) {
-                        $seriesRepository->update($dataUpdate, $this->context);
+                        $topdataSeriesRepository->update($dataUpdate, $this->context);
                         $dataUpdate = [];
                         $this->progressLoggingService->activity();
                     }
@@ -477,17 +477,17 @@ class MappingHelperService
             }
 
             if (count($dataCreate)) {
-                $seriesRepository->create($dataCreate, $this->context);
+                $topdataSeriesRepository->create($dataCreate, $this->context);
                 $this->progressLoggingService->activity();
             }
 
             if (count($dataUpdate)) {
-                $seriesRepository->update($dataUpdate, $this->context);
+                $topdataSeriesRepository->update($dataUpdate, $this->context);
                 $this->progressLoggingService->activity();
             }
             $this->progressLoggingService->writeln("\nSeries done " . $this->progressLoggingService->lap() . "sec");
             $series = null;
-            $seriesRepository = null;
+            $topdataSeriesRepository = null;
 
             return true;
         } catch (\Exception $e) {
