@@ -324,7 +324,7 @@ class MappingHelperService
             $brands = $this->topdataWebserviceClient->getBrands();
             $this->progressLoggingService->activity('Got ' . count($brands->data) . " brands from remote server\n");
             ImportReport::setCounter('Fetched Brands', count($brands->data));
-            $brandRepository = $this->topdataBrandRepository;
+            $topdataBrandRepository = $this->topdataBrandRepository;
 
             $duplicates = [];
             $dataCreate = [];
@@ -341,7 +341,7 @@ class MappingHelperService
                 }
                 $duplicates[$code] = true;
 
-                $brand = $brandRepository
+                $brand = $topdataBrandRepository
                     ->search(
                         (new Criteria())->addFilter(new EqualsFilter('code', $code))->setLimit(1),
                         $this->context
@@ -371,29 +371,29 @@ class MappingHelperService
                 }
 
                 if (count($dataCreate) > 100) {
-                    $brandRepository->create($dataCreate, $this->context);
+                    $topdataBrandRepository->create($dataCreate, $this->context);
                     $dataCreate = [];
                     $this->progressLoggingService->activity();
                 }
 
                 if (count($dataUpdate) > 100) {
-                    $brandRepository->update($dataUpdate, $this->context);
+                    $topdataBrandRepository->update($dataUpdate, $this->context);
                     $dataUpdate = [];
                     $this->progressLoggingService->activity();
                 }
             }
 
             if (count($dataCreate)) {
-                $brandRepository->create($dataCreate, $this->context);
+                $topdataBrandRepository->create($dataCreate, $this->context);
                 $this->progressLoggingService->activity();
             }
 
             if (count($dataUpdate)) {
-                $brandRepository->update($dataUpdate, $this->context);
+                $topdataBrandRepository->update($dataUpdate, $this->context);
                 $this->progressLoggingService->activity();
             }
             $this->progressLoggingService->writeln("\nBrands done " . $this->progressLoggingService->lap() . "sec");
-            $brandRepository = null;
+            $topdataBrandRepository = null;
             $duplicates = null;
             $brands = null;
 
@@ -524,7 +524,7 @@ class MappingHelperService
             ImportReport::setCounter('Fetched DeviceTypes', count($types->data));
 
             // Initialize the repository and data arrays
-            $typeRepository = $this->topdataDeviceTypeRepository;
+            $topdataDeviceTypeRepository = $this->topdataDeviceTypeRepository;
             $dataCreate = [];
             $dataUpdate = [];
 
@@ -582,14 +582,14 @@ class MappingHelperService
 
                     // Create new types in batches of 100
                     if (count($dataCreate) > 100) {
-                        $typeRepository->create($dataCreate, $this->context);
+                        $topdataDeviceTypeRepository->create($dataCreate, $this->context);
                         $dataCreate = [];
                         $this->progressLoggingService->activity();
                     }
 
                     // Update existing types in batches of 100
                     if (count($dataUpdate) > 100) {
-                        $typeRepository->update($dataUpdate, $this->context);
+                        $topdataDeviceTypeRepository->update($dataUpdate, $this->context);
                         $dataUpdate = [];
                         $this->progressLoggingService->activity();
                     }
@@ -598,13 +598,13 @@ class MappingHelperService
 
             // Create any remaining new types
             if (count($dataCreate)) {
-                $typeRepository->create($dataCreate, $this->context);
+                $topdataDeviceTypeRepository->create($dataCreate, $this->context);
                 $this->progressLoggingService->activity();
             }
 
             // Update any remaining existing types
             if (count($dataUpdate)) {
-                $typeRepository->update($dataUpdate, $this->context);
+                $topdataDeviceTypeRepository->update($dataUpdate, $this->context);
                 $this->progressLoggingService->activity();
             }
 
@@ -894,7 +894,7 @@ class MappingHelperService
         $this->progressLoggingService->writeln('Devices Media start');
         $this->brandWsArray = null;
         try {
-            $deviceRepository = $this->topdataDeviceRepository;
+            $topdataDeviceRepository = $this->topdataDeviceRepository; // TODO: remove this
 
             // Fetch enabled devices
             $available_Printers = [];
@@ -948,7 +948,7 @@ class MappingHelperService
                     }
 
                     $code = $brand['code'] . '_' . self::formCode($s->val);
-                    $device = $deviceRepository
+                    $device = $topdataDeviceRepository
                         ->search(
                             (new Criteria())
                                 ->addFilter(new EqualsFilter('code', $code))
@@ -966,7 +966,7 @@ class MappingHelperService
 
                     // Delete media if the image is null
                     if (is_null($s->img) && $currentMedia) {
-                        $deviceRepository->update([
+                        $topdataDeviceRepository->update([
                             [
                                 'id'      => $device->getId(),
                                 'mediaId' => null,
@@ -995,7 +995,7 @@ class MappingHelperService
                     try {
                         $mediaId = $this->entitiesHelperService->getMediaId($s->img, $imageDate, 'td-');
                         if ($mediaId) {
-                            $deviceRepository->update([
+                            $topdataDeviceRepository->update([
                                 [
                                     'id'      => $device->getId(),
                                     'mediaId' => $mediaId,

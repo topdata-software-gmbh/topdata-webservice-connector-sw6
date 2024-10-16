@@ -28,7 +28,7 @@ class TopdataConnectorController extends AbstractController
     private Logger $logger;
     private ContainerBagInterface $containerBag;
     private Connection $connection;
-    private EntityRepository $brandRepository;
+    private EntityRepository $topdataBrandRepository;
     private ConfigCheckerService $configCheckerService;
 
     public function __construct(
@@ -36,14 +36,14 @@ class TopdataConnectorController extends AbstractController
         Logger                $logger,
         ContainerBagInterface $containerBag,
         Connection            $connection,
-        EntityRepository      $brandRepository
+        EntityRepository      $topdataBrandRepository
     )
     {
         $this->systemConfigService = $systemConfigService;
         $this->logger = $logger;
         $this->containerBag = $containerBag;
         $this->connection = $connection;
-        $this->brandRepository = $brandRepository;
+        $this->topdataBrandRepository = $topdataBrandRepository;
     }
 
     /**
