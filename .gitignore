@@ -8,3 +8,5 @@ var
 # +----------------------------+
 !/**/.gitkeep
 .aider*
+
+.php-cs-fixer.cache
