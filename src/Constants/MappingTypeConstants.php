@@ -2,9 +2,8 @@
 
 namespace Topdata\TopdataConnectorSW6\Constants;
 
-
 /**
- * Constants for mapping types
+ * Constants for mapping types.
  *
  * 10/2024 created (extracted from MappingHelperService)
  */
@@ -17,5 +16,4 @@ class MappingTypeConstants
     const MAPPING_TYPE_DEFAULT                  = 'default';
     const MAPPING_TYPE_CUSTOM                   = 'custom';
     const MAPPING_TYPE_CUSTOM_FIELD             = 'customField';
-
 }

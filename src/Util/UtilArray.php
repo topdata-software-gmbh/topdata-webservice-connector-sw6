@@ -2,20 +2,14 @@
 
 namespace Topdata\TopdataConnectorSW6\Util;
 
-/**
- *
- */
 class UtilArray
 {
-
-
-
     /**
      * removes all occurrences of $toRemove from $arr
-     * 04/2021 TODO: rename withoutOne
+     * 04/2021 TODO: rename withoutOne.
      *
-     * @param array $arr
-     * @param mixed $toRemove
+     * @param  array $arr
+     * @param  mixed $toRemove
      * @return array $arr without $toRemove
      */
     public static function without(array $arr, $toRemove)
@@ -25,27 +19,24 @@ class UtilArray
 
     /**
      * removes all occurrences of elements of $toRemove from $arr
-     * 04/2021 created
+     * 04/2021 created.
      *
-     * @param array $arr
-     * @param mixed[] $toRemove
-     * @return array $arr without $toRemove
+     * @param  array   $arr
+     * @param  mixed[] $toRemove
+     * @return array   $arr without $toRemove
      */
     public static function withoutMany(array $arr, array $toRemove)
     {
         return array_diff($arr, $toRemove);
     }
 
-
-
-
     /**
      * 12/2017
-     * basically a convenience wrapper array array_map
+     * basically a convenience wrapper array array_map.
      *
-     * @param array $arr
-     * @param $keyName
-     * @param bool $bKeepOriginalKeys
+     * @param  array $arr
+     * @param        $keyName
+     * @param  bool  $bKeepOriginalKeys
      * @return array
      */
     public static function getAssocProperty(array $arr, $keyName, $bKeepOriginalKeys = false)
@@ -66,10 +57,8 @@ class UtilArray
         return $newArray;
     }
 
-
-
     /**
-     * @param array $arr
+     * @param  array $arr
      * @return bool
      */
     public static function isAssoc(array $arr)
@@ -80,7 +69,7 @@ class UtilArray
     }
 
     /**
-     * @param array $arr
+     * @param  array $arr
      * @return bool
      */
     public static function isNumeric(array $arr)
@@ -89,9 +78,9 @@ class UtilArray
     }
 
     /**
-     * 06/2020
+     * 06/2020.
      *
-     * @param array $arr
+     * @param  array $arr
      * @return bool
      */
     public static function isNumericArray($arr)
@@ -100,9 +89,9 @@ class UtilArray
     }
 
     /**
-     * 06/2020
+     * 06/2020.
      *
-     * @param array $arr
+     * @param  array $arr
      * @return bool
      */
     public static function isAssocArray($arr)
@@ -110,23 +99,20 @@ class UtilArray
         return is_array($arr) && self::isAssoc($arr);
     }
 
-
     public static function toOneDimensionalArray(array $array)
     {
-        $it = new \RecursiveIteratorIterator(new \RecursiveArrayIterator($array));
+        $it     = new \RecursiveIteratorIterator(new \RecursiveArrayIterator($array));
         $oneDim = iterator_to_array($it, false);
 
         return $oneDim;
     }
 
-
-
     /**
      * 07/2018
-     * used by Schlegel
+     * used by Schlegel.
      *
-     * @param array $arr
-     * @param string $key
+     * @param  array  $arr
+     * @param  string $key
      * @return array
      */
     public static function groupByKey(array $arr, string $key)
@@ -139,13 +125,12 @@ class UtilArray
         return $ret;
     }
 
-
     /**
      * 10/2020
-     * used by CloudLister
+     * used by CloudLister.
      *
-     * @param array $arr
-     * @param string $key
+     * @param  array  $arr
+     * @param  string $key
      * @return array
      */
     public static function groupByGetter(array $arr, string $getterName)
@@ -158,14 +143,13 @@ class UtilArray
         return $ret;
     }
 
-
     /**
      * 08/2022 TODO: move to UtilDictArray/UtilObjectArray/UtilDocumemtArray
      * 08/2022 TODO where is this used?
      *
-     * @param array $arr
-     * @param $key
-     * @param $value
+     * @param  array           $arr
+     * @param                  $key
+     * @param                  $value
      * @return int|string|null index/key
      */
     public static function findIndex(array $arr, $key, $value)
@@ -182,30 +166,28 @@ class UtilArray
         return null;
     }
 
-
     /**
-     * @param array $arr
+     * @param  array $arr
      * @return mixed
      */
     public static function getLastKey(array &$arr)
     {
-        return key(array_slice($arr, -1, 1, TRUE));
+        return key(array_slice($arr, -1, 1, true));
     }
-
 
     /**
      * helper to iterate over arrays (ring buffer like)
      * acts as circular buffer
-     * used in fixtures
+     * used in fixtures.
      *
-     * @param $array
+     * @param        $array
      * @return mixed
      */
     public static function getNext(array &$array)
     {
         UtilAssert::assertNotEmpty($array);
 
-        if(key($array) === null) {
+        if (key($array) === null) {
             // If the internal pointer points beyond the end of the elements list or the array is empty, key() returns NULL.
             reset($array);
         }
@@ -220,7 +202,7 @@ class UtilArray
     }
 
     /**
-     * @param array $arr
+     * @param  array $arr
      * @return array
      */
     public static function removeEmptyElements(array $arr)
@@ -235,9 +217,9 @@ class UtilArray
     }
 
     /**
-     * @param array $values array with unquoted strings
-     * @param string $delimiter
-     * @return array array with quoted strings
+     * @param  array  $values    array with unquoted strings
+     * @param  string $delimiter
+     * @return array  array with quoted strings
      */
     public static function pregQuoteArray(array $values, string $delimiter = '/')
     {
@@ -246,42 +228,37 @@ class UtilArray
         }, $values);
     }
 
-
-
-
-
     /**
      * from marketer v1
-     * TODO: remove
+     * TODO: remove.
      *
-     * @param array $arr
+     * @param  array    $arr
      * @return object[]
      */
     public static function arrayToObject(array $arr)
     {
         return array_map(function ($x) {
-            return (object)$x;
+            return (object) $x;
         }, $arr);
     }
 
     /**
      * from marketer v1
-     * TODO: remove
+     * TODO: remove.
      *
      *
-     * @param array $arr
+     * @param  array   $arr
      * @return array[]
      */
     public static function objectToArray(array $arr)
     {
         return array_map(function ($x) {
-            return (array)$x;
+            return (array) $x;
         }, $arr);
     }
 
-
     /**
-     * 05/2018 marketer
+     * 05/2018 marketer.
      *
      * @param $arr
      * @param $element
@@ -296,7 +273,7 @@ class UtilArray
     /**
      * 07/2017 schlegel
      * 05/2018 marketer
-     * 04/2020 bugfixed (pypush4 graphgen)
+     * 04/2020 bugfixed (pypush4 graphgen).
      *
      * @param $arr
      * @param $needle
@@ -309,10 +286,9 @@ class UtilArray
         }
     }
 
-
     /**
      * 11/2017 push4
-     * uses array_splice instead of unset .. thus the array must be numeric assay
+     * uses array_splice instead of unset .. thus the array must be numeric assay.
      *
      * @param $arr
      * @param $needle
@@ -327,11 +303,10 @@ class UtilArray
         }
     }
 
-
     /**
-     * 01/2018 moved from UtilMongo to here
+     * 01/2018 moved from UtilMongo to here.
      *
-     * @param \Doctrine\Common\Collections\ArrayCollection|\Doctrine\ODM\MongoDB\Cursor|\MongoCursor|\Iterator|array $arr
+     * @param  \Doctrine\Common\Collections\ArrayCollection|\Doctrine\ODM\MongoDB\Cursor|\MongoCursor|\Iterator|array $arr
      * @return array
      */
     public static function iteratorToArray($arr, $useKeys = true)
@@ -343,11 +318,10 @@ class UtilArray
         return iterator_to_array($arr, $useKeys);
     }
 
-
     /**
-     * 03/2018 used by cloudlister
+     * 03/2018 used by cloudlister.
      *
-     * @param $arr
+     * @param       $arr
      * @return bool
      */
     public static function isEmpty($arr)
@@ -363,7 +337,7 @@ class UtilArray
 
     /**
      * 05/2018
-     * used in cloudlister
+     * used in cloudlister.
      * @param $key
      */
     public static function pull(array &$arr, $key, bool $bThrowException = false)
@@ -381,13 +355,10 @@ class UtilArray
         return $ret;
     }
 
-
-
-
     /**
-     * 08/2018 used for UtilAssert
+     * 08/2018 used for UtilAssert.
      *
-     * @param array $array
+     * @param  array $array
      * @return bool
      */
     public static function hasDuplicates(array $array)
@@ -395,11 +366,10 @@ class UtilArray
         return count($array) > count(array_flip($array));
     }
 
-
     /**
-     * 08/2018 used for UtilAssert
+     * 08/2018 used for UtilAssert.
      *
-     * @param array $array
+     * @param  array $array
      * @return bool
      */
     public static function getDuplicates(array $array)
@@ -407,9 +377,8 @@ class UtilArray
         return array_values(array_unique(array_diff_assoc($array, array_unique($array))));
     }
 
-
     /**
-     * 07/2018 used by Schlegel
+     * 07/2018 used by Schlegel.
      *
      * @param $array
      * @param $idx1
@@ -420,12 +389,11 @@ class UtilArray
         [$array[$idx1], $array[$idx2]] = [$array[$idx2], $array[$idx1]];
     }
 
-
     /**
-     * 07/2018 used by Schlegel
+     * 07/2018 used by Schlegel.
      *
-     * @param array $array
-     * @param int $maxElements
+     * @param  array $array
+     * @param  int   $maxElements
      * @return array
      */
     public static function cut(array $array, int $maxElements)
@@ -437,20 +405,19 @@ class UtilArray
         }
     }
 
-
     /**
-     * calls a method with (optional) parameters, returns results as array
+     * calls a method with (optional) parameters, returns results as array.
      *
      * 08/2018 created for marketer
      *
      * @param array $arr
-     * @param $methodName
-     * .. possible more arguments are passed to called method
+     * @param       $methodName
+     *                         .. possible more arguments are passed to called method
      */
     public static function callMethod(array $arr, $methodName)
     {
         $params = array_slice(func_get_args(), 2); // skip first 2 passed params
-        $res = [];
+        $res    = [];
         foreach ($arr as $item) {
             $res[] = call_user_func_array([$item, $methodName], $params);
         }
@@ -458,19 +425,18 @@ class UtilArray
         return $res;
     }
 
-
     /**
      * filters array of strings by searchterm
-     * 10/2018 used by cloudlister
+     * 10/2018 used by cloudlister.
      *
-     * @param array $arr
-     * @param string $searchterm
-     * @return array the filtered array
+     * @param  array  $arr
+     * @param  string $searchterm
+     * @return array  the filtered array
      */
     public static function filterBySearchterm(array $arr, string $searchterm, $bKeepOriginalKeys = false)
     {
         $ret = array_filter($arr, function ($val) use ($searchterm) {
-            return stripos($val, $searchterm, 0) !== FALSE;
+            return stripos($val, $searchterm, 0) !== false;
         });
 
         if (!$bKeepOriginalKeys) {
@@ -480,13 +446,12 @@ class UtilArray
         return $ret;
     }
 
-
     /**
-     * 12/2018 used for ImageCompositor
+     * 12/2018 used for ImageCompositor.
      *
-     * @param $m
-     * @param $n
-     * @param $value
+     * @param        $m
+     * @param        $n
+     * @param        $value
      * @return array 2d array
      */
     public static function declare2d($m, $n, $value = null)
@@ -494,10 +459,8 @@ class UtilArray
         return array_fill(0, $m, array_fill(0, $n, $value));
     }
 
-
-
     /**
-     * recursive private function for flatten
+     * recursive private function for flatten.
      */
     private static function _flattenRecursive($json, string $separator, array $aIgnore, string $prefix = '', $row = []): array
     {
@@ -508,7 +471,7 @@ class UtilArray
             if (is_array($val)) {
                 if (UtilArray::isAssoc($val) || is_array($val[0])) {
                     $newPrefix = "{$prefix}{$key}{$separator}";
-                    $row = array_merge($row, self::_flattenRecursive($val, $separator, $aIgnore, $newPrefix, $row));
+                    $row       = array_merge($row, self::_flattenRecursive($val, $separator, $aIgnore, $newPrefix, $row));
                 } else {
                     $row[$prefix . $key] = implode("\n", $val);
                 }
@@ -521,12 +484,10 @@ class UtilArray
     }
 
     /**
-     * 12/2023 created
+     * 12/2023 created.
      */
-    public static function flatten($json, string $separator='.', array $aIgnore = []): array
+    public static function flatten($json, string $separator = '.', array $aIgnore = []): array
     {
         return self::_flattenRecursive($json, $separator, $aIgnore);
     }
-
-
 }

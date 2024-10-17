@@ -26,10 +26,9 @@ use Topdata\TopdataConnectorSW6\Util\UtilString;
  */
 class CliStyle extends SymfonyStyle
 {
-
     /**
      * 06/2021 created, source: https://gist.github.com/superbrothers/3431198.
-     * 11/2023 moved from AnsiColor to CliStyle
+     * 11/2023 moved from AnsiColor to CliStyle.
      *
      * php-ansi-color
      *
@@ -40,22 +39,22 @@ class CliStyle extends SymfonyStyle
      *      echo $this->colorText("Success", "green+bold") . " Something was successful!");
      */
     private const ANSI_CODES = [
-        'off'        => 0,
-        'bold'       => 1,
-        'italic'     => 3,
-        'underline'  => 4,
-        'blink'      => 5,
-        'inverse'    => 7,
-        'hidden'     => 8,
+        'off'       => 0,
+        'bold'      => 1,
+        'italic'    => 3,
+        'underline' => 4,
+        'blink'     => 5,
+        'inverse'   => 7,
+        'hidden'    => 8,
         // ---------------
-        'black'      => 30,
-        'red'        => 31,
-        'green'      => 32,
-        'yellow'     => 33,
-        'blue'       => 34,
-        'magenta'    => 35,
-        'cyan'       => 36,
-        'white'      => 37,
+        'black'   => 30,
+        'red'     => 31,
+        'green'   => 32,
+        'yellow'  => 33,
+        'blue'    => 34,
+        'magenta' => 35,
+        'cyan'    => 36,
+        'white'   => 37,
         // ---------------
         'black_bg'   => 40,
         'red_bg'     => 41,
@@ -73,7 +72,7 @@ class CliStyle extends SymfonyStyle
     /**
      * 01/2023 created
      * 11/2023 moved from AnsiColor to CliStyle
-     * 12/2023 making it non-static, adding check $this->isDecorated
+     * 12/2023 making it non-static, adding check $this->isDecorated.
      */
     public function colorText(string $msg, string $color): string
     {
@@ -83,7 +82,7 @@ class CliStyle extends SymfonyStyle
         }
 
         $color_attrs = explode('+', $color);
-        $ansi_str = '';
+        $ansi_str    = '';
         foreach ($color_attrs as $attr) {
             $ansi_str .= "\033[" . self::ANSI_CODES[$attr] . 'm';
         }
@@ -92,18 +91,17 @@ class CliStyle extends SymfonyStyle
         return $ansi_str;
     }
 
-//    public static function replace($full_text, $search_regexp, $color)
-//    {
-//        $new_text = preg_replace_callback(
-//            "/($search_regexp)/",
-//            function ($matches) use ($color) {
-//                return self::set($matches[1], $color);
-//            },
-//            $full_text
-//        );
-//        return is_null($new_text) ? $full_text : $new_text;
-//    }
-
+    //    public static function replace($full_text, $search_regexp, $color)
+    //    {
+    //        $new_text = preg_replace_callback(
+    //            "/($search_regexp)/",
+    //            function ($matches) use ($color) {
+    //                return self::set($matches[1], $color);
+    //            },
+    //            $full_text
+    //        );
+    //        return is_null($new_text) ? $full_text : $new_text;
+    //    }
 
     /**
      * wrapper to have an instance of input and output
@@ -111,7 +109,7 @@ class CliStyle extends SymfonyStyle
      */
     public function __construct(InputInterface $input, OutputInterface $output)
     {
-        $this->input = $input;
+        $this->input  = $input;
         $this->output = $output;
 
         // ---- custom styles, see https://symfony.com/doc/current/console/coloring.html#using-color-styles
@@ -121,9 +119,9 @@ class CliStyle extends SymfonyStyle
     }
 
     /**
-     * 04/2023 created
+     * 04/2023 created.
      *
-     * @param mixed $val
+     * @param  mixed        $val
      * @return false|string
      */
     private static function _nonScalarToStringForTable(mixed $val)
@@ -132,9 +130,9 @@ class CliStyle extends SymfonyStyle
     }
 
     /**
-     * 08/2023 created
+     * 08/2023 created.
      *
-     * @param array $rows
+     * @param  array $rows
      * @return array new rows with non-scalar values converted to string
      */
     public function _fixNonScalarTableCells(array $rows): array
@@ -155,9 +153,8 @@ class CliStyle extends SymfonyStyle
         return $rowsFixed;
     }
 
-
     /**
-     * same like SymfonyStyle's table but with optional headerTitle and footerTitle
+     * same like SymfonyStyle's table but with optional headerTitle and footerTitle.
      *
      * 07/2023 created
      */
@@ -182,7 +179,6 @@ class CliStyle extends SymfonyStyle
 
         $this->newLine();
     }
-
 
     /**
      * Formats a horizontal table.
@@ -211,12 +207,10 @@ class CliStyle extends SymfonyStyle
             $tbl->setFooterTitle($footerTitle);
         }
 
-
         $tbl->render();
 
         $this->newLine();
     }
-
 
     /**
      * 03/2022 TODO: some color as parameter would be nice (see UtilFormatter for ascii tables as alternative to symfony's table)
@@ -224,13 +218,13 @@ class CliStyle extends SymfonyStyle
      * 12/2023 added param $bFlatten
      * 01/2024 added optional conversion from object to assoc
      * 01/2024 added parameter $maxLength which cuts too long strings
-     * 03/2024 renamed dictAsHorizontalTable --> dumpDict
+     * 03/2024 renamed dictAsHorizontalTable --> dumpDict.
      */
     public function dumpDict(array|object|null $dict, ?string $title = null, bool $bFlatten = true, ?int $maxLength = 80): void
     {
         // optional conversion from object to assoc
         if (is_object($dict)) {
-            $dict = (array)$dict;
+            $dict = (array) $dict;
         }
 
         if (!$dict) {
@@ -244,7 +238,7 @@ class CliStyle extends SymfonyStyle
         }
 
         // ---- cut too long strings
-        if($maxLength) {
+        if ($maxLength) {
             foreach ($dict as $key => $val) {
                 if (is_string($val)) {
                     $dict[$key] = UtilString::maxLength($val, $maxLength);
@@ -285,13 +279,13 @@ class CliStyle extends SymfonyStyle
     /**
      * 05/2021 created.
      */
-    public function done(string|null $msg = "DONE"): void
+    public function done(string|null $msg = 'DONE'): void
     {
         $this->success("==== $msg ====");
     }
 
     /**
-     * 01/2023 created
+     * 01/2023 created.
      */
     public function fail(): void
     {
@@ -358,43 +352,40 @@ class CliStyle extends SymfonyStyle
         $this->write($this->colorText($msg, 'magenta_bg'), $bNewLine);
     }
 
-
     /**
      * same like SymfonyStyle's definitionList but with optional headerTitle and footerTitle
-     * copied from SymfonyStyle::definitionList() and modified
+     * copied from SymfonyStyle::definitionList() and modified.
      *
      * 01/2024 created
-     *
      */
     public function myDefinitionList(array $list, ?string $headerTitle = null, ?string $footerTitle = null): void
     {
         $headers = [];
-        $row = [];
+        $row     = [];
         foreach ($list as $value) {
             if ($value instanceof TableSeparator) {
                 $headers[] = $value;
-                $row[] = $value;
+                $row[]     = $value;
                 continue;
             }
             if (\is_string($value)) {
                 $headers[] = new TableCell($value, ['colspan' => 2]);
-                $row[] = null;
+                $row[]     = null;
                 continue;
             }
             if (!\is_array($value)) {
                 throw new InvalidArgumentException('Value should be an array, string, or an instance of TableSeparator.');
             }
             $headers[] = key($value);
-            $row[] = current($value);
+            $row[]     = current($value);
         }
 
         $this->horizontalTable($headers, [$row], $headerTitle, $footerTitle);
     }
 
-
     /**
      * 04/2022 created.
-     * 01/2024 optional headerTitle and footerTitle added
+     * 01/2024 optional headerTitle and footerTitle added.
      *
      * @param string[] $arr
      */
@@ -402,31 +393,31 @@ class CliStyle extends SymfonyStyle
     {
         $rows = [];
         foreach ($arr as $key => $item) {
-            $rows[] = [(string)($key + 1) => $item];
+            $rows[] = [(string) ($key + 1) => $item];
         }
         $this->myDefinitionList($rows, $headerTitle, $footerTitle);
     }
 
     /**
-     * 03/2023 created
+     * 03/2023 created.
      *
      * @param array $dicts numeric array of dicts
      */
     public function listOfDictsAsTable(array $dicts, ?string $title = null): void
     {
         if (empty($dicts)) {
-            $this->warning("listOfDictsAsTable - dict is empty");
+            $this->warning('listOfDictsAsTable - dict is empty');
+
             return;
         }
 
         $this->table(array_keys($dicts[0]), $dicts, $title);
     }
 
-
     /**
      * Lets the user type some confirmation string (eg the domain name of a shop the command is going to operate on)
      * if the entered string does not match the expected $confirmation string, the script EXITS with code 77
-     * 05/2023 created
+     * 05/2023 created.
      *
      * @param string $confirmationString
      * @param string $info
@@ -446,7 +437,6 @@ class CliStyle extends SymfonyStyle
         }
     }
 
-
     public function getInput(): InputInterface
     {
         return $this->input;
@@ -458,7 +448,7 @@ class CliStyle extends SymfonyStyle
     }
 
     /**
-     * TODO: try using UtilSyntaxHighlightingCli::highlightSourceCode()
+     * TODO: try using UtilSyntaxHighlightingCli::highlightSourceCode().
      *
      * 01/2024 created
      * 02/2024 renamed writeSql --> dumpSql
@@ -467,16 +457,16 @@ class CliStyle extends SymfonyStyle
      */
     public function dumpSql(string|array $sql): void
     {
-        if(is_string($sql)) {
+        if (is_string($sql)) {
             $sql = [$sql];
         }
-        foreach($sql as $s) {
+        foreach ($sql as $s) {
             $this->writeln(\SqlFormatter::format($s));
         }
     }
 
     /**
-     * 03/2024 created
+     * 03/2024 created.
      */
     public function divider(?string $title = null, int $paddingY = 3): void
     {
@@ -484,13 +474,13 @@ class CliStyle extends SymfonyStyle
 
         $widthTotal = 180;
 
-        if(empty($title)) {
+        if (empty($title)) {
             $this->writeln(str_repeat('-', $widthTotal));
         } else {
-            $lenTitle = strlen($title);
+            $lenTitle  = strlen($title);
             $remaining = $widthTotal - $lenTitle;
-            $left = (int)($remaining / 2);
-            $right = $remaining - $left;
+            $left      = (int) ($remaining / 2);
+            $right     = $remaining - $left;
             $this->writeln(str_repeat('-', $left) . ' ' . $title . ' ' . str_repeat('-', $right));
         }
 
@@ -498,15 +488,14 @@ class CliStyle extends SymfonyStyle
     }
 
     /**
-     * just a demo of styling output with tags
+     * just a demo of styling output with tags.
      *
      * 04/2024 created
      */
     public function exampleStyledOutputs(): void
     {
-
-         // green text
-        $this->writeln(trim("
+        // green text
+        $this->writeln(trim('
 
 <info>info - yellow</info> ... 
 <comment>comment - green</comment> ... 
@@ -514,29 +503,27 @@ class CliStyle extends SymfonyStyle
 <error>error - red background</error> ...
 <fire>fire</fire> ...
 
-        "));
+        '));
     }
 
     /**
-     * it right-aligns all numbers and adds thousand separators
+     * it right-aligns all numbers and adds thousand separators.
      *
      * 10/2024 created
      */
     public function dumpCounters(array $countersDict, string $title): void
     {
         // number format to all numbers
-        foreach($countersDict as $key => $val) {
+        foreach ($countersDict as $key => $val) {
             $countersDict[$key] = number_format($val);
         }
 
         // right align all numbers
-        $maxLength = array_reduce(array_values($countersDict), fn($carry, $item) => max($carry, strlen($item)), 0);
-        foreach($countersDict as $key => $val) {
+        $maxLength = array_reduce(array_values($countersDict), fn ($carry, $item) => max($carry, strlen($item)), 0);
+        foreach ($countersDict as $key => $val) {
             $countersDict[$key] = str_pad($val, $maxLength, ' ', STR_PAD_LEFT);
         }
 
         $this->dumpDict($countersDict, $title);
     }
-
-
 }

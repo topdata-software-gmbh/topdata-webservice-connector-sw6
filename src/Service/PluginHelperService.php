@@ -8,7 +8,7 @@ use Shopware\Core\Kernel;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
- * 04/2024 PluginHelper --> PluginHelperService; unused
+ * 04/2024 PluginHelper --> PluginHelperService; unused.
  */
 class PluginHelperService
 {

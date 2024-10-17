@@ -3,7 +3,7 @@
 namespace Topdata\TopdataConnectorSW6\Util;
 
 /**
- * 06/2024 created
+ * 06/2024 created.
  */
 class ImportReport
 {
@@ -11,7 +11,6 @@ class ImportReport
      * this is always a dict (never a list).
      */
     protected static array $counters = [];
-
 
     public static function incCounter(string $key, int $inc = 1): void
     {
@@ -40,6 +39,4 @@ class ImportReport
     {
         return self::$counters[$key] ?? null; // GlobalConfigConstants::NUM_ROWS__FAILED; // -2 is a magic number
     }
-
-
 }

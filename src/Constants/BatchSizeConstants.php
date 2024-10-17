@@ -2,7 +2,6 @@
 
 namespace Topdata\TopdataConnectorSW6\Constants;
 
-
 class BatchSizeConstants
 {
     const ENABLE_DEVICES      = 100;

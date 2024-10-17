@@ -14,7 +14,7 @@ use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 
 /**
- * 10/2024 created (extracted from MappingHelperService)
+ * 10/2024 created (extracted from MappingHelperService).
  */
 class ProductMappingService
 {
@@ -23,18 +23,15 @@ class ProductMappingService
     private CliStyle $cliStyle;
     private TopdataWebserviceClient $topdataWebserviceClient;
 
-
     public function __construct(
-        private readonly LoggerInterface        $logger,
-        private readonly Connection             $connection,
-        private readonly EntityRepository       $topdataToProductRepository,
-        private readonly OptionsHelperService   $optionsHelperService,
+        private readonly LoggerInterface $logger,
+        private readonly Connection $connection,
+        private readonly EntityRepository $topdataToProductRepository,
+        private readonly OptionsHelperService $optionsHelperService,
         private readonly ProgressLoggingService $progressLoggingService,
-    )
-    {
+    ) {
         $this->context = Context::createDefaultContext();
     }
-
 
     public function mapProducts(): bool
     {
@@ -66,7 +63,7 @@ class ProductMappingService
             return true;
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
-            $this->progressLoggingService->writeln("\nException abgefangen: " . $e->getMessage() . "");
+            $this->progressLoggingService->writeln("\nException abgefangen: " . $e->getMessage() . '');
         }
 
         return false;
@@ -82,7 +79,7 @@ class ProductMappingService
         $currentDateTime = date('Y-m-d H:i:s');
         foreach ($artnos as $wsid => $prods) {
             foreach ($prods as $prodid) {
-                if (ctype_digit((string)$wsid)) {
+                if (ctype_digit((string) $wsid)) {
                     $dataInsert[] = '(' .
                         '0x' . Uuid::randomHex() . ',' .
                         "$wsid," .
@@ -134,7 +131,7 @@ class ProductMappingService
         }
 
         $stored = 0;
-        $this->cliStyle->info(count($artnos) . " products to check ...");
+        $this->cliStyle->info(count($artnos) . ' products to check ...');
         for ($i = 1; ; $i++) {
             $all_artnr = $this->topdataWebserviceClient->matchMyDistributer(['page' => $i]);
             if (!isset($all_artnr->page->available_pages)) {
@@ -146,7 +143,7 @@ class ProductMappingService
                     //if((int)$s['distributor_id'] != (int)$distri->distributor_id)
                     //    continue;
                     foreach ($distri->artnrs as $artnr) {
-                        $key = (string)$artnr;
+                        $key = (string) $artnr;
                         if (isset($artnos[$key])) {
                             foreach ($artnos[$key] as $artnosValue) {
                                 $stored++;
@@ -170,7 +167,7 @@ class ProductMappingService
 
             $this->progressLoggingService->activity("\ndistributor $i/$available_pages");
             $this->progressLoggingService->mem();
-            $this->progressLoggingService->writeln("");
+            $this->progressLoggingService->writeln('');
 
             if ($i >= $available_pages) {
                 break;
@@ -180,7 +177,7 @@ class ProductMappingService
             $this->topdataToProductRepository->create($dataInsert, $this->context);
             $dataInsert = [];
         }
-        $this->progressLoggingService->writeln("\n" . $stored . " - stored topdata products");
+        $this->progressLoggingService->writeln("\n" . $stored . ' - stored topdata products');
         unset($artnos);
     }
 
@@ -193,7 +190,7 @@ class ProductMappingService
      *
      * The method fetches product data from the database, processes it, and inserts the mapped data into the `topdata_to_product` repository.
      *
-     * @throws \Exception If any error occurs during the mapping process.
+     * @throws \Exception if any error occurs during the mapping process
      */
     private function mapDefault(): void
     {
@@ -229,8 +226,8 @@ class ProductMappingService
         // Map OEM numbers to product data
         $oemMap = [];
         foreach ($oems as $oem) {
-            $oem['manufacturer_number'] = strtolower(ltrim(trim($oem['manufacturer_number']), '0'));
-            $oemMap[(string)$oem['manufacturer_number']][$oem['id'] . '-' . $oem['version_id']] = [
+            $oem['manufacturer_number']                                                          = strtolower(ltrim(trim($oem['manufacturer_number']), '0'));
+            $oemMap[(string) $oem['manufacturer_number']][$oem['id'] . '-' . $oem['version_id']] = [
                 'id'         => $oem['id'],
                 'version_id' => $oem['version_id'],
             ];
@@ -240,9 +237,9 @@ class ProductMappingService
         // Map EAN numbers to product data
         $eanMap = [];
         foreach ($eans as $ean) {
-            $ean['ean'] = preg_replace('/[^0-9]/', '', $ean['ean']);
-            $ean['ean'] = ltrim(trim($ean['ean']), '0');
-            $eanMap[(string)$ean['ean']][$ean['id'] . '-' . $ean['version_id']] = [
+            $ean['ean']                                                          = preg_replace('/[^0-9]/', '', $ean['ean']);
+            $ean['ean']                                                          = ltrim(trim($ean['ean']), '0');
+            $eanMap[(string) $ean['ean']][$ean['id'] . '-' . $ean['version_id']] = [
                 'id'         => $ean['id'],
                 'version_id' => $ean['version_id'],
             ];
@@ -274,15 +271,15 @@ class ProductMappingService
     /**
      * Processes EANs (European Article Numbers) by fetching data from the web service and mapping them to products.
      *
-     * @param array $eanMap An associative array mapping EANs to product data.
-     * @param array &$setted A reference to an array that keeps track of already processed products.
-     * @param array &$dataInsert A reference to an array that accumulates data to be inserted into the repository.
+     * @param array $eanMap      an associative array mapping EANs to product data
+     * @param array &$setted     A reference to an array that keeps track of already processed products
+     * @param array &$dataInsert A reference to an array that accumulates data to be inserted into the repository
      *
-     * @throws \Exception If the web service does not return the expected number of pages.
+     * @throws \Exception if the web service does not return the expected number of pages
      */
     private function processEANs(array $eanMap, array &$setted, array &$dataInsert): void
     {
-        $this->progressLoggingService->writeln("fetching EANs from Webservice...");
+        $this->progressLoggingService->writeln('fetching EANs from Webservice...');
         $total = 0;
         for ($i = 1; ; $i++) {
             $all_artnr = $this->topdataWebserviceClient->matchMyEANs(['page' => $i]);
@@ -293,7 +290,7 @@ class ProductMappingService
             $available_pages = $all_artnr->page->available_pages;
             foreach ($all_artnr->match as $prod) {
                 foreach ($prod->values as $ean) {
-                    $ean = (string)$ean;
+                    $ean = (string) $ean;
                     $ean = ltrim(trim($ean), '0');
                     if (isset($eanMap[$ean])) {
                         foreach ($eanMap[$ean] as $key => $product) {
@@ -327,15 +324,15 @@ class ProductMappingService
     /**
      * Processes OEMs (Original Equipment Manufacturer numbers) by fetching data from the web service and mapping them to products.
      *
-     * @param array $oemMap An associative array mapping OEMs to product data.
-     * @param array &$setted A reference to an array that keeps track of already processed products.
-     * @param array &$dataInsert A reference to an array that accumulates data to be inserted into the repository.
+     * @param array $oemMap      an associative array mapping OEMs to product data
+     * @param array &$setted     A reference to an array that keeps track of already processed products
+     * @param array &$dataInsert A reference to an array that accumulates data to be inserted into the repository
      *
-     * @throws \Exception If the web service does not return the expected number of pages.
+     * @throws \Exception if the web service does not return the expected number of pages
      */
     private function processOEMs(array $oemMap, array &$setted, array &$dataInsert): void
     {
-        $this->progressLoggingService->writeln("fetching OEMs from Webservice...");
+        $this->progressLoggingService->writeln('fetching OEMs from Webservice...');
         $total = 0;
         for ($i = 1; ; $i++) {
             $all_artnr = $this->topdataWebserviceClient->matchMyOems(['page' => $i]);
@@ -346,7 +343,7 @@ class ProductMappingService
             $available_pages = $all_artnr->page->available_pages;
             foreach ($all_artnr->match as $prod) {
                 foreach ($prod->values as $oem) {
-                    $oem = (string)$oem;
+                    $oem = (string) $oem;
                     $oem = strtolower($oem);
                     if (isset($oemMap[$oem])) {
                         foreach ($oemMap[$oem] as $key => $product) {
@@ -380,11 +377,11 @@ class ProductMappingService
     /**
      * Processes PCDs (Product Category Descriptions) by fetching data from the web service and mapping them to products.
      *
-     * @param array $oemMap An associative array mapping OEMs to product data.
-     * @param array &$setted A reference to an array that keeps track of already processed products.
-     * @param array &$dataInsert A reference to an array that accumulates data to be inserted into the repository.
+     * @param array $oemMap      an associative array mapping OEMs to product data
+     * @param array &$setted     A reference to an array that keeps track of already processed products
+     * @param array &$dataInsert A reference to an array that accumulates data to be inserted into the repository
      *
-     * @throws \Exception If the web service does not return the expected number of pages.
+     * @throws \Exception if the web service does not return the expected number of pages
      */
     private function processPCDs(array $oemMap, array &$setted, array &$dataInsert): void
     {
@@ -398,7 +395,7 @@ class ProductMappingService
             $available_pages = $all_artnr->page->available_pages;
             foreach ($all_artnr->match as $prod) {
                 foreach ($prod->values as $oem) {
-                    $oem = (string)$oem;
+                    $oem = (string) $oem;
                     $oem = strtolower($oem);
                     if (isset($oemMap[$oem])) {
                         foreach ($oemMap[$oem] as $key => $product) {
@@ -493,7 +490,6 @@ class ProductMappingService
         return $arr;
     }
 
-
     /**
      * FIXME? ordernumber?
      */
@@ -503,10 +499,10 @@ class ProductMappingService
         $query->select(['p.product_number', 'p.id', 'p.version_id'])
             ->from('product', 'p');
 
-        $results = $query->execute()->fetchAllAssociative();
+        $results     = $query->execute()->fetchAllAssociative();
         $returnArray = [];
         foreach ($results as $res) {
-            $returnArray[(string)$res['product_number']][] = [
+            $returnArray[(string) $res['product_number']][] = [
                 'id'         => $res['id'],
                 'version_id' => $res['version_id'],
             ];
@@ -527,10 +523,10 @@ class ProductMappingService
             ->where('pgt.name = :option')
             ->setParameter(':option', $optionName);
 
-        $results = $query->execute()->fetchAllAssociative();
+        $results     = $query->execute()->fetchAllAssociative();
         $returnArray = [];
         foreach ($results as $res) {
-            $returnArray[(string)$res['name']][] = [
+            $returnArray[(string) $res['name']][] = [
                 'id'         => $res['id'],
                 'version_id' => $res['version_id'],
             ];
@@ -538,7 +534,6 @@ class ProductMappingService
 
         return $returnArray;
     }
-
 
     public function getCustomFieldTechnicalName(string $name): ?string
     {
@@ -552,7 +547,6 @@ class ProductMappingService
         return $result ?: null;
     }
 
-
     public function getKeysByCustomFieldUnique(string $technicalName, ?string $fieldName = null)
     {
         //$technicalName = $this->getCustomFieldTechnicalName($optionName);
@@ -563,7 +557,7 @@ class ProductMappingService
                 . ' LOWER(HEX(product_version_id)) as version_id'
                 . ' FROM product_translation ');
         $rez->execute();
-        $results = $rez->fetchAllAssociative();
+        $results     = $rez->fetchAllAssociative();
         $returnArray = [];
         foreach ($results as $val) {
             if (!$val['custom_fields']) {
@@ -576,12 +570,12 @@ class ProductMappingService
 
             if (!empty($fieldName)) {
                 $returnArray[] = [
-                    $fieldName   => (string)$cf[$technicalName],
+                    $fieldName   => (string) $cf[$technicalName],
                     'id'         => $val['id'],
                     'version_id' => $val['version_id'],
                 ];
             } else {
-                $returnArray[(string)$cf[$technicalName]][] = [
+                $returnArray[(string) $cf[$technicalName]][] = [
                     'id'         => $val['id'],
                     'version_id' => $val['version_id'],
                 ];
@@ -592,7 +586,7 @@ class ProductMappingService
     }
 
     /**
-     * Gets product id and variant_id by MANUFACTURER NUMBER
+     * Gets product id and variant_id by MANUFACTURER NUMBER.
      */
     private function getKeysBySuppliernumber()
     {
@@ -614,7 +608,6 @@ class ProductMappingService
         return $query->execute()->fetchAllAssociative();
     }
 
-
     public function setCliStyle(CliStyle $cliStyle): void
     {
         $this->cliStyle = $cliStyle;
@@ -624,5 +617,4 @@ class ProductMappingService
     {
         $this->topdataWebserviceClient = $topdataWebserviceClient;
     }
-
 }

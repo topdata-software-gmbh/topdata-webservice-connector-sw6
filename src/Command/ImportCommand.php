@@ -21,7 +21,7 @@ use Topdata\TopdataConnectorSW6\Service\OptionsHelperService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 
 /**
- * This command imports data from the TopData Webservice
+ * This command imports data from the TopData Webservice.
  */
 class ImportCommand extends AbstractCommand
 {
@@ -35,24 +35,21 @@ class ImportCommand extends AbstractCommand
     const ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED       = 8;
     const ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED_2     = 9;
 
-
     private bool $verbose = true;
 
-
     public function __construct(
-        private readonly SystemConfigService   $systemConfigService,
+        private readonly SystemConfigService $systemConfigService,
         private readonly ContainerBagInterface $containerBag,
-        private readonly LoggerInterface       $logger,
-        private readonly MappingHelperService  $mappingHelperService,
-        private readonly ConfigCheckerService  $configCheckerService,
-        private readonly OptionsHelperService  $optionsHelperService,
-    )
-    {
+        private readonly LoggerInterface $logger,
+        private readonly MappingHelperService $mappingHelperService,
+        private readonly ConfigCheckerService $configCheckerService,
+        private readonly OptionsHelperService $optionsHelperService,
+    ) {
         parent::__construct();
     }
 
     /**
-     * ==== MAIN ====
+     * ==== MAIN ====.
      */
     public function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -88,7 +85,7 @@ class ImportCommand extends AbstractCommand
         $this->cliStyle->dumpDict($cliOptionsDto->toDict(), 'CLI Options DTO');
 
         // ---- init webservice client
-        $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
+        $pluginConfig            = $this->systemConfigService->get('TopdataConnectorSW6.config');
         $topdataWebserviceClient = new TopdataWebserviceClient(
             $this->logger,
             $pluginConfig['apiUsername'],
@@ -113,16 +110,15 @@ class ImportCommand extends AbstractCommand
 
         if (!$cliOptionsDto->isServiceAll()) {
             if ($input->getOption('start')) {
-                $this->optionsHelperService->setOption(OptionConstants::START, (int)$input->getOption('start'));
+                $this->optionsHelperService->setOption(OptionConstants::START, (int) $input->getOption('start'));
             }
             if ($input->getOption('end')) {
-                $this->optionsHelperService->setOption(OptionConstants::END, (int)$input->getOption('end'));
+                $this->optionsHelperService->setOption(OptionConstants::END, (int) $input->getOption('end'));
             }
         }
 
         // ---- mapping
         if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceMapping()) {
-
             $this->cliStyle->section('Mapping Products');
 
             if (!$this->mappingHelperService->mapProducts()) {
@@ -164,6 +160,7 @@ class ImportCommand extends AbstractCommand
                 if ($this->verbose) {
                     $this->cliStyle->error('Set products to devices failed!');
                 }
+
                 return self::ERROR_CODE_PRODUCT_TO_DEVICE_LINKING_FAILED;
             }
         }
@@ -241,7 +238,6 @@ class ImportCommand extends AbstractCommand
             //            $rez = $mappingHelper->getKeysByCustomFieldUnique('Distributor product number');
             //            print_r($rez);
         }
-
 
         // ---- dump report
         $this->cliStyle->dumpCounters(ImportReport::getCountersSorted(), 'Report');

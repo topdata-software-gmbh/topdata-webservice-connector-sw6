@@ -10,25 +10,22 @@ use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
  *
  * This class is responsible for loading configuration settings from the Topfeed plugin
  * and setting them as options that can be used elsewhere in the application.
- *
- * @package Topdata\TopdataConnectorSW6\Service
  */
 class OptionsHelperService
 {
     /**
-     * @var array $options Array to store options.
+     * @var array array to store options
      */
     private array $options = [];
 
     /**
      * Constructor for OptionsHelperService.
      *
-     * @param SystemConfigService $systemConfigService Service to access system configuration.
+     * @param SystemConfigService $systemConfigService service to access system configuration
      */
     public function __construct(
-        private readonly SystemConfigService   $systemConfigService,
-    )
-    {
+        private readonly SystemConfigService $systemConfigService,
+    ) {
     }
 
     /**
@@ -39,7 +36,6 @@ class OptionsHelperService
      *
      * 06/2024 created
      * 10/2024 moved from ImportCommand to OptionsHelperService
-     *
      */
     public function loadTopdataTopFeedPluginConfig(): void
     {
@@ -54,8 +50,8 @@ class OptionsHelperService
      *
      * An "option" can be either something from command line or a plugin setting.
      *
-     * @param string $name The option name.
-     * @param mixed $value The option value.
+     * @param string $name  the option name
+     * @param mixed  $value the option value
      */
     public function setOption($name, $value): void
     {
@@ -66,7 +62,7 @@ class OptionsHelperService
     /**
      * Set multiple options at once.
      *
-     * @param array $keyValueArray An array of option name-value pairs.
+     * @param array $keyValueArray an array of option name-value pairs
      */
     public function setOptions(array $keyValueArray): void
     {
@@ -78,12 +74,11 @@ class OptionsHelperService
     /**
      * Get an option.
      *
-     * @param string $name The option name.
-     * @return mixed The option value or false if the option is not set.
+     * @param  string $name the option name
+     * @return mixed  the option value or false if the option is not set
      */
     public function getOption(string $name): mixed
     {
         return (isset($this->options[$name])) ? $this->options[$name] : false;
     }
-
 }

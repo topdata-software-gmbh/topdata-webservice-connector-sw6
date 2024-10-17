@@ -4,7 +4,7 @@ namespace Topdata\TopdataConnectorSW6\Service;
 
 /**
  * 10/2024 created (extracted from MappingHelperService)
- * TODO: merge this into CliStyle
+ * TODO: merge this into CliStyle.
  */
 class ProgressLoggingService
 {
@@ -16,9 +16,8 @@ class ProgressLoggingService
         $this->microtime = microtime(true);
     }
 
-
     /**
-     * helper method for logging stuff to stdout
+     * helper method for logging stuff to stdout.
      */
     public function activity(string $str = '.', bool $newLine = false): void
     {
@@ -31,7 +30,7 @@ class ProgressLoggingService
     }
 
     /**
-     * logging helper
+     * logging helper.
      */
     public function mem(): void
     {
@@ -39,7 +38,7 @@ class ProgressLoggingService
     }
 
     /**
-     * logging helper
+     * logging helper.
      */
     public function lap($start = false): string
     {
@@ -48,10 +47,10 @@ class ProgressLoggingService
 
             return '';
         }
-        $lapTime = microtime(true) - $this->microtime;
+        $lapTime         = microtime(true) - $this->microtime;
         $this->microtime = microtime(true);
 
-        return (string)round($lapTime, 3);
+        return (string) round($lapTime, 3);
     }
 
     public function setVerbose(bool $verbose): void
@@ -60,15 +59,13 @@ class ProgressLoggingService
     }
 
     /**
-     * 10/2024 created
+     * 10/2024 created.
      */
     public function writeln(string $string): void
     {
-        if(!$this->verbose) {
+        if (!$this->verbose) {
             return;
         }
         echo $string . "\n";
     }
-
-
 }

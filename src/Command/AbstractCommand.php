@@ -2,7 +2,6 @@
 
 namespace Topdata\TopdataConnectorSW6\Command;
 
-
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\NullOutput;
@@ -12,7 +11,7 @@ use Topdata\TopdataConnectorSW6\Util\UtilDict;
 use Topdata\TopdataConnectorSW6\Util\UtilFormatter;
 
 /**
- * base command class with useful stuff for all commands
+ * base command class with useful stuff for all commands.
  *
  * 04/2024 created
  */
@@ -21,16 +20,15 @@ abstract class AbstractCommand extends Command
     protected CliStyle $cliStyle;
     private float $_startTime; // in seconds, used for profiling
 
-
     /**
-     * 07/2023 created
+     * 07/2023 created.
      *
-     * @param InputInterface $input
+     * @param  InputInterface $input
      * @return array
      */
     protected static function getFilteredCommandLineArgs(InputInterface $input): array
     {
-// UtilDebug::d($input->getArguments());
+        // UtilDebug::d($input->getArguments());
         $ignoreList = [
             'help',
             'quiet',
@@ -51,9 +49,9 @@ abstract class AbstractCommand extends Command
                 $options[$key] = implode(', ', $val);
             }
         }
+
         return $options;
     }
-
 
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
@@ -61,16 +59,14 @@ abstract class AbstractCommand extends Command
 
         $this->_startTime = microtime(true); // for performance profiling
 
-
         if ($input->hasOption('quiet') && (true === $input->getOption('quiet'))) {
             $output = new NullOutput();
         }
 
-
         $this->cliStyle = new CliStyle($input, $output);
 
         // ---- print current date name + description
-        $now = (new \DateTime("now", new \DateTimeZone('Europe/Berlin')))->format('Y-m-d H:i');
+        $now = (new \DateTime('now', new \DateTimeZone('Europe/Berlin')))->format('Y-m-d H:i');
         $this->cliStyle->title($now . ' - ' . $this->getName() . ' - ' . $this->getDescription());
 
         // ---- dump arguments
@@ -80,7 +76,6 @@ abstract class AbstractCommand extends Command
             $this->cliStyle->dumpDict($arguments, 'Command Arguments');
         }
 
-
         // ---- dump options
         $options = $this->getFilteredCommandLineArgs($input);
         if (!empty($options)) {
@@ -88,17 +83,13 @@ abstract class AbstractCommand extends Command
         }
     }
 
-
     /**
-     * 01/2023 created
+     * 01/2023 created.
      *
      * prints FAIL error and exits
      */
     protected function done()
     {
-        $this->cliStyle->done("DONE " . $this->getName() . " [" . UtilFormatter::formatBytes(memory_get_peak_usage(true)) . ' / ' . UtilFormatter::formatDuration(microtime(true) - $this->_startTime, 2) . "]");
+        $this->cliStyle->done('DONE ' . $this->getName() . ' [' . UtilFormatter::formatBytes(memory_get_peak_usage(true)) . ' / ' . UtilFormatter::formatDuration(microtime(true) - $this->_startTime, 2) . ']');
     }
-
 }
-
-

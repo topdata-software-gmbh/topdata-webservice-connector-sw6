@@ -1,10 +1,9 @@
 <?php
 
-
 namespace Topdata\TopdataConnectorSW6\Constants;
 
 /**
- * Constants for option names
+ * Constants for option names.
  *
  * 10/2024 created (extracted from MappingHelperService)
  */
@@ -21,6 +20,4 @@ class OptionConstants
     const PRODUCT_WAREGROUPS_PARENT = 'productWaregroupsParent'; // unused?
     const PRODUCT_COLOR_VARIANT     = 'productColorVariant';
     const PRODUCT_CAPACITY_VARIANT  = 'productCapacityVariant';
-
-
 }

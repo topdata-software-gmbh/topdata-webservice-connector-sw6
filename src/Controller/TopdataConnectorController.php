@@ -32,17 +32,16 @@ class TopdataConnectorController extends AbstractController
     private ConfigCheckerService $configCheckerService;
 
     public function __construct(
-        SystemConfigService   $systemConfigService,
-        Logger                $logger,
+        SystemConfigService $systemConfigService,
+        Logger $logger,
         ContainerBagInterface $containerBag,
-        Connection            $connection,
-        EntityRepository      $topdataBrandRepository
-    )
-    {
-        $this->systemConfigService = $systemConfigService;
-        $this->logger = $logger;
-        $this->containerBag = $containerBag;
-        $this->connection = $connection;
+        Connection $connection,
+        EntityRepository $topdataBrandRepository
+    ) {
+        $this->systemConfigService    = $systemConfigService;
+        $this->logger                 = $logger;
+        $this->containerBag           = $containerBag;
+        $this->connection             = $connection;
         $this->topdataBrandRepository = $topdataBrandRepository;
     }
 
@@ -53,7 +52,7 @@ class TopdataConnectorController extends AbstractController
     public function connectorTestAction(): JsonResponse
     {
         $additionalData = '';
-        $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
+        $config         = $this->systemConfigService->get('TopdataConnectorSW6.config');
         if ($this->configCheckerService->isConfigEmpty()) {
             $credentialsValid = 'no';
             $additionalData .= 'Fill in the connection parameters in admin: Extensions > My Extensions > Topdata Webservice Connector > [...] > Configure';
@@ -61,14 +60,14 @@ class TopdataConnectorController extends AbstractController
 
         try {
             $webservice = new TopdataWebserviceClient($this->logger, $config['apiUsername'], $config['apiKey'], $config['apiSalt'], $config['apiLanguage']);
-            $info = $webservice->getUserInfo();
+            $info       = $webservice->getUserInfo();
 
             if (isset($info->error)) {
                 $credentialsValid = 'no';
                 $additionalData .= $info->error[0]->error_message;
             } else {
                 $credentialsValid = 'yes';
-                $additionalData = $info;
+                $additionalData   = $info;
             }
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
@@ -89,9 +88,9 @@ class TopdataConnectorController extends AbstractController
     #[Route('/api/topdata/load-brands', name: 'api.action.topdata.load-brands', methods: ['GET'])]
     public function loadBrands(Request $request, Context $context): JsonResponse
     {
-        $allBrands = [];
+        $allBrands     = [];
         $primaryBrands = [];
-        $brands = $this->connection->createQueryBuilder()
+        $brands        = $this->connection->createQueryBuilder()
             ->select('LOWER(HEX(id)) as id, label as name, sort')
             ->from('topdata_brand')
             ->where('is_enabled = 1')
@@ -152,7 +151,7 @@ class TopdataConnectorController extends AbstractController
     #[Route('/api/topdata/connector-plugins', name: 'api.action.topdata.connector-plugins', methods: ['GET'])]
     public function activeTopdataPlugins(Request $request, Context $context): JsonResponse
     {
-        $activePlugins = [];
+        $activePlugins  = [];
         $additionalData = '';
 
         $allActivePlugins = $this->containerBag->get('kernel.active_plugins');
@@ -188,9 +187,9 @@ class TopdataConnectorController extends AbstractController
     public function installDemoData(Request $request, Context $context): JsonResponse
     {
         $manufacturerRepository = $this->container->get('product_manufacturer.repository');
-        $productRepository = $this->container->get('product.repository');
-        $connection = $this->container->get('Doctrine\DBAL\Connection');
-        $productsService = new ProductsCommand($manufacturerRepository, $productRepository, $connection);
+        $productRepository      = $this->container->get('product.repository');
+        $connection             = $this->container->get('Doctrine\DBAL\Connection');
+        $productsService        = new ProductsCommand($manufacturerRepository, $productRepository, $connection);
 
         $result = $productsService->installDemoData();
 

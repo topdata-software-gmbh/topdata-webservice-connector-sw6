@@ -14,7 +14,7 @@ use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
 
 /**
- * Test connection to the TopData webservice
+ * Test connection to the TopData webservice.
  */
 class TestConnectionCommand extends AbstractCommand
 {
@@ -23,27 +23,24 @@ class TestConnectionCommand extends AbstractCommand
     const ERROR_CODE_CONNECTION_ERROR                             = 3;
     const ERROR_CODE_EXCEPTION                                    = 4;
 
-
     private SystemConfigService $systemConfigService;
     private ContainerBagInterface $containerBag;
     private LoggerInterface $logger;
     private ConfigCheckerService $configCheckerService;
 
     public function __construct(
-        SystemConfigService   $systemConfigService,
+        SystemConfigService $systemConfigService,
         ContainerBagInterface $ContainerBag,
-        LoggerInterface       $logger,
-        ConfigCheckerService  $configCheckerService
-    )
-    {
-        $this->systemConfigService = $systemConfigService;
-        $this->containerBag = $ContainerBag;
-        $this->logger = $logger;
+        LoggerInterface $logger,
+        ConfigCheckerService $configCheckerService
+    ) {
+        $this->systemConfigService  = $systemConfigService;
+        $this->containerBag         = $ContainerBag;
+        $this->logger               = $logger;
         $this->configCheckerService = $configCheckerService;
 
         parent::__construct();
     }
-
 
     protected function configure(): void
     {
@@ -51,7 +48,7 @@ class TestConnectionCommand extends AbstractCommand
         $this->setDescription('Test connection to the TopData webservice');
     }
 
-        public function execute(InputInterface $input, OutputInterface $output): int
+    public function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->cliStyle->writeln('Check plugin is active...');
         $activePlugins = $this->containerBag->get('kernel.active_plugins');
@@ -74,7 +71,7 @@ class TestConnectionCommand extends AbstractCommand
         $this->cliStyle->writeln('Connecting to TopData api server...');
         try {
             $webservice = new TopdataWebserviceClient($this->logger, $config['apiUsername'], $config['apiKey'], $config['apiSalt'], $config['apiLanguage']);
-            $info = $webservice->getUserInfo();
+            $info       = $webservice->getUserInfo();
 
             if (isset($info->error)) {
                 $this->cliStyle->error("Connection error: {$info->error[0]->error_message}");

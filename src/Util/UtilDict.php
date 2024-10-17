@@ -3,43 +3,41 @@
 namespace Topdata\TopdataConnectorSW6\Util;
 
 /**
- * utility functions for handling associative arrays (aka dicts)
+ * utility functions for handling associative arrays (aka dicts).
  *
  * 12/2019
  */
 class UtilDict
 {
-
-
     /**
      *  Block list
      *    Remove the values you don't want
-     *    var result = _.omit(credentials, ['age']);
+     *    var result = _.omit(credentials, ['age']);.
      *
      * 02/2023 created (TopData)
      *
-     * @param $dict
-     * @param string[] $blockList list of "blocked" dict keys (blacklist)
+     * @param           $dict
+     * @param  string[] $blockList list of "blocked" dict keys (blacklist)
      * @return array
      */
     public static function omit($dict, array $blockList): array
     {
         $ret = [];
-        foreach($dict as $key => $value) {
-            if(!in_array($key, $blockList))
-            $ret[$key] = $value;
+        foreach ($dict as $key => $value) {
+            if (!in_array($key, $blockList)) {
+                $ret[$key] = $value;
+            }
         }
 
         return $ret;
     }
 
     /**
-     * recursive helper
+     * recursive helper.
      */
     private static function _pick(array $src, array &$dest, array $allowList)
     {
         foreach ($allowList as $path) {
-
             if (str_contains($path, '.')) {
                 // ---- with sub keys
                 [$mainKey, $remainingKey] = explode('.', $path, 2);
@@ -69,20 +67,19 @@ class UtilDict
                     $dest[$path] = $src[$path];
                 }
             }
-
         }
     }
 
     /**
      * Allow list
      *   Only allow certain values
-     *   var result = _.pick(credentials, ['fname', 'lname']);
+     *   var result = _.pick(credentials, ['fname', 'lname']);.
      *
      * 02/2023 created (TopData)
      * 09/2023 now supports sub-keys (separated by dot), eg 'customFields.topdata_order_approval_phone_number'
      *
-     * @param array $src
-     * @param string[] $allowList list of allowed dict keys (whitelist)
+     * @param  array    $src
+     * @param  string[] $allowList list of allowed dict keys (whitelist)
      * @return void
      */
     public static function pick(array $src, array $allowList): array
@@ -93,19 +90,17 @@ class UtilDict
         return $dest;
     }
 
-
-
     /**
      * used by mb
-     * TODO: add support for dots in paths
+     * TODO: add support for dots in paths.
      *
      * 12/2019 created
      * 11/2021 parameter $bSkipNonExisting added (true for PATCH, false for PUT/POST)
      *
-     * @param array $src
-     * @param string[] $whitelistedKeys list of paths, dots are supported
-     * @param bool $bSkipNonExisting skip if a field from whitelist does not exist in srcArray if true, set it to NULL if false
-     * @return array the newly created assoc array (aka dict)
+     * @param  array    $src
+     * @param  string[] $whitelistedKeys  list of paths, dots are supported
+     * @param  bool     $bSkipNonExisting skip if a field from whitelist does not exist in srcArray if true, set it to NULL if false
+     * @return array    the newly created assoc array (aka dict)
      */
     public static function getOneFilteredByWhitelist(array $src, array $whitelistedKeys, bool $bSkipNonExisting = false)
     {
@@ -124,25 +119,23 @@ class UtilDict
         return $newDict;
     }
 
-
     /**
-     * 12/2019 unimplemented
+     * 12/2019 unimplemented.
      *
-     * @param array $arr
-     * @param array $blacklistedKeys
+     * @param  array      $arr
+     * @param  array      $blacklistedKeys
      * @throws \Exception
      */
     public static function getManyFilteredByBlacklist($arr, array $blacklistedKeys)
     {
-        throw new \Exception("TODO...");
+        throw new \Exception('TODO...');
     }
 
-
     /**
-     * 12/2019
+     * 12/2019.
      *
-     * @param array[] $many
-     * @param array $whitelistedKeys
+     * @param  array[] $many
+     * @param  array   $whitelistedKeys
      * @return array[]
      */
     public static function getManyFilteredByWhitelist(iterable $many, array $whitelistedKeys)
@@ -155,13 +148,12 @@ class UtilDict
         return $newList;
     }
 
-
     /**
-     * 12/2019 moved from UtilArray to here .. because list of dicts is sorted
+     * 12/2019 moved from UtilArray to here .. because list of dicts is sorted.
      *
-     * @param array $array
-     * @param string $key
-     * @param array $order
+     * @param  array  $array
+     * @param  string $key
+     * @param  array  $order
      * @return array
      */
     public static function sortManyByCustomOrder(array $array, string $key, array $order)
@@ -169,18 +161,18 @@ class UtilDict
         usort($array, function ($a, $b) use ($order, $key) {
             $pos_a = array_search($a[$key], $order);
             $pos_b = array_search($b[$key], $order);
+
             return $pos_a - $pos_b;
         });
 
         return $array;
     }
 
-
     /**
-     * 08/2020
+     * 08/2020.
      *
-     * @param array $arr
-     * @param string $prefix
+     * @param  array       $arr
+     * @param  string      $prefix
      * @return array|false
      */
     public static function prependToKeys(array $arr, string $prefix)
@@ -192,12 +184,11 @@ class UtilDict
         return array_combine($keys, array_values($arr));
     }
 
-
     /**
-     * 08/2020
+     * 08/2020.
      *
-     * @param array $arr
-     * @param string $prefix
+     * @param  array       $arr
+     * @param  string      $prefix
      * @return array|false
      */
     public static function appendToKeys(array $arr, string $suffix)
@@ -210,15 +201,15 @@ class UtilDict
     }
 
     /**
-     * filters assoc array
+     * filters assoc array.
      *
      * was used by cloudlister
      * 05/2021 moved from UtilArray::filterArrayByKeys() to UtilDict::filterByKeys()
      * 05/2021 unused (TODO? remove)
      *
      *
-     * @param array $arr
-     * @param string[] $allowedKeys
+     * @param  array    $arr
+     * @param  string[] $allowedKeys
      * @return array
      */
     public static function filterByKeys(array $arr, array $allowedKeys)
@@ -234,7 +225,7 @@ class UtilDict
     }
 
     /**
-     * Filters dict ("assoc array") by its keys and convert it to a list ("numeric array")
+     * Filters dict ("assoc array") by its keys and convert it to a list ("numeric array").
      *
      * example:
      *
@@ -255,9 +246,9 @@ class UtilDict
      *
      * used by cloudlister(exportOrdersToExcel), cm
      *
-     * @param array $dict
-     * @param string[] $keys
-     * @return array numeric(!) array
+     * @param  array    $dict
+     * @param  string[] $keys
+     * @return array    numeric(!) array
      */
     public static function pickToList(array $dict, array $keys): array
     {
@@ -270,9 +261,9 @@ class UtilDict
      * 07/2022 created, used by MB
      * converts a dict to list of assoc arrays , eg:
      *      IN: {a:1, b:2}
-     *      OUT: [{key:"a", value:1}, {key:"b", value:2}]
+     *      OUT: [{key:"a", value:1}, {key:"b", value:2}].
      *
-     * @param array $dict
+     * @param  array $dict
      * @return array list of assoc arrays
      */
     public static function toDictArray(array $dict, string $keyName = 'key', string $valueName = 'value'): array
@@ -288,15 +279,13 @@ class UtilDict
         return $ret;
     }
 
-
-
     /**
-     * 05/2021 created push4
+     * 05/2021 created push4.
      *
-     * @param array $dict
-     * @param string $path
-     * @param bool $bExceptionOnNotFound
-     * @return mixed the value at give path, if found; null otherwise (or Exception is thrown if bExceptionOnNotFound)
+     * @param  array      $dict
+     * @param  string     $path
+     * @param  bool       $bExceptionOnNotFound
+     * @return mixed      the value at give path, if found; null otherwise (or Exception is thrown if bExceptionOnNotFound)
      * @throws \Exception
      */
     public static function deepGet(array $dict, string $path, bool $bExceptionOnNotFound = true)
@@ -317,14 +306,13 @@ class UtilDict
         return $dict;
     }
 
-
     /**
      * 07/2021 created, used by ct, mb
      * 11/2021 support for dot-notation paths added
      * 11/2021 parameter bExceptionOnNotFound added
-     * 09/2022 bugfixed
+     * 09/2022 bugfixed.
      *
-     * @param array $dict the dict aka assoc array
+     * @param array    $dict         the dict aka assoc array
      * @param string[] $keysToDelete
      */
     public static function unsetMany(array &$dict, array $keysToDelete, bool $bExceptionOnNotFound = false)
@@ -342,7 +330,7 @@ class UtilDict
                     }
                 }
                 // UtilDebug::d($key, $fieldName);
-                if($idx === count($subfields) -1) {
+                if ($idx === count($subfields) - 1) {
                     // UtilDebug::d($dict2[$key]);
                     unset($dict2[$fieldName]);
                 } else {
@@ -354,21 +342,22 @@ class UtilDict
     }
 
     /**
-     * renames keys of a dict
+     * renames keys of a dict.
      *
      * 09/2022 created (MB)
      * 11/2023 bugfix: skip if oldKey === newKey
      *
-     * @param array $dict assoc array
-     * @param array $renames assoc array
-     * @param bool $bExceptionOnNotFound
+     * @param array $dict                 assoc array
+     * @param array $renames              assoc array
+     * @param bool  $bExceptionOnNotFound
      */
-    public static function renameKeys(array &$dict, array $renames, bool $bExceptionOnNotFound = false) {
-        foreach($renames as $oldKey => $newKey) {
-            if($oldKey === $newKey) {
+    public static function renameKeys(array &$dict, array $renames, bool $bExceptionOnNotFound = false)
+    {
+        foreach ($renames as $oldKey => $newKey) {
+            if ($oldKey === $newKey) {
                 continue;
             }
-            if(!array_key_exists($oldKey, $dict) && $bExceptionOnNotFound) {
+            if (!array_key_exists($oldKey, $dict) && $bExceptionOnNotFound) {
                 throw new \Exception("key fail: $oldKey");
             }
             $dict[$newKey] = $dict[$oldKey] ?? null;
@@ -377,14 +366,14 @@ class UtilDict
     }
 
     /**
-     * adds an entry at a specific position to a dict
+     * adds an entry at a specific position to a dict.
      *
      * 08/2023 created
      *
-     * @param array $dict
-     * @param int $pos
-     * @param $key
-     * @param $value
+     * @param  array $dict
+     * @param  int   $pos
+     * @param        $key
+     * @param        $value
      * @return void
      */
     public static function insertAt(array &$dict, int $pos, $key, $value): void
@@ -395,10 +384,10 @@ class UtilDict
     }
 
     /**
-     * 11/2023 created
+     * 11/2023 created.
      *
-     * @param array $origDict assoc array
-     * @param array $renames assoc array
+     * @param  array $origDict assoc array
+     * @param  array $renames  assoc array
      * @return array picked data with renamed keys
      */
     public static function pickAndRenameKeys(array $origDict, array $renames): array
@@ -408,6 +397,4 @@ class UtilDict
 
         return $picked;
     }
-
-
 }
