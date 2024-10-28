@@ -104,12 +104,20 @@ class DeviceCustomerEntity extends Entity
     public function setExtraInfo(array $extraInfo): void
     {
         $this->_extraInfo = $extraInfo;
-        $this->extraInfo  = json_encode($extraInfo);
+        $this->extraInfo = json_encode($extraInfo);
     }
 
+    /**
+     * Generates a default extra information array for devices.
+     * this data is stored as json in the extra_info field.
+     *
+     * @param int $amount The number of devices to include in the array. Defaults to 0.
+     *                    If a negative number is provided, it will be treated as 0.
+     * @return array The default extra information array containing device details.
+     */
     public static function defaultExtraInfo($amount = 0): array
     {
-        $amount = (int) $amount;
+        $amount = (int)$amount;
         if ($amount < 0) {
             $amount = 0;
         }
