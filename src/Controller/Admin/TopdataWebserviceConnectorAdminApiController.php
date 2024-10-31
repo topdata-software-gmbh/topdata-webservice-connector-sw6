@@ -203,12 +203,7 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
     )]
     public function installDemoData(Request $request, Context $context): JsonResponse
     {
-        $manufacturerRepository = $this->container->get('product_manufacturer.repository');
-        $productRepository = $this->container->get('product.repository');
-        $connection = $this->container->get('Doctrine\DBAL\Connection');
-        $productsService = new ProductsCommand($manufacturerRepository, $productRepository, $connection);
-
-        $result = $productsService->installDemoData();
+        $result = $this->productsService->installDemoData();
 
         return new JsonResponse($result);
     }
