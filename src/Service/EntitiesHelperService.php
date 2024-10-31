@@ -27,6 +27,7 @@ class EntitiesHelperService
     const DEFAULT_MAIN_FOLDER = 'product';
     const UPLOAD_FOLDER_NAME  = 'TopData';
 
+    private ?array $propertyGroups = null;
     private ?array $categoryTree = null;
     private ?array $manufacturers = null;
     private ?string $rootCategoryId = null;
@@ -47,6 +48,7 @@ class EntitiesHelperService
         private readonly EntityRepository    $categoryRepository,
         private readonly EntityRepository    $productManufacturerRepository,
         private readonly EntityRepository    $mediaFolderRepository,
+        private readonly EntityRepository    $propertyGroupOptionRepository,
         private readonly LocaleHelperService $localeHelperService,
     )
     {

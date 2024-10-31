@@ -18,6 +18,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Topdata\TopdataConnectorSW6\Command\ProductsCommand;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
+use Topdata\TopdataConnectorSW6\Service\ProductService;
 
 /**
  * 10/2024 renamed TopdataConnectorController --> TopdataWebserviceConnectorAdminApiController
@@ -30,7 +31,9 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
         private readonly LoggerInterface       $logger,
         private readonly ContainerBagInterface $containerBag,
         private readonly Connection            $connection,
-        private readonly ConfigCheckerService  $configCheckerService
+        private readonly ConfigCheckerService  $configCheckerService,
+        private readonly ProductService        $productService,
+        private readonly TopdataBrandService   $brandService,
     )
     {
     }
@@ -86,29 +89,10 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
     )]
     public function loadBrands(Request $request, Context $context): JsonResponse
     {
-        $primaryBrands = [];
-        $brands = $this->connection->createQueryBuilder()
-            ->select('LOWER(HEX(id)) as id, label as name, sort')
-            ->from('topdata_brand')
-            ->where('is_enabled = 1')
-            ->orderBy('label')
-            ->execute()
-            ->fetchAllAssociative();
-
-        foreach ($brands as $brand) {
-            $allBrands[$brand['id']] = $brand['name'];
-            if ($brand['sort'] == 1) {
-                $primaryBrands[$brand['id']] = $brand['name'];
-            }
-        }
-
-        return new JsonResponse([
-            'brands'         => $allBrands,
-            'primary'        => $primaryBrands,
-            'brandsCount'    => count($allBrands),
-            'primaryCount'   => count($primaryBrands),
-            'additionalData' => 'success',
-        ]);
+        $result = $this->brandService->getEnabledBrands();
+        $result['additionalData'] = 'success';
+        
+        return new JsonResponse($result);
     }
 
     /**
@@ -122,27 +106,10 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
     public function savePrimaryBrands(Request $request, Context $context): JsonResponse
     {
         $params = $request->request->all();
-        if (!isset($params['primaryBrands'])) {
-            return new JsonResponse([
-                'success' => 'false',
-            ]);
-        }
-
-        $brands = $params['primaryBrands'];
-        $this->connection->executeStatement('UPDATE topdata_brand SET sort = 0');
-
-        if ($brands) {
-            foreach ($brands as $key => $brandId) {
-                if (preg_match('/^[0-9a-f]{32}$/', $brandId)) {
-                    $brands[$key] = '0x' . $brandId;
-                }
-            }
-
-            $this->connection->executeStatement('UPDATE topdata_brand SET sort = 1 WHERE id IN (' . implode(',', $brands) . ')');
-        }
-
+        $success = $this->brandService->savePrimaryBrands($params['primaryBrands'] ?? null);
+        
         return new JsonResponse([
-            'success' => 'true',
+            'success' => $success ? 'true' : 'false',
         ]);
     }
 
@@ -203,7 +170,7 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
     )]
     public function installDemoData(Request $request, Context $context): JsonResponse
     {
-        $result = $this->productsService->installDemoData();
+        $result = $this->productService->installDemoData();
 
         return new JsonResponse($result);
     }
