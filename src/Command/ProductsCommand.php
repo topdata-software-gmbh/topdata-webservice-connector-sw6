@@ -68,12 +68,6 @@ class ProductsCommand extends AbstractCommand
             return 1;
         }
 
-        $handle = fopen($file, 'r');
-        if (!$handle) {
-            echo "invalid file!\n";
-
-            return 2;
-        }
         echo $file . "\n";
 
         $columnMapping = [
@@ -94,11 +88,10 @@ class ProductsCommand extends AbstractCommand
             $columnMapping
         );
 
-        if ($handle) {
-            $products = $this->productService->parseProductsFromCsv($handle, $csvConfig);
-            fclose($handle);
-        } else {
-            echo 'error opening the file';
+        try {
+            $products = $this->productService->parseProductsFromCsv($file, $csvConfig);
+        } catch (\RuntimeException $e) {
+            $this->cliStyle->error($e->getMessage());
             return 3;
         }
 

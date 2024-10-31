@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Topdata\TopdataConnectorSW6\Service\Product;
+namespace Topdata\TopdataConnectorSW6\Service;
 
 use RuntimeException;
 use Topdata\TopdataConnectorSW6\DTO\CsvConfiguration;

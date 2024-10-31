@@ -13,6 +13,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\DTO\CsvConfiguration;
+use Topdata\TopdataConnectorSW6\Service\ProductCsvReader;
 
 /**
  * 10/2024 created (extracted from "ProductsCommand")
@@ -27,11 +28,13 @@ class ProductService
         private readonly EntityRepository $productRepository,
         private readonly EntityRepository $productManufacturerRepository,
         private readonly Connection       $connection,
+        private readonly ProductCsvReader $productCsvReader
     )
     {
         $this->context = Context::createDefaultContext();
         $this->systemDefaultLocaleCode = $this->getLocaleCodeOfSystemLanguage();
     }
+
 
     private function getLocaleCodeOfSystemLanguage(): string
     {
@@ -63,7 +66,7 @@ class ProductService
         $result = $this->connection->executeQuery('
             SELECT LOWER(HEX(`id`))
             FROM `sales_channel`
-            WHERE `type_id` = ' . Uuid::fromHexToBytes(Defaults::SALES_CHANNEL_TYPE_STOREFRONT) . '
+            WHERE `type_id` = 0x' . Defaults::SALES_CHANNEL_TYPE_STOREFRONT . '
             ORDER BY `created_at` ASC            
         ')->fetchOne();
 
@@ -109,49 +112,10 @@ class ProductService
         return $manufacturerId;
     }
 
-    public function parseProductsFromCsv($handle, CsvConfiguration $config): array
+
+    public function parseProductsFromCsv(string $filePath, CsvConfiguration $config): array
     {
-        $products = [];
-        $lineNumber = -1;
-        
-        while (($line = fgets($handle)) !== false) {
-            $lineNumber++;
-            if ($lineNumber > $config->getEndLine()) {
-                break;
-            }
-            if ($lineNumber < $config->getStartLine()) {
-                continue;
-            }
-
-            $values = explode($config->getDelimiter(), $line);
-            foreach ($values as $key => $val) {
-                $values[$key] = trim($val, $config->getEnclosure());
-            }
-
-            $mapping = $config->getColumnMapping();
-            $products[$values[$mapping['number']]] = [
-                'productNumber' => $values[$mapping['number']],
-                'name' => $values[$mapping['name']],
-            ];
-
-            if ($mapping['wsid'] !== null) {
-                $products[$values[$mapping['number']]]['topDataId'] = (int)$values[$mapping['wsid']];
-            }
-            if ($mapping['description'] !== null) {
-                $products[$values[$mapping['number']]]['description'] = $values[$mapping['description']];
-            }
-            if ($mapping['ean'] !== null) {
-                $products[$values[$mapping['number']]]['ean'] = $values[$mapping['ean']];
-            }
-            if ($mapping['mpn'] !== null) {
-                $products[$values[$mapping['number']]]['mpn'] = $values[$mapping['mpn']];
-            }
-            if ($mapping['brand'] !== null) {
-                $products[$values[$mapping['number']]]['brand'] = $values[$mapping['brand']];
-            }
-        }
-
-        return $products;
+        return $this->productCsvReader->readProducts($filePath, $config);
     }
 
     public function formProductsArray(array $input, float $price = 1.0): array
