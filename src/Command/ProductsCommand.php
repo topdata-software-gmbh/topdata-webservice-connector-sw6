@@ -17,79 +17,60 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * Command to import products from a CSV file into Shopware 6
+ */
 class ProductsCommand extends AbstractCommand
 {
-    private $_manufacturers = null;
-    private EntityRepository $productRepository;
-    private EntityRepository $manufacturerRepository;
-    private Context $context;
-    private Connection $connection;
-
-    /** @var int|null */
-    private $lineStart;
-
-    /** @var int|null */
-    private $lineEnd;
-
-    /** @var int|null */
-    private $columnNumber;
-
-    /** @var int|null */
-    private $columnName;
-
-    /** @var int|null */
-    private $columnTopdataId;
-
-    /** @var int|null */
-    private $columnEAN;
-
-    /** @var int|null */
-    private $columnMPN;
-
-    /** @var int|null */
-    private $columnBrand;
-
-    /** @var int|null */
-    private $columnDescription;
-
-    /** @var string */
-    private $trim;
-
-    /** @var string */
-    private $divider;
-
-    /** @var string */
-    private $systemDefaultLocaleCode;
+    private ?array $_manufacturers = null;
+    private string $systemDefaultLocaleCode;
+    private ?int $lineStart = null;
+    private ?int $lineEnd = null;
+    private ?int $columnNumber = null;
+    private ?int $columnName = null;
+    private ?int $columnTopdataId = null;
+    private ?int $columnEAN = null;
+    private ?int $columnMPN = null;
+    private ?int $columnBrand = null;
+    private ?int $columnDescription = null;
+    private string $trim = '"';
+    private string $divider = ';';
 
     public function __construct(
-        EntityRepository $manufacturerRepository,
-        EntityRepository $productRepository,
-        Connection $connection
+        private readonly EntityRepository $manufacturerRepository,
+        private readonly EntityRepository $productRepository,
+        private readonly Connection $connection,
+        private readonly Context $context = null
     ) {
-        $this->productRepository       = $productRepository;
-        $this->manufacturerRepository  = $manufacturerRepository;
-        $this->context                 = Context::createDefaultContext();
-        $this->connection              = $connection;
-        $this->systemDefaultLocaleCode = $this->getLocaleCodeOfSystemLanguage();
         parent::__construct();
+        $this->context = $context ?? Context::createDefaultContext();
+        $this->systemDefaultLocaleCode = $this->getLocaleCodeOfSystemLanguage();
     }
 
+    /**
+     * Configure the command options
+     * 
+     * Sets up all available command line options for the product import:
+     * - Required options: file, name, number
+     * - Optional options: start, end, wsid, description, ean, mpn, brand, divider, trim
+     */
     protected function configure(): void
     {
-        $this->setName('topdata:connector:products');
-        $this->setDescription('Import products from a csv file');
-        $this->addOption('file', null, InputOption::VALUE_REQUIRED, 'csv filename');
-        $this->addOption('start', null, InputOption::VALUE_OPTIONAL, 'start line');
-        $this->addOption('end', null, InputOption::VALUE_OPTIONAL, 'end line');
-        $this->addOption('name', null, InputOption::VALUE_REQUIRED, 'name column number');
-        $this->addOption('number', null, InputOption::VALUE_REQUIRED, 'name column number');
-        $this->addOption('wsid', null, InputOption::VALUE_OPTIONAL, 'Topdata webservice ID column number');
-        $this->addOption('description', null, InputOption::VALUE_OPTIONAL, 'description column number');
-        $this->addOption('ean', null, InputOption::VALUE_OPTIONAL, 'EAN column number');
-        $this->addOption('mpn', null, InputOption::VALUE_OPTIONAL, 'MPN column number');
-        $this->addOption('brand', null, InputOption::VALUE_OPTIONAL, 'brand column number');
-        $this->addOption('divider', null, InputOption::VALUE_OPTIONAL, 'divider for columns, default ;');
-        $this->addOption('trim', null, InputOption::VALUE_OPTIONAL, 'trim character in column, default semicolon \' ');
+        $this
+            ->setName('topdata:connector:products')
+            ->setDescription('Import products from a CSV file')
+            ->addOption('file', null, InputOption::VALUE_REQUIRED, 'Path to the CSV file')
+            ->addOption('start', null, InputOption::VALUE_OPTIONAL, 'Start line number for import')
+            ->addOption('end', null, InputOption::VALUE_OPTIONAL, 'End line number for import')
+            ->addOption('name', null, InputOption::VALUE_REQUIRED, 'Column number for product name')
+            ->addOption('number', null, InputOption::VALUE_REQUIRED, 'Column number for product number')
+            ->addOption('wsid', null, InputOption::VALUE_OPTIONAL, 'Column number for Topdata webservice ID')
+            ->addOption('description', null, InputOption::VALUE_OPTIONAL, 'Column number for product description')
+            ->addOption('ean', null, InputOption::VALUE_OPTIONAL, 'Column number for EAN')
+            ->addOption('mpn', null, InputOption::VALUE_OPTIONAL, 'Column number for MPN')
+            ->addOption('brand', null, InputOption::VALUE_OPTIONAL, 'Column number for brand')
+            ->addOption('divider', null, InputOption::VALUE_OPTIONAL, 'CSV column delimiter (default: ;)')
+            ->addOption('trim', null, InputOption::VALUE_OPTIONAL, 'Character to trim from values (default: ")');
     }
 
     private function getLocaleCodeOfSystemLanguage(): string
@@ -119,17 +100,17 @@ class ProductsCommand extends AbstractCommand
         }
         echo $file . "\n";
 
-        $this->lineStart         = ($input->getOption('start') !== null) ? (int) $input->getOption('start') : 1;
-        $this->lineEnd           = ($input->getOption('end') !== null) ? (int) $input->getOption('end') : null;
-        $this->columnName        = (int) $input->getOption('name');
-        $this->columnNumber      = (int) $input->getOption('number');
-        $this->columnTopdataId   = ($input->getOption('wsid') !== null) ? (int) $input->getOption('wsid') : null;
-        $this->columnDescription = ($input->getOption('description') !== null) ? (int) $input->getOption('description') : null;
-        $this->columnEAN         = ($input->getOption('ean') !== null) ? (int) $input->getOption('ean') : null;
-        $this->columnMPN         = ($input->getOption('mpn') !== null) ? (int) $input->getOption('mpn') : null;
-        $this->columnBrand       = ($input->getOption('brand') !== null) ? (int) $input->getOption('brand') : null;
-        $this->divider           = ($input->getOption('divider') !== null) ? $input->getOption('divider') : ';';
-        $this->trim              = ($input->getOption('trim') !== null) ? $input->getOption('trim') : '"';
+        $this->lineStart = (int) ($input->getOption('start') ?? 1);
+        $this->lineEnd = $input->getOption('end') ? (int) $input->getOption('end') : null;
+        $this->columnName = (int) $input->getOption('name');
+        $this->columnNumber = (int) $input->getOption('number');
+        $this->columnTopdataId = $input->getOption('wsid') ? (int) $input->getOption('wsid') : null;
+        $this->columnDescription = $input->getOption('description') ? (int) $input->getOption('description') : null;
+        $this->columnEAN = $input->getOption('ean') ? (int) $input->getOption('ean') : null;
+        $this->columnMPN = $input->getOption('mpn') ? (int) $input->getOption('mpn') : null;
+        $this->columnBrand = $input->getOption('brand') ? (int) $input->getOption('brand') : null;
+        $this->divider = $input->getOption('divider') ?? ';';
+        $this->trim = $input->getOption('trim') ?? '"';
 
         if ($handle) {
             $lineNumber = -1;

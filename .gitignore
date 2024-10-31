@@ -10,3 +10,4 @@ var
 .aider*
 
 .php-cs-fixer.cache
+.env
