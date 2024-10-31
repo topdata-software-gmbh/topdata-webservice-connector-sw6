@@ -1,11 +1,11 @@
 <?php
 
-namespace Topdata\TopdataWebserviceConnectorSW6\DTO;
+namespace Topdata\TopdataConnectorSW6\DTO;
 
 /**
  * Configuration for CSV import
  */
-class CsvConfiguration
+readonly class CsvConfiguration
 {
 
 

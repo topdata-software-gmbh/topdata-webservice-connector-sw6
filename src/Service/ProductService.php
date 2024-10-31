@@ -12,6 +12,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Topdata\TopdataConnectorSW6\DTO\CsvConfiguration;
 
 /**
  * 10/2024 created (extracted from "ProductsCommand")
@@ -106,6 +107,51 @@ class ProductService
         }
 
         return $manufacturerId;
+    }
+
+    public function parseProductsFromCsv($handle, CsvConfiguration $config): array
+    {
+        $products = [];
+        $lineNumber = -1;
+        
+        while (($line = fgets($handle)) !== false) {
+            $lineNumber++;
+            if ($lineNumber > $config->getEndLine()) {
+                break;
+            }
+            if ($lineNumber < $config->getStartLine()) {
+                continue;
+            }
+
+            $values = explode($config->getDelimiter(), $line);
+            foreach ($values as $key => $val) {
+                $values[$key] = trim($val, $config->getEnclosure());
+            }
+
+            $mapping = $config->getColumnMapping();
+            $products[$values[$mapping['number']]] = [
+                'productNumber' => $values[$mapping['number']],
+                'name' => $values[$mapping['name']],
+            ];
+
+            if ($mapping['wsid'] !== null) {
+                $products[$values[$mapping['number']]]['topDataId'] = (int)$values[$mapping['wsid']];
+            }
+            if ($mapping['description'] !== null) {
+                $products[$values[$mapping['number']]]['description'] = $values[$mapping['description']];
+            }
+            if ($mapping['ean'] !== null) {
+                $products[$values[$mapping['number']]]['ean'] = $values[$mapping['ean']];
+            }
+            if ($mapping['mpn'] !== null) {
+                $products[$values[$mapping['number']]]['mpn'] = $values[$mapping['mpn']];
+            }
+            if ($mapping['brand'] !== null) {
+                $products[$values[$mapping['number']]]['brand'] = $values[$mapping['brand']];
+            }
+        }
+
+        return $products;
     }
 
     public function formProductsArray(array $input, float $price = 1.0): array

@@ -9,26 +9,15 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Topdata\TopdataConnectorSW6\Service\ProductService;
+use Topdata\TopdataConnectorSW6\DTO\CsvConfiguration;
 
 /**
  * Command to import products from a CSV file into Shopware 6
  */
 class ProductsCommand extends AbstractCommand
 {
-    private ?int $lineStart = null;
-    private ?int $lineEnd = null;
-    private ?int $columnNumber = null;
-    private ?int $columnName = null;
-    private ?int $columnTopdataId = null;
-    private ?int $columnEAN = null;
-    private ?int $columnMPN = null;
-    private ?int $columnBrand = null;
-    private ?int $columnDescription = null;
-    private string $trim = '"';
-    private string $divider = ';';
-
     public function __construct(
-        private readonly ProductService $productService,
+        private readonly ProductService $productService
     )
     {
         parent::__construct();
@@ -87,58 +76,29 @@ class ProductsCommand extends AbstractCommand
         }
         echo $file . "\n";
 
-        $this->lineStart = (int)($input->getOption('start') ?? 1);
-        $this->lineEnd = $input->getOption('end') ? (int)$input->getOption('end') : null;
-        $this->columnName = (int)$input->getOption('name');
-        $this->columnNumber = (int)$input->getOption('number');
-        $this->columnTopdataId = $input->getOption('wsid') ? (int)$input->getOption('wsid') : null;
-        $this->columnDescription = $input->getOption('description') ? (int)$input->getOption('description') : null;
-        $this->columnEAN = $input->getOption('ean') ? (int)$input->getOption('ean') : null;
-        $this->columnMPN = $input->getOption('mpn') ? (int)$input->getOption('mpn') : null;
-        $this->columnBrand = $input->getOption('brand') ? (int)$input->getOption('brand') : null;
-        $this->divider = $input->getOption('divider') ?? ';';
-        $this->trim = $input->getOption('trim') ?? '"';
+        $columnMapping = [
+            'number' => (int)$input->getOption('number'),
+            'name' => (int)$input->getOption('name'),
+            'wsid' => $input->getOption('wsid') ? (int)$input->getOption('wsid') : null,
+            'description' => $input->getOption('description') ? (int)$input->getOption('description') : null,
+            'ean' => $input->getOption('ean') ? (int)$input->getOption('ean') : null,
+            'mpn' => $input->getOption('mpn') ? (int)$input->getOption('mpn') : null,
+            'brand' => $input->getOption('brand') ? (int)$input->getOption('brand') : null,
+        ];
+
+        $csvConfig = new CsvConfiguration(
+            $input->getOption('divider') ?? ';',
+            $input->getOption('trim') ?? '"',
+            (int)($input->getOption('start') ?? 1),
+            $input->getOption('end') ? (int)$input->getOption('end') : null,
+            $columnMapping
+        );
 
         if ($handle) {
-            $lineNumber = -1;
-            while (($line = fgets($handle)) !== false) {
-                $lineNumber++;
-                if ($lineNumber > $this->lineEnd) {
-                    break;
-                }
-                if ($lineNumber < $this->lineStart) {
-                    continue;
-                }
-
-                $values = explode($this->divider, $line);
-                foreach ($values as $key => $val) {
-                    $values[$key] = trim($val, $this->trim);
-                }
-                $products[$values[$this->columnNumber]] = [
-                    'productNumber' => $values[$this->columnNumber],
-                    'name'          => $values[$this->columnName],
-                ];
-                if (null !== $this->columnTopdataId) {
-                    $products[$values[$this->columnNumber]]['topDataId'] = (int)$values[$this->columnTopdataId];
-                }
-                if (null !== $this->columnDescription) {
-                    $products[$values[$this->columnNumber]]['description'] = $values[$this->columnDescription];
-                }
-                if (null !== $this->columnEAN) {
-                    $products[$values[$this->columnNumber]]['ean'] = $values[$this->columnEAN];
-                }
-                if (null !== $this->columnMPN) {
-                    $products[$values[$this->columnNumber]]['mpn'] = $values[$this->columnMPN];
-                }
-                if (null !== $this->columnBrand) {
-                    $products[$values[$this->columnNumber]]['brand'] = $values[$this->columnBrand];
-                }
-            }
-
+            $products = $this->productService->parseProductsFromCsv($handle, $csvConfig);
             fclose($handle);
         } else {
             echo 'error opening the file';
-
             return 3;
         }
 
