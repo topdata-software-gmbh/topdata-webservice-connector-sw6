@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Topdata\TopdataConnectorSW6\Controller;
+namespace Topdata\TopdataConnectorSW6\Controller\Admin;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception;
 use Monolog\Logger;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -21,12 +22,12 @@ use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
 /**
  * 10/2024 renamed TopdataConnectorController --> TopdataWebserviceConnectorAdminApiController
  */
-#[Route(defaults: ['_routeScope' => 'administration'])]
+#[Route(defaults: ['_routeScope' => ['administration']])]
 class TopdataWebserviceConnectorAdminApiController extends AbstractController
 {
     public function __construct(
         private readonly SystemConfigService   $systemConfigService,
-        private readonly Logger                $logger,
+        private readonly LoggerInterface       $logger,
         private readonly ContainerBagInterface $containerBag,
         private readonly Connection            $connection,
         private readonly ConfigCheckerService  $configCheckerService
@@ -37,7 +38,11 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
     /**
      * Test the connector configuration.
      */
-    #[Route('/api/topdata/connector-test', name: 'api.action.topdata.connector-test', methods: ['GET'])]
+    #[Route(
+        path: '/api/topdata/connector-test',
+        name: 'api.action.topdata.connector-test',
+        methods: ['GET']
+    )]
     public function connectorTestAction(): JsonResponse
     {
         $additionalData = '';
@@ -74,10 +79,13 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
     /**
      * Load all enabled brands.
      */
-    #[Route('/api/topdata/load-brands', name: 'api.action.topdata.load-brands', methods: ['GET'])]
+    #[Route(
+        path: '/api/topdata/load-brands',
+        name: 'api.action.topdata.load-brands',
+        methods: ['GET']
+    )]
     public function loadBrands(Request $request, Context $context): JsonResponse
     {
-        $allBrands = [];
         $primaryBrands = [];
         $brands = $this->connection->createQueryBuilder()
             ->select('LOWER(HEX(id)) as id, label as name, sort')
@@ -106,7 +114,11 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
     /**
      * Save primary brands.
      */
-    #[Route('/api/topdata/save-primary-brands', name: 'api.action.topdata.save-primary-brands', methods: ['POST'])]
+    #[Route(
+        path: '/api/topdata/save-primary-brands',
+        name: 'api.action.topdata.save-primary-brands',
+        methods: ['POST']
+    )]
     public function savePrimaryBrands(Request $request, Context $context): JsonResponse
     {
         $params = $request->request->all();
@@ -139,7 +151,11 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
      * TODO: move this into a service in the TopdataControlCenterSW6 plugin
      * TODO: remove additionalData (it is just an empty string)
      */
-    #[Route('/api/topdata/connector-plugins', name: 'api.action.topdata.connector-plugins', methods: ['GET'])]
+    #[Route(
+        path: '/api/topdata/connector-plugins',
+        name: 'api.action.topdata.connector-plugins',
+        methods: ['GET']
+    )]
     public function activeTopdataPlugins(Request $request, Context $context): JsonResponse
     {
         $activePlugins = [];
@@ -164,7 +180,11 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
      * Get the plugin's config.
      * TODO: rename .. it returns more than just the credentials
      */
-    #[Route('/api/_action/connector/connector-credentials-get', name: 'api.action.connector.connector.credentials.get', methods: ['GET'])]
+    #[Route(
+        path: '/api/_action/connector/connector-credentials-get',
+        name: 'api.action.connector.connector.credentials.get',
+        methods: ['GET']
+    )]
     public function getCredentialsAction(): JsonResponse
     {
         $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
@@ -176,7 +196,11 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
      * Install demo data.
      * FIXME: inject the ProductsCommand into the controller (later, make a service, eg DemoDataService)
      */
-    #[Route('/api/topdata/connector-install-demodata', name: 'api.action.topdata.connector-install-demodata', methods: ['GET'])]
+    #[Route(
+        path: '/api/topdata/connector-install-demodata',
+        name: 'api.action.topdata.connector-install-demodata',
+        methods: ['GET']
+    )]
     public function installDemoData(Request $request, Context $context): JsonResponse
     {
         $manufacturerRepository = $this->container->get('product_manufacturer.repository');

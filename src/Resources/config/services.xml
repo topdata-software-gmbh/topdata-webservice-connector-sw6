@@ -119,12 +119,7 @@
         </service>
         
         <!-- Controllers -->
-        <service id="Topdata\TopdataConnectorSW6\Controller\TopdataConnectorController" public="true">
-            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
-            <argument type="service" id="logger" />
-            <argument type="service" id="parameter_bag" />
-            <argument type="service" id="Doctrine\DBAL\Connection" />
-            <argument type="service" id="topdata_brand.repository"/>
+        <service id="Topdata\TopdataConnectorSW6\Controller\Admin\TopdataWebserviceConnectorAdminApiController" public="true" autowire="true">
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
