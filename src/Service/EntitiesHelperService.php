@@ -27,88 +27,34 @@ class EntitiesHelperService
     const DEFAULT_MAIN_FOLDER = 'product';
     const UPLOAD_FOLDER_NAME  = 'TopData';
 
-    private $propertyGroups          = null;
-    private $categoryTree            = null;
-    private $manufacturers           = null;
-    private $rootCategoryId          = null;
-    private $defaultCmsListingPageId = null;
-    private $temp;
-    private $propertyGroupsOptionsArray = null;
-    private $uploadFolderId             = null;
-    private $enLangID                   = null;
-    private $deLangID                   = null;
-
-    /**
-     * @var Connection
-     */
-    private $connection;
-
-    /**
-     * @var MediaService
-     */
-    private $mediaService;
-
-    /**
-     * @var EntityRepository
-     */
-    private $mediaRepository;
-
-    /**
-     * @param Context
-     */
-    private $context;
-
-    /**
-     * @var EntityRepository
-     */
-    private $propertyGroupRepository;
-
-    /**
-     * @var EntityRepository
-     */
-    private $propertyGroupOptionRepository;
-
-    /**
-     * @var EntityRepository
-     */
-    private $categoryRepository;
-
-    /**
-     * @var EntityRepository
-     */
-    private $manufacturerRepository;
-
-    /**
-     * @var EntityRepository
-     */
-    private $mediaFolderRepository;
-
-    /** @var string */
-    private $systemDefaultLocaleCode;
+    private ?array $propertyGroups = null;
+    private ?array $categoryTree = null;
+    private ?array $manufacturers = null;
+    private ?string $rootCategoryId = null;
+    private ?string $defaultCmsListingPageId = null;
+    private mixed $temp;
+    private ?array $propertyGroupsOptionsArray = null;
+    private ?string $uploadFolderId = null;
+    private ?string $enLangID = null;
+    private ?string $deLangID = null;
+    private readonly string $systemDefaultLocaleCode;
+    private readonly Context $context;
 
     public function __construct(
-        Connection $connection,
-        EntityRepository $mediaRepository,
-        MediaService $mediaService,
-        EntityRepository $propertyGroupRepository,
-        EntityRepository $categoryRepository,
-        EntityRepository $manufacturerRepository,
-        EntityRepository $mediaFolderRepository,
-        EntityRepository $propertyGroupOptionRepository
+        private readonly Connection $connection,
+        private readonly EntityRepository $mediaRepository,
+        private readonly MediaService $mediaService,
+        private readonly EntityRepository $propertyGroupRepository,
+        private readonly EntityRepository $categoryRepository,
+        private readonly EntityRepository $manufacturerRepository,
+        private readonly EntityRepository $mediaFolderRepository,
+        private readonly EntityRepository $propertyGroupOptionRepository,
+        private readonly LocaleHelperService $localeHelperService,
     ) {
-        $this->connection              = $connection;
-        $this->mediaRepository         = $mediaRepository;
-        $this->mediaService            = $mediaService;
-        $this->propertyGroupRepository = $propertyGroupRepository;
-        $this->categoryRepository      = $categoryRepository;
-        $this->manufacturerRepository  = $manufacturerRepository;
-        $this->mediaFolderRepository   = $mediaFolderRepository;
-
-        $this->propertyGroupOptionRepository = $propertyGroupOptionRepository;
-
         $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();
-        $this->context                 = Context::createDefaultContext();
+        $this->context = Context::createDefaultContext();
     }
+
 
     protected function loadPropertyGroups(): void
     {
