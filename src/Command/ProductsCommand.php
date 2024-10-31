@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Topdata\TopdataConnectorSW6\Command;
 
 use Shopware\Core\Defaults;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -49,23 +50,13 @@ class ProductsCommand extends AbstractCommand
             ->addOption('trim', null, InputOption::VALUE_OPTIONAL, 'Character to trim from values (default: ")');
     }
 
-    private function getLocaleCodeOfSystemLanguage(): string
-    {
-        return $this->connection
-            ->fetchOne(
-                'SELECT lo.code FROM language as la JOIN locale as lo on lo.id = la.locale_id  WHERE la.id = UNHEX(:systemLanguageId)',
-                ['systemLanguageId' => Defaults::LANGUAGE_SYSTEM]
-            );
-    }
-
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        $products = [];
         $file = $input->getOption('file');
         if (!$file) {
             echo "add file!\n";
 
-            return 1;
+            return Command::FAILURE;
         }
 
         echo $file . "\n";

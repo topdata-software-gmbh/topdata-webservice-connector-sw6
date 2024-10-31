@@ -106,17 +106,8 @@ class EntitiesHelperService
 
         $this->propertyGroupOptionRepository = $propertyGroupOptionRepository;
 
-        $this->systemDefaultLocaleCode = $this->getLocaleCodeOfSystemLanguage();
+        $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();
         $this->context                 = Context::createDefaultContext();
-    }
-
-    private function getLocaleCodeOfSystemLanguage(): string
-    {
-        return $this->connection
-            ->fetchOne(
-                'SELECT lo.code FROM language as la JOIN locale as lo on lo.id = la.locale_id  WHERE la.id = UNHEX(:systemLanguageId)',
-                ['systemLanguageId' => Defaults::LANGUAGE_SYSTEM]
-            );
     }
 
     protected function loadPropertyGroups(): void

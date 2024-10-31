@@ -24,26 +24,19 @@ class ProductService
     private string $systemDefaultLocaleCode;
     private Context $context;
 
+
     public function __construct(
-        private readonly EntityRepository $productRepository,
-        private readonly EntityRepository $productManufacturerRepository,
-        private readonly Connection       $connection,
-        private readonly ProductCsvReader $productCsvReader
+        private readonly EntityRepository    $productRepository,
+        private readonly EntityRepository    $productManufacturerRepository,
+        private readonly Connection          $connection,
+        private readonly ProductCsvReader    $productCsvReader,
+        private readonly LocaleHelperService $localeHelperService,
     )
     {
         $this->context = Context::createDefaultContext();
-        $this->systemDefaultLocaleCode = $this->getLocaleCodeOfSystemLanguage();
+        $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();
     }
 
-
-    private function getLocaleCodeOfSystemLanguage(): string
-    {
-        return $this->connection
-            ->fetchOne(
-                'SELECT lo.code FROM language as la JOIN locale as lo on lo.id = la.locale_id  WHERE la.id = UNHEX(:systemLanguageId)',
-                ['systemLanguageId' => Defaults::LANGUAGE_SYSTEM]
-            );
-    }
 
     private function getTaxId(): string
     {
