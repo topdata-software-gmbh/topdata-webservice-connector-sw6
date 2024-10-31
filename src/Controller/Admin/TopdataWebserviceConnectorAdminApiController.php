@@ -18,7 +18,9 @@ use Symfony\Component\Routing\Annotation\Route;
 use Topdata\TopdataConnectorSW6\Command\ProductsCommand;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
+use Topdata\TopdataConnectorSW6\Service\DemoDataImportService;
 use Topdata\TopdataConnectorSW6\Service\ProductService;
+use Topdata\TopdataConnectorSW6\Service\TopdataBrandService;
 
 /**
  * 10/2024 renamed TopdataConnectorController --> TopdataWebserviceConnectorAdminApiController
@@ -26,14 +28,14 @@ use Topdata\TopdataConnectorSW6\Service\ProductService;
 #[Route(defaults: ['_routeScope' => ['administration']])]
 class TopdataWebserviceConnectorAdminApiController extends AbstractController
 {
+
     public function __construct(
         private readonly SystemConfigService   $systemConfigService,
         private readonly LoggerInterface       $logger,
         private readonly ContainerBagInterface $containerBag,
-        private readonly Connection            $connection,
         private readonly ConfigCheckerService  $configCheckerService,
-        private readonly ProductService        $productService,
-        private readonly TopdataBrandService   $brandService,
+        private readonly DemoDataImportService $demoDataImportService,
+        private readonly TopdataBrandService   $topdataBrandService,
     )
     {
     }
@@ -89,9 +91,9 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
     )]
     public function loadBrands(Request $request, Context $context): JsonResponse
     {
-        $result = $this->brandService->getEnabledBrands();
+        $result = $this->topdataBrandService->getEnabledBrands();
         $result['additionalData'] = 'success';
-        
+
         return new JsonResponse($result);
     }
 
@@ -106,8 +108,8 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
     public function savePrimaryBrands(Request $request, Context $context): JsonResponse
     {
         $params = $request->request->all();
-        $success = $this->brandService->savePrimaryBrands($params['primaryBrands'] ?? null);
-        
+        $success = $this->topdataBrandService->savePrimaryBrands($params['primaryBrands'] ?? null);
+
         return new JsonResponse([
             'success' => $success ? 'true' : 'false',
         ]);
@@ -170,7 +172,7 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
     )]
     public function installDemoData(Request $request, Context $context): JsonResponse
     {
-        $result = $this->productService->installDemoData();
+        $result = $this->demoDataImportService->installDemoData();
 
         return new JsonResponse($result);
     }

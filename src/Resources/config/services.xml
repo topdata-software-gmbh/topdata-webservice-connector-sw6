@@ -82,6 +82,7 @@
         </service>
 
         <!-- SERVICES -->
+        <service id="Topdata\TopdataConnectorSW6\Service\DemoDataImportService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\LocaleHelperService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ProductCsvReader" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ProductService" autowire="true"/>
