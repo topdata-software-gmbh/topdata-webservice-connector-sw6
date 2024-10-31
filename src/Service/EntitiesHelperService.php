@@ -27,7 +27,6 @@ class EntitiesHelperService
     const DEFAULT_MAIN_FOLDER = 'product';
     const UPLOAD_FOLDER_NAME  = 'TopData';
 
-    private ?array $propertyGroups = null;
     private ?array $categoryTree = null;
     private ?array $manufacturers = null;
     private ?string $rootCategoryId = null;
@@ -41,16 +40,16 @@ class EntitiesHelperService
     private readonly Context $context;
 
     public function __construct(
-        private readonly Connection $connection,
-        private readonly EntityRepository $mediaRepository,
-        private readonly MediaService $mediaService,
-        private readonly EntityRepository $propertyGroupRepository,
-        private readonly EntityRepository $categoryRepository,
-        private readonly EntityRepository $manufacturerRepository,
-        private readonly EntityRepository $mediaFolderRepository,
-        private readonly EntityRepository $propertyGroupOptionRepository,
+        private readonly Connection          $connection,
+        private readonly EntityRepository    $mediaRepository,
+        private readonly MediaService        $mediaService,
+        private readonly EntityRepository    $propertyGroupRepository,
+        private readonly EntityRepository    $categoryRepository,
+        private readonly EntityRepository    $productManufacturerRepository,
+        private readonly EntityRepository    $mediaFolderRepository,
         private readonly LocaleHelperService $localeHelperService,
-    ) {
+    )
+    {
         $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();
         $this->context = Context::createDefaultContext();
     }
@@ -134,14 +133,14 @@ class EntitiesHelperService
     {
         $propGroups = $this->getPropertyGroupsOptionsArray();
 
-        $currentGroup    = null;
-        $currentGroupId  = null;
+        $currentGroup = null;
+        $currentGroupId = null;
         $currentOptionId = Uuid::randomHex();
 
         foreach ($propGroups as $id => $propertyGroup) {
             if ($propertyGroup['name'] == $propGroupName) {
                 $currentGroupId = $id;
-                $currentGroup   = $propertyGroup;
+                $currentGroup = $propertyGroup;
                 break;
             }
         }
@@ -158,7 +157,7 @@ class EntitiesHelperService
                     'name'        => [
                         $this->systemDefaultLocaleCode => $propGroupName,
                     ],
-                    'options' => [
+                    'options'     => [
                         [
                             'id'   => $currentOptionId,
                             'name' => [
@@ -206,8 +205,8 @@ class EntitiesHelperService
         //            ]
         //        ], $this->context);
         $currentDateTime = date('Y-m-d H:i:s');
-        $enId            = $this->getEnID();
-        $deId            = $this->getDeID();
+        $enId = $this->getEnID();
+        $deId = $this->getDeID();
         $this->connection->executeStatement('
             INSERT INTO property_group_option 
             (id, property_group_id, created_at) 
@@ -281,7 +280,7 @@ class EntitiesHelperService
 
     protected function loadCategoryTree()
     {
-        $categories         = $this->categoryRepository->search(new Criteria(), $this->context)->getEntities();
+        $categories = $this->categoryRepository->search(new Criteria(), $this->context)->getEntities();
         $this->categoryTree = $this->buildCategorySubTree(null, $categories);
     }
 
@@ -353,8 +352,8 @@ class EntitiesHelperService
     }
 
     /**
-     * @param  array  $categoriesChain
-     * @param  string $parentId
+     * @param array $categoriesChain
+     * @param string $parentId
      * @return string Id of a last created child category
      */
     private function createBranch(array $categoriesChain, ?string $parentId): string
@@ -404,7 +403,7 @@ class EntitiesHelperService
             foreach ($categoriesChain as $key => $category) {
                 $temp = $this->findInBranch($category['waregroup'], $branch);
                 if ($temp) {
-                    $branch   = $temp;
+                    $branch = $temp;
                     $parentId = $temp['id'];
                 } else {
                     $parentId = $this->createBranch(array_slice($categoriesChain, $key), $parentId);
@@ -430,7 +429,7 @@ class EntitiesHelperService
                 }
                 $temp = $this->findInBranch($category['waregroup'], $branch);
                 if ($temp) {
-                    $branch   = $temp;
+                    $branch = $temp;
                     $parentId = $temp['id'];
                 } else {
                     $parentId = $this->createBranch(array_slice($categoriesChain, $key), $parentId);
@@ -469,7 +468,7 @@ class EntitiesHelperService
             throw new \RuntimeException('Default Cms Listing page not found');
         }
 
-        $this->defaultCmsListingPageId = Uuid::fromBytesToHex((string) $result);
+        $this->defaultCmsListingPageId = Uuid::fromBytesToHex((string)$result);
 
         return $this->defaultCmsListingPageId;
     }
@@ -586,8 +585,8 @@ class EntitiesHelperService
 
     protected function loadManufacturers(): void
     {
-        $manufacturers = $this->manufacturerRepository->search(new Criteria(), $this->context)->getEntities();
-        $ret           = [];
+        $manufacturers = $this->productManufacturerRepository->search(new Criteria(), $this->context)->getEntities();
+        $ret = [];
         foreach ($manufacturers as $manufacturer) {
             $ret[$manufacturer->getName()] = $manufacturer->getId();
         }
@@ -604,7 +603,7 @@ class EntitiesHelperService
             $manufacturerId = $this->manufacturers[$manufacturerName];
         } else {
             $manufacturerId = Uuid::randomHex();
-            $this->manufacturerRepository->create([
+            $this->productManufacturerRepository->create([
                 [
                     'id'   => $manufacturerId,
                     'name' => [
