@@ -34,6 +34,18 @@ class ProductMappingService
         $this->context = Context::createDefaultContext();
     }
 
+    /**
+     * Maps products based on the mapping type specified in the options.
+     *
+     * This method performs the following steps:
+     * 1. Logs the start of the product mapping process.
+     * 2. Truncates the `topdata_to_product` table to remove existing mappings.
+     * 3. Determines the mapping type from the options and calls the appropriate mapping method.
+     * 4. Returns `true` if the mapping process completes successfully.
+     * 5. Catches any exceptions, logs the error, and returns `false`.
+     *
+     * @return bool Returns `true` if the mapping process completes successfully, `false` otherwise.
+     */
     public function mapProducts(): bool
     {
         $this->cliStyle->info('ProductMappingService::mapProducts() - using mapping type: ' . $this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE));
