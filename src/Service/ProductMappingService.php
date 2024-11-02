@@ -12,15 +12,16 @@ use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataFoundationSW6\Helper\CliStyle;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
+use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
 
 /**
  * 10/2024 created (extracted from MappingHelperService).
  */
 class ProductMappingService
 {
-    private bool $verbose;
+    use CliStyleTrait;
+
     private Context $context;
-    private CliStyle $cliStyle;
     private TopdataWebserviceClient $topdataWebserviceClient;
 
     public function __construct(
@@ -635,11 +636,6 @@ class ProductMappingService
             ->where('(p.ean != \'\') AND (p.ean IS NOT NULL)');
 
         return $query->execute()->fetchAllAssociative();
-    }
-
-    public function setCliStyle(CliStyle $cliStyle): void
-    {
-        $this->cliStyle = $cliStyle;
     }
 
     public function setTopdataWebserviceClient(TopdataWebserviceClient $topdataWebserviceClient): void

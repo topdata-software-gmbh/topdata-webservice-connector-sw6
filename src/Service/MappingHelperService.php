@@ -20,11 +20,11 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
-use Topdata\TopdataFoundationSW6\Helper\CliStyle;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
 use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
+use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
 
 /**
  * MappingHelperService class.
@@ -38,6 +38,8 @@ use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
  */
 class MappingHelperService
 {
+    use CliStyleTrait;
+
     /**
      * Constants for cross-selling types.
      */
@@ -118,30 +120,29 @@ class MappingHelperService
      *      ]
      *  ]
      */
-    private ?array $topidProducts = null;
     private TopdataWebserviceClient $topdataWebserviceClient;
     private bool $verbose = false;
     private Context $context;
     private string $systemDefaultLocaleCode;
-    private CliStyle $cliStyle;
 
 
     public function __construct(
-        private readonly LoggerInterface        $logger,
-        private readonly Connection             $connection,
-        private readonly EntityRepository       $topdataBrandRepository,
-        private readonly EntityRepository       $topdataDeviceRepository,
-        private readonly EntityRepository       $topdataSeriesRepository,
-        private readonly EntityRepository       $topdataDeviceTypeRepository,
-        private readonly EntityRepository       $productRepository,
-        private readonly EntitiesHelperService  $entitiesHelperService,
-        private readonly EntityRepository       $productCrossSellingRepository,
-        private readonly EntityRepository       $productCrossSellingAssignedProductsRepository,
-        private readonly ProductMappingService  $productMappingService,
-        private readonly OptionsHelperService   $optionsHelperService,
-        private readonly ProgressLoggingService $progressLoggingService,
-        private readonly LocaleHelperService    $localeHelperService,
-        private readonly ManufacturerService    $manufacturerService,
+        private readonly LoggerInterface               $logger,
+        private readonly Connection                    $connection,
+        private readonly EntityRepository              $topdataBrandRepository,
+        private readonly EntityRepository              $topdataDeviceRepository,
+        private readonly EntityRepository              $topdataSeriesRepository,
+        private readonly EntityRepository              $topdataDeviceTypeRepository,
+        private readonly EntityRepository              $productRepository,
+        private readonly EntitiesHelperService         $entitiesHelperService,
+        private readonly EntityRepository              $productCrossSellingRepository,
+        private readonly EntityRepository              $productCrossSellingAssignedProductsRepository,
+        private readonly ProductMappingService         $productMappingService,
+        private readonly OptionsHelperService          $optionsHelperService,
+        private readonly ProgressLoggingService        $progressLoggingService,
+        private readonly LocaleHelperService           $localeHelperService,
+        private readonly ManufacturerService           $manufacturerService,
+        private readonly TopdataToProductHelperService $topdataToProductHelperService,
     )
     {
         $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();
@@ -232,38 +233,6 @@ class MappingHelperService
     //        return $returnArray;
     //    }
 
-    /**
-     * it populates $this->topidProducts once, unless $forceReload is true.
-     */
-    private function _fetchTopidProducts(bool $forceReload = false): array
-    {
-        if (null === $this->topidProducts || $forceReload) {
-            $rows = $this->connection->fetchAllAssociative('
-                SELECT 
-                    topdata_to_product.top_data_id, 
-                    LOWER(HEX(topdata_to_product.product_id)) as product_id, 
-                    LOWER(HEX(topdata_to_product.product_version_id)) as product_version_id, 
-                    LOWER(HEX(product.parent_id)) as parent_id 
-                FROM `topdata_to_product`, product 
-                WHERE topdata_to_product.product_id = product.id 
-                    AND topdata_to_product.product_version_id = product.version_id 
-                ORDER BY topdata_to_product.top_data_id
-            ');
-
-            $this->cliStyle->info('_fetchTopidProducts :: fetched ' . count($rows) . ' products');
-
-            $this->topidProducts = [];
-            foreach ($rows as $row) {
-                $this->topidProducts[$row['top_data_id']][] = [
-                    'product_id'         => $row['product_id'],
-                    'product_version_id' => $row['product_version_id'],
-                    'parent_id'          => $row['parent_id'],
-                ];
-            }
-        }
-
-        return $this->topidProducts;
-    }
 
     private function _getEnabledDevices(): array
     {
@@ -292,7 +261,6 @@ class MappingHelperService
      */
     public function mapProducts(): bool
     {
-        $this->productMappingService->setCliStyle($this->cliStyle);
         $this->productMappingService->setTopdataWebserviceClient($this->topdataWebserviceClient);
 
         return $this->productMappingService->mapProducts();
@@ -1092,11 +1060,7 @@ class MappingHelperService
                 'unlinked device-to-product ' => $cntE,
             ]);
 
-            $topidProducts = $this->_fetchTopidProducts();
-            if (empty($topidProducts)) {
-                // Select how you want our articles to be linked to our product database (mapping) *1
-                $this->cliStyle->warning('No mapped products found in database. Did you set the correct mapping in plugin config?');
-            }
+            $topidProducts = $this->topdataToProductHelperService->getTopidProducts();
 
             $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
             $enabledBrands = [];
@@ -1524,7 +1488,7 @@ class MappingHelperService
     private function findRelatedProducts($remoteProductData): array
     {
         $relatedProducts = [];
-        $topid_products = $this->_fetchTopidProducts();
+        $topid_products = $this->topdataToProductHelperService->getTopidProducts();
         if (isset($remoteProductData->product_accessories->products) && count($remoteProductData->product_accessories->products)) {
             foreach ($remoteProductData->product_accessories->products as $tid) {
                 if (!isset($topid_products[$tid])) {
@@ -1540,7 +1504,7 @@ class MappingHelperService
     private function findBundledProducts($remoteProductData): array
     {
         $bundledProducts = [];
-        $topid_products = $this->_fetchTopidProducts();
+        $topid_products = $this->topdataToProductHelperService->getTopidProducts();
         if (isset($remoteProductData->bundle_content->products) && count($remoteProductData->bundle_content->products)) {
             foreach ($remoteProductData->bundle_content->products as $tid) {
                 if (!isset($topid_products[$tid->products_id])) {
@@ -1556,7 +1520,7 @@ class MappingHelperService
     private function findAlternateProducts($remoteProductData): array
     {
         $alternateProducts = [];
-        $topid_products = $this->_fetchTopidProducts();
+        $topid_products = $this->topdataToProductHelperService->getTopidProducts();
         if (isset($remoteProductData->product_alternates->products) && count($remoteProductData->product_alternates->products)) {
             foreach ($remoteProductData->product_alternates->products as $tid) {
                 if (!isset($topid_products[$tid])) {
@@ -1572,7 +1536,7 @@ class MappingHelperService
     private function findSimilarProducts($remoteProductData): array
     {
         $similarProducts = [];
-        $topid_products = $this->_fetchTopidProducts();
+        $topid_products = $this->topdataToProductHelperService->getTopidProducts();
 
         if (isset($remoteProductData->product_same_accessories->products) && count($remoteProductData->product_same_accessories->products)) {
             foreach ($remoteProductData->product_same_accessories->products as $tid) {
@@ -1607,7 +1571,7 @@ class MappingHelperService
     private function findColorVariantProducts($remoteProductData): array
     {
         $linkedProducts = [];
-        $topid_products = $this->_fetchTopidProducts();
+        $topid_products = $this->topdataToProductHelperService->getTopidProducts();
         if (isset($remoteProductData->product_special_variants->color) && count($remoteProductData->product_special_variants->color)) {
             foreach ($remoteProductData->product_special_variants->color as $tid) {
                 if (!isset($topid_products[$tid])) {
@@ -1623,7 +1587,7 @@ class MappingHelperService
     private function findCapacityVariantProducts($remoteProductData): array
     {
         $linkedProducts = [];
-        $topid_products = $this->_fetchTopidProducts();
+        $topid_products = $this->topdataToProductHelperService->getTopidProducts();
         if (isset($remoteProductData->product_special_variants->capacity) && count($remoteProductData->product_special_variants->capacity)) {
             foreach ($remoteProductData->product_special_variants->capacity as $tid) {
                 if (!isset($topid_products[$tid])) {
@@ -1639,7 +1603,7 @@ class MappingHelperService
     private function findVariantProducts($remoteProductData): array
     {
         $products = [];
-        $topid_products = $this->_fetchTopidProducts();
+        $topid_products = $this->topdataToProductHelperService->getTopidProducts();
 
         if (isset($remoteProductData->product_variants->products) && count($remoteProductData->product_variants->products)) {
             foreach ($remoteProductData->product_variants->products as $rprod) {
@@ -1676,7 +1640,7 @@ class MappingHelperService
         }
 
         // Fetch the topid products
-        $topid_products = $this->_fetchTopidProducts(true);
+        $topid_products = $this->topdataToProductHelperService->getTopidProducts(true);
         $productDataUpdate = [];
         $productDataUpdateCovers = [];
         $productDataDeleteDuplicateMedia = [];
@@ -2924,8 +2888,4 @@ SQL;
         return $rez;
     }
 
-    public function setCliStyle(CliStyle $cliStyle): void
-    {
-        $this->cliStyle = $cliStyle;
-    }
 }

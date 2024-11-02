@@ -11,8 +11,8 @@ use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
-use Topdata\TopdataFoundationSW6\Helper\CliStyle;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
+use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
 
 /**
  * Service class responsible for handling the import operations.
@@ -21,6 +21,8 @@ use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
  */
 class ImportService
 {
+    use CliStyleTrait;
+
     // Error codes for various failure scenarios
     const ERROR_CODE_PLUGIN_INACTIVE                  = 1;
     const ERROR_CODE_MISSING_PLUGIN_CONFIGURATION     = 2;
@@ -33,7 +35,6 @@ class ImportService
     const ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED_2     = 9;
 
     private bool $verbose = true;
-    private CliStyle $cliStyle;
 
     public function __construct(
         private readonly SystemConfigService  $systemConfigService,
@@ -55,18 +56,6 @@ class ImportService
     {
         $this->verbose = $verbose;
         $this->mappingHelperService->setVerbose($verbose);
-    }
-
-    /**
-     * Main execution method for the import service.
-     *
-     * @param ImportCommandCliOptionsDTO $cliOptionsDto
-     * @return int
-     */
-    public function setCliStyle(CliStyle $cliStyle): void
-    {
-        $this->cliStyle = $cliStyle;
-        $this->mappingHelperService->setCliStyle($cliStyle);
     }
 
     public function execute(ImportCommandCliOptionsDTO $cliOptionsDto): int
@@ -267,7 +256,7 @@ class ImportService
 
         // ---- Check if TopFeed plugin is available
         if (!$this->pluginHelperService->isTopFeedPluginAvailable()) {
-            if($this->verbose) {
+            if ($this->verbose) {
                 $this->cliStyle->writeln('You need TopFeed plugin to update product information!');
             }
             return null;
