@@ -13,6 +13,7 @@ use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Helper\CliStyle;
+use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 
 /**
  * Service class responsible for handling the import operations.
@@ -33,6 +34,8 @@ class ImportService
     const ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED_2     = 9;
 
     private bool $verbose = true;
+    private CliStyle $cliStyle;
+
 
     /**
      * Constructor for ImportService.
@@ -51,6 +54,7 @@ class ImportService
         private readonly MappingHelperService  $mappingHelperService,
         private readonly ConfigCheckerService  $configCheckerService,
         private readonly OptionsHelperService  $optionsHelperService,
+        private readonly PluginHelperService   $pluginHelperService
     )
     {
     }
@@ -70,22 +74,25 @@ class ImportService
      * Main execution method for the import service.
      *
      * @param ImportCommandCliOptionsDTO $cliOptionsDto
-     * @param CliStyle $cliStyle
      * @return int
      */
-    public function execute(ImportCommandCliOptionsDTO $cliOptionsDto, CliStyle $cliStyle): int
+    public function setCliStyle(CliStyle $cliStyle): void
     {
+        $this->cliStyle = $cliStyle;
         $this->mappingHelperService->setCliStyle($cliStyle);
+    }
+
+    public function execute(ImportCommandCliOptionsDTO $cliOptionsDto): int
+    {
 
         if ($this->verbose) {
-            $cliStyle->writeln('Starting work...');
+            $this->cliStyle->writeln('Starting work...');
         }
 
         // Check if plugin is active
-        $activePlugins = $this->containerBag->get('kernel.active_plugins');
-        if (!isset($activePlugins['Topdata\TopdataConnectorSW6\TopdataConnectorSW6'])) {
+        if (!$this->pluginHelperService->isPluginActive('Topdata\TopdataConnectorSW6\TopdataConnectorSW6')) {
             if ($this->verbose) {
-                $cliStyle->error('The TopdataConnectorSW6 plugin is inactive!');
+                $this->cliStyle->error('The TopdataConnectorSW6 plugin is inactive!');
             }
             return self::ERROR_CODE_PLUGIN_INACTIVE;
         }
@@ -93,23 +100,23 @@ class ImportService
         // Check if plugin is configured
         if ($this->configCheckerService->isConfigEmpty()) {
             if ($this->verbose) {
-                $cliStyle->writeln('Fill in the connection parameters in admin: Extensions > My Extensions > Topdata Webservice Connector > [...] > Configure');
+                $this->cliStyle->writeln('Fill in the connection parameters in admin: Extensions > My Extensions > Topdata Webservice Connector > [...] > Configure');
             }
             return self::ERROR_CODE_MISSING_PLUGIN_CONFIGURATION;
         }
 
-        $cliStyle->dumpDict($cliOptionsDto->toDict(), 'CLI Options DTO');
+        $this->cliStyle->dumpDict($cliOptionsDto->toDict(), 'CLI Options DTO');
 
         // Init webservice client
         $this->initializeWebserviceClient();
 
         // Execute import operations based on options
-        if ($result = $this->executeImportOperations($cliOptionsDto, $activePlugins, $cliStyle)) {
+        if ($result = $this->executeImportOperations($cliOptionsDto)) {
             return $result;
         }
 
         // Dump report
-        $cliStyle->dumpCounters(ImportReport::getCountersSorted(), 'Report');
+        $this->cliStyle->dumpCounters(ImportReport::getCountersSorted(), 'Report');
 
         return Command::SUCCESS;
     }
@@ -147,36 +154,27 @@ class ImportService
 
     /**
      * Executes the import operations based on the provided CLI options.
-     *
-     * @param ImportCommandCliOptionsDTO $cliOptionsDto
-     * @param array $activePlugins
-     * @param CliStyle $cliStyle
-     * @return int|null
      */
-    private function executeImportOperations(
-        ImportCommandCliOptionsDTO $cliOptionsDto,
-        array                      $activePlugins,
-        CliStyle                   $cliStyle
-    ): ?int
+    private function executeImportOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
         // Mapping
         if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceMapping()) {
-            $cliStyle->section('Mapping Products');
+            $this->cliStyle->section('Mapping Products');
             if (!$this->mappingHelperService->mapProducts()) {
                 if ($this->verbose) {
-                    $cliStyle->error('Mapping failed!');
+                    $this->cliStyle->error('Mapping failed!');
                 }
                 return self::ERROR_CODE_MAPPING_PRODUCTS_FAILED;
             }
         }
 
         // Device operations
-        if ($result = $this->handleDeviceOperations($cliOptionsDto, $cliStyle)) {
+        if ($result = $this->_handleDeviceOperations($cliOptionsDto)) {
             return $result;
         }
 
         // Product operations
-        if ($result = $this->handleProductOperations($cliOptionsDto, $activePlugins, $cliStyle)) {
+        if ($result = $this->_handleProductOperations($cliOptionsDto)) {
             return $result;
         }
 
@@ -187,10 +185,9 @@ class ImportService
      * Handles device-related import operations.
      *
      * @param ImportCommandCliOptionsDTO $cliOptionsDto
-     * @param CliStyle $cliStyle
      * @return int|null
      */
-    private function handleDeviceOperations(ImportCommandCliOptionsDTO $cliOptionsDto, CliStyle $cliStyle): ?int
+    private function _handleDeviceOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
         if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceDevice()) {
             if (
@@ -200,14 +197,14 @@ class ImportService
                 || !$this->mappingHelperService->setDevices()
             ) {
                 if ($this->verbose) {
-                    $cliStyle->error('Device import failed!');
+                    $this->cliStyle->error('Device import failed!');
                 }
                 return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
             }
         } elseif ($cliOptionsDto->isServiceDeviceOnly()) {
             if (!$this->mappingHelperService->setDevices()) {
                 if ($this->verbose) {
-                    $cliStyle->error('Device import failed!');
+                    $this->cliStyle->error('Device import failed!');
                 }
                 return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
             }
@@ -218,23 +215,14 @@ class ImportService
 
     /**
      * Handles product-related import operations.
-     *
-     * @param ImportCommandCliOptionsDTO $cliOptionsDto
-     * @param array $activePlugins
-     * @param CliStyle $cliStyle
-     * @return int|null
      */
-    private function handleProductOperations(
-        ImportCommandCliOptionsDTO $cliOptionsDto,
-        array                      $activePlugins,
-        CliStyle                   $cliStyle
-    ): ?int
+    private function _handleProductOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
         // Product to device linking
         if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceProduct()) {
             if (!$this->mappingHelperService->setProducts()) {
                 if ($this->verbose) {
-                    $cliStyle->error('Set products to devices failed!');
+                    $this->cliStyle->error('Set products to devices failed!');
                 }
                 return self::ERROR_CODE_PRODUCT_TO_DEVICE_LINKING_FAILED;
             }
@@ -244,14 +232,14 @@ class ImportService
         if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceDeviceMedia()) {
             if (!$this->mappingHelperService->setDeviceMedia()) {
                 if ($this->verbose) {
-                    $cliStyle->error('Load device media failed!');
+                    $this->cliStyle->error('Load device media failed!');
                 }
                 return self::ERROR_CODE_LOAD_DEVICE_MEDIA_FAILED;
             }
         }
 
         // Product information
-        if ($result = $this->handleProductInformation($cliOptionsDto, $activePlugins, $cliStyle)) {
+        if ($result = $this->_handleProductInformation($cliOptionsDto)) {
             return $result;
         }
 
@@ -259,14 +247,14 @@ class ImportService
         if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceDeviceSynonyms()) {
             if (!$this->mappingHelperService->setDeviceSynonyms()) {
                 if ($this->verbose) {
-                    $cliStyle->error('Set device synonyms failed!');
+                    $this->cliStyle->error('Set device synonyms failed!');
                 }
                 return self::ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED;
             }
         }
 
         // Product variations
-        if ($result = $this->handleProductVariations($cliOptionsDto, $activePlugins, $cliStyle)) {
+        if ($result = $this->_handleProductVariations($cliOptionsDto)) {
             return $result;
         }
 
@@ -275,41 +263,32 @@ class ImportService
 
     /**
      * Handles product information import operations.
-     *
-     * @param ImportCommandCliOptionsDTO $cliOptionsDto
-     * @param array $activePlugins
-     * @param CliStyle $cliStyle
-     * @return int|null
      */
-    private function handleProductInformation(
-        ImportCommandCliOptionsDTO $cliOptionsDto,
-        array                      $activePlugins,
-        CliStyle                   $cliStyle
-    ): ?int
+    private function _handleProductInformation(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
         if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceProductInformation()) {
-            if (isset($activePlugins['Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6'])) {
+            if ($this->pluginHelperService->isPluginActive('Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6')) {
                 $this->optionsHelperService->loadTopdataTopFeedPluginConfig();
                 if (!$this->mappingHelperService->setProductInformation()) {
                     if ($this->verbose) {
-                        $cliStyle->error('Load product information failed!');
+                        $this->cliStyle->error('Load product information failed!');
                     }
                     return self::ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED;
                 }
             } elseif ($cliOptionsDto->isServiceProductInformation() && $this->verbose) {
-                $cliStyle->writeln('You need TopFeed plugin to update product information!');
+                $this->cliStyle->writeln('You need TopFeed plugin to update product information!');
             }
         } elseif ($cliOptionsDto->isServiceProductMedia()) {
-            if (isset($activePlugins['Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6'])) {
+            if ($this->pluginHelperService->isPluginActive('Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6')) {
                 $this->optionsHelperService->loadTopdataTopFeedPluginConfig();
                 if (!$this->mappingHelperService->setProductInformation(true)) {
                     if ($this->verbose) {
-                        $cliStyle->error('Load product information failed!');
+                        $this->cliStyle->error('Load product information failed!');
                     }
                     return self::ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED;
                 }
             } elseif ($this->verbose) {
-                $cliStyle->writeln('You need TopFeed plugin to update product information!');
+                $this->cliStyle->writeln('You need TopFeed plugin to update product information!');
             }
         }
 
@@ -318,28 +297,19 @@ class ImportService
 
     /**
      * Handles product variations import operations.
-     *
-     * @param ImportCommandCliOptionsDTO $cliOptionsDto
-     * @param array $activePlugins
-     * @param CliStyle $cliStyle
-     * @return int|null
      */
-    private function handleProductVariations(
-        ImportCommandCliOptionsDTO $cliOptionsDto,
-        array                      $activePlugins,
-        CliStyle                   $cliStyle
-    ): ?int
+    private function _handleProductVariations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
         if ($cliOptionsDto->isProductVariations()) {
-            if (isset($activePlugins['Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6'])) {
+            if ($this->pluginHelperService->isPluginActive('Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6')) {
                 if (!$this->mappingHelperService->setProductColorCapacityVariants()) {
                     if ($this->verbose) {
-                        $cliStyle->error('Set device synonyms failed!');
+                        $this->cliStyle->error('Set device synonyms failed!');
                     }
                     return self::ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED_2;
                 }
             } elseif ($this->verbose) {
-                $cliStyle->warning('You need TopFeed plugin to create variated products!');
+                $this->cliStyle->warning('You need TopFeed plugin to create variated products!');
             }
         }
 

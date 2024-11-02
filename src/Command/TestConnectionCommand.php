@@ -9,10 +9,10 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
 use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
+use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 
 /**
  * Test connection to the TopData webservice.
@@ -24,22 +24,14 @@ class TestConnectionCommand extends AbstractTopdataCommand
     const ERROR_CODE_CONNECTION_ERROR                             = 3;
     const ERROR_CODE_EXCEPTION                                    = 4;
 
-    private SystemConfigService $systemConfigService;
-    private ContainerBagInterface $containerBag;
-    private LoggerInterface $logger;
-    private ConfigCheckerService $configCheckerService;
 
     public function __construct(
-        SystemConfigService $systemConfigService,
-        ContainerBagInterface $ContainerBag,
-        LoggerInterface $logger,
-        ConfigCheckerService $configCheckerService
-    ) {
-        $this->systemConfigService  = $systemConfigService;
-        $this->containerBag         = $ContainerBag;
-        $this->logger               = $logger;
-        $this->configCheckerService = $configCheckerService;
-
+        private readonly SystemConfigService   $systemConfigService,
+        private readonly LoggerInterface       $logger,
+        private readonly ConfigCheckerService  $configCheckerService,
+        private readonly PluginHelperService   $pluginHelperService,
+    )
+    {
         parent::__construct();
     }
 
@@ -52,8 +44,7 @@ class TestConnectionCommand extends AbstractTopdataCommand
     public function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->cliStyle->writeln('Check plugin is active...');
-        $activePlugins = $this->containerBag->get('kernel.active_plugins');
-        if (!isset($activePlugins['Topdata\TopdataConnectorSW6\TopdataConnectorSW6'])) {
+        if (!$this->pluginHelperService->isPluginActive('Topdata\TopdataConnectorSW6\TopdataConnectorSW6')) {
             // a bit silly check, as this command is part of the TopdataConnectorSW6 plugin
             $this->cliStyle->error('The TopdataConnectorSW6 plugin is inactive!');
             $this->cliStyle->writeln('Activate the TopdataConnectorSW6 plugin first. Abort.');
@@ -72,7 +63,7 @@ class TestConnectionCommand extends AbstractTopdataCommand
         $this->cliStyle->writeln('Connecting to TopData api server...');
         try {
             $webservice = new TopdataWebserviceClient($this->logger, $config['apiUsername'], $config['apiKey'], $config['apiSalt'], $config['apiLanguage']);
-            $info       = $webservice->getUserInfo();
+            $info = $webservice->getUserInfo();
 
             if (isset($info->error)) {
                 $this->cliStyle->error("Connection error: {$info->error[0]->error_message}");

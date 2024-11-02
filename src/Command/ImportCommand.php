@@ -23,13 +23,16 @@ class ImportCommand extends AbstractTopdataCommand
         parent::__construct();
     }
 
+    /**
+     * ==== MAIN ====
+     */
     public function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->importService->setVerbose($input->getOption('verbose') >= 1);
-        
+        $this->importService->setCliStyle($this->cliStyle);
         $cliOptionsDto = new ImportCommandCliOptionsDTO($input);
         
-        return $this->importService->execute($cliOptionsDto, $this->cliStyle);
+        return $this->importService->execute($cliOptionsDto);
     }
 
     protected function configure(): void
