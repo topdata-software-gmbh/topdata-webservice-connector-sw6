@@ -300,12 +300,26 @@ class MappingHelperService
         return $this->productMappingService->mapProducts();
     }
 
+    /**
+     * Sets the brands by fetching data from the remote server and updating the local database.
+     *
+     * This method retrieves brand data from the remote server, processes the data, and updates the local database
+     * by creating new entries or updating existing ones. It uses the `TopdataWebserviceClient` to fetch the data and
+     * the `EntityRepository` to perform database operations.
+     *
+     * @return bool Returns true if the operation is successful, false otherwise.
+     */
     public function setBrands(): bool
     {
         try {
+            // Start the section for brands in the CLI output
             $this->cliStyle->section("\n\nBrands");
+
+            // Log the start of the data fetching process
             $this->progressLoggingService->writeln('Getting data from remote server...');
             $this->progressLoggingService->lap(true);
+
+            // Fetch the brands from the remote server
             $brands = $this->topdataWebserviceClient->getBrands();
             $this->progressLoggingService->activity('Got ' . count($brands->data) . " brands from remote server\n");
             ImportReport::setCounter('Fetched Brands', count($brands->data));
@@ -315,6 +329,8 @@ class MappingHelperService
             $dataCreate = [];
             $dataUpdate = [];
             $this->progressLoggingService->activity('Processing data');
+
+            // Process each brand fetched from the remote server
             foreach ($brands->data as $b) {
                 if ($b->main == 0) {
                     continue;
@@ -326,6 +342,7 @@ class MappingHelperService
                 }
                 $duplicates[$code] = true;
 
+                // Search for existing brand in the local database
                 $brand = $topdataBrandRepository
                     ->search(
                         (new Criteria())->addFilter(new EqualsFilter('code', $code))->setLimit(1),
@@ -334,6 +351,7 @@ class MappingHelperService
                     ->getEntities()
                     ->first();
 
+                // If the brand does not exist, prepare data for creation
                 if (!$brand) {
                     $dataCreate[] = [
                         'code'    => $code,
@@ -342,6 +360,7 @@ class MappingHelperService
                         'sort'    => (int)$b->top,
                         'wsId'    => (int)$b->id,
                     ];
+                    // If the brand exists but has different data, prepare data for update
                 } elseif (
                     $brand->getName() != $b->val ||
                     $brand->getSort() != $b->top ||
@@ -350,17 +369,19 @@ class MappingHelperService
                     $dataUpdate[] = [
                         'id'   => $brand->getId(),
                         'name' => $b->val,
-                        //                        'sort' => (int)$b->top,
+                        // 'sort' => (int)$b->top,
                         'wsId' => (int)$b->id,
                     ];
                 }
 
+                // Create new brands in batches of 100
                 if (count($dataCreate) > 100) {
                     $topdataBrandRepository->create($dataCreate, $this->context);
                     $dataCreate = [];
                     $this->progressLoggingService->activity();
                 }
 
+                // Update existing brands in batches of 100
                 if (count($dataUpdate) > 100) {
                     $topdataBrandRepository->update($dataUpdate, $this->context);
                     $dataUpdate = [];
@@ -368,15 +389,19 @@ class MappingHelperService
                 }
             }
 
+            // Create any remaining new brands
             if (count($dataCreate)) {
                 $topdataBrandRepository->create($dataCreate, $this->context);
                 $this->progressLoggingService->activity();
             }
 
+            // Update any remaining existing brands
             if (count($dataUpdate)) {
                 $topdataBrandRepository->update($dataUpdate, $this->context);
                 $this->progressLoggingService->activity();
             }
+
+            // Log the completion of the brands process
             $this->progressLoggingService->writeln("\nBrands done " . $this->progressLoggingService->lap() . 'sec');
             $topdataBrandRepository = null;
             $duplicates = null;
@@ -384,6 +409,7 @@ class MappingHelperService
 
             return true;
         } catch (\Exception $e) {
+            // Log any exceptions that occur
             $this->logger->error($e->getMessage());
             $this->progressLoggingService->writeln('Exception abgefangen: ' . $e->getMessage());
         }
