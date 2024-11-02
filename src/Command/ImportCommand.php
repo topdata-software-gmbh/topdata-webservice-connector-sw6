@@ -155,7 +155,7 @@ class ImportCommand extends AbstractTopdataCommand
             }
         }
 
-        //set printer to products
+        // ---- set printer to products
         if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceProduct()) {
             if (!$this->mappingHelperService->setProducts()) {
                 if ($this->verbose) {
@@ -234,12 +234,6 @@ class ImportCommand extends AbstractTopdataCommand
             }
         }
 
-        //test
-        if ($input->getOption('test')) {
-            //            $rez = $mappingHelper->getKeysByCustomFieldUnique('Distributor product number');
-            //            print_r($rez);
-        }
-
         // ---- dump report
         $this->cliStyle->dumpCounters(ImportReport::getCountersSorted(), 'Report');
 
@@ -250,7 +244,6 @@ class ImportCommand extends AbstractTopdataCommand
     {
         $this->setName('topdata:connector:import');
         $this->setDescription('Import data from the TopData Webservice');
-        $this->addOption('test', null, InputOption::VALUE_NONE, 'for developer tests');
         $this->addOption('all', null, InputOption::VALUE_NONE, 'full update with webservice');
         $this->addOption('mapping', null, InputOption::VALUE_NONE, 'Mapping all existing products to webservice');
         $this->addOption('device', null, InputOption::VALUE_NONE, 'add devices from webservice');
