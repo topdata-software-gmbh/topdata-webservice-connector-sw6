@@ -70,11 +70,14 @@ class ProductMappingService
         return false;
     }
 
+    /**
+     * TopID from the webservice is used as shopware product number
+     */
     private function mapProductNumberAsWsId(): void
     {
         $dataInsert = [];
 
-        $artnos = $this->fixMultiArrayBinaryIds(
+        $artnos = $this->_convertMultiArrayBinaryIdsToHex(
             $this->getKeysByOrdernumber()
         );
         $currentDateTime = date('Y-m-d H:i:s');
@@ -116,11 +119,11 @@ class ProductMappingService
         $dataInsert = [];
 
         if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::DISTRIBUTOR_CUSTOM && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
-            $artnos = $this->fixMultiArrayBinaryIds($this->getKeysByOptionValueUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER)));
+            $artnos = $this->_convertMultiArrayBinaryIdsToHex($this->getKeysByOptionValueUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER)));
         } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
             $artnos = $this->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER));
         } else {
-            $artnos = $this->fixMultiArrayBinaryIds($this->getKeysByOrdernumber());
+            $artnos = $this->_convertMultiArrayBinaryIdsToHex($this->getKeysByOrdernumber());
         }
 
         if (count($artnos) == 0) {
@@ -471,7 +474,16 @@ class ProductMappingService
         return $arr;
     }
 
-    private function fixMultiArrayBinaryIds(array $arr): array
+    /**
+     * Converts binary IDs in a multi-dimensional array to hexadecimal strings.
+     *
+     * This method iterates over a multi-dimensional array and converts the binary
+     * 'id' and 'version_id' fields to their hexadecimal string representations.
+     *
+     * @param array $arr The input array containing binary IDs.
+     * @return array The modified array with hexadecimal string IDs.
+     */
+    private function _convertMultiArrayBinaryIdsToHex(array $arr): array
     {
         foreach ($arr as $no => $vals) {
             foreach ($vals as $key => $val) {
