@@ -114,6 +114,15 @@ class ProductMappingService
         }
     }
 
+    /**
+     * Maps products using the distributor mapping strategy.
+     *
+     * This method handles the mapping of products based on distributor data. It fetches product data from the database,
+     * processes it, and inserts the mapped data into the `topdata_to_product` repository. The mapping strategy is determined
+     * by the options set in `OptionConstants`.
+     *
+     * @throws \Exception if no products are found or if the web service does not return the expected number of pages
+     */
     private function mapDistributor(): void
     {
         $dataInsert = [];
@@ -175,7 +184,6 @@ class ProductMappingService
         }
         if (count($dataInsert) > 0) {
             $this->topdataToProductRepository->create($dataInsert, $this->context);
-            $dataInsert = [];
         }
         $this->progressLoggingService->writeln("\n" . $stored . ' - stored topdata products');
         unset($artnos);
