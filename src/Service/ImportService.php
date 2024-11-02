@@ -254,6 +254,7 @@ class ImportService
     private function _handleProductInformation(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
         if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceProductInformation()) {
+            // ---- Load product information
             if ($this->pluginHelperService->isPluginActive('Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6')) {
                 $this->optionsHelperService->loadTopdataTopFeedPluginConfig();
                 if (!$this->mappingHelperService->setProductInformation()) {
@@ -266,6 +267,7 @@ class ImportService
                 $this->cliStyle->writeln('You need TopFeed plugin to update product information!');
             }
         } elseif ($cliOptionsDto->isServiceProductMedia()) {
+            // ---- Update only product media
             if ($this->pluginHelperService->isPluginActive('Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6')) {
                 $this->optionsHelperService->loadTopdataTopFeedPluginConfig();
                 if (!$this->mappingHelperService->setProductInformation(true)) {

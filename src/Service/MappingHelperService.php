@@ -18,7 +18,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Topdata\TopdataConnectorSW6\Command\ProductsCommand;
 use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataFoundationSW6\Helper\CliStyle;
@@ -135,7 +134,6 @@ class MappingHelperService
         private readonly EntityRepository       $topdataSeriesRepository,
         private readonly EntityRepository       $topdataDeviceTypeRepository,
         private readonly EntityRepository       $productRepository,
-//        private readonly ProductsCommand        $productCommand, // TODO: remove this dependency
         private readonly EntitiesHelperService  $entitiesHelperService,
         private readonly EntityRepository       $productCrossSellingRepository,
         private readonly EntityRepository       $productCrossSellingAssignedProductsRepository,
@@ -1659,13 +1657,25 @@ class MappingHelperService
         return $products;
     }
 
-    public function setProductInformation($onlyMedia = false): bool
+    /**
+     * Updates product information or media by fetching data from a remote server and updating the local database.
+     *
+     * This method retrieves product data from the remote server, processes the data, and updates the local database
+     * by creating new entries or updating existing ones. It handles both product information and media updates.
+     *
+     * @param bool $onlyMedia If true, only media information is updated; otherwise, all product information is updated.
+     * @return bool Returns true if the operation is successful, false otherwise.
+     * @throws \Exception If there is an error fetching data from the remote server.
+     */
+    public function setProductInformation(bool $onlyMedia = false): bool
     {
         if ($onlyMedia) {
             $this->cliStyle->section("\n\nProduct media");
         } else {
             $this->cliStyle->section("\n\nProduct information");
         }
+
+        // Fetch the topid products
         $topid_products = $this->_fetchTopidProducts(true);
         $productDataUpdate = [];
         $productDataUpdateCovers = [];
@@ -1673,8 +1683,10 @@ class MappingHelperService
 
         $chunkSize = 50;
 
+        // Split the topid products into chunks
         $topids = array_chunk(array_keys($topid_products), $chunkSize);
         $this->progressLoggingService->lap(true);
+
         foreach ($topids as $k => $prs) {
             if ($this->optionsHelperService->getOption(OptionConstants::START) && ($k + 1 < $this->optionsHelperService->getOption(OptionConstants::START))) {
                 continue;
@@ -1685,13 +1697,13 @@ class MappingHelperService
             }
 
             $this->progressLoggingService->activity('Getting data from remote server part ' . ($k + 1) . '/' . count($topids) . ' (' . count($prs) . ' products)...');
+
+            // Fetch product data from the remote server
             $products = $this->topdataWebserviceClient->myProductList([
                 'products' => implode(',', $prs),
                 'filter'   => 'all',
             ]);
             $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
-
-            //            $this->debug(implode(',', $prs), true);
 
             if (!isset($products->page->available_pages)) {
                 throw new \Exception($products->error[0]->error_message . 'webservice no pages');
@@ -1704,20 +1716,22 @@ class MappingHelperService
                 $currentChunkProductIds[] = $p[0]['product_id'];
             }
 
+            // Load product import settings
             $this->loadProductImportSettings($currentChunkProductIds);
 
             if (!$onlyMedia) {
-                $this->unlinkProducts($currentChunkProductIds); //+
-                $this->unlinkProperties($currentChunkProductIds); //+
-                $this->unlinkCategories($currentChunkProductIds); //nochange
+                $this->unlinkProducts($currentChunkProductIds);
+                $this->unlinkProperties($currentChunkProductIds);
+                $this->unlinkCategories($currentChunkProductIds);
             }
-            $this->unlinkImages($currentChunkProductIds); //+
+            $this->unlinkImages($currentChunkProductIds);
 
             foreach ($products->products as $product) {
                 if (!isset($topid_products[$product->products_id])) {
                     continue;
                 }
 
+                // Prepare product data for update
                 $productData = $this->prepareProduct($topid_products[$product->products_id][0], $product, $onlyMedia);
                 if ($productData) {
                     $productDataUpdate[] = $productData;
@@ -1765,7 +1779,6 @@ class MappingHelperService
         }
 
         if (count($productDataUpdateCovers)) {
-            //            $this->progressLoggingService->activity("\nHas covers!");
             $this->progressLoggingService->activity("\nUpdating last product covers...");
             $this->productRepository->update($productDataUpdateCovers, $this->context);
             $this->progressLoggingService->activity(' ' . $this->progressLoggingService->lap() . "sec\n");
@@ -1803,6 +1816,7 @@ class MappingHelperService
 
         return true;
     }
+
 
     private function unlinkProperties(array $productIds): void
     {

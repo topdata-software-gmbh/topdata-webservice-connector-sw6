@@ -22,7 +22,7 @@ class ImportCommandCliOptionsDTO
     private bool $isServiceDeviceSynonyms;
     private bool $isServiceProduct;
     private bool $isServiceProductInformation;
-    private bool $isServiceProductMedia;
+    private bool $isServiceProductMedia; // --product-media-only
     private bool $isProductVariations;
 
     public function __construct(InputInterface $input)
