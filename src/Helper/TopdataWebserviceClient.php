@@ -18,30 +18,18 @@ class TopdataWebserviceClient
     const TOPDATA_WEBSERVICE_BASE_URL = 'https://ws.topdata.de';
     const CURL_TIMEOUT                = 30;  // seconds
 
-    private $baseUrl;
-    private $uid;
-    private $password;
-    private $security_key;
-    private $lg;
-    private $version;
-    private $lastURL;
+    private string $baseUrl = self::TOPDATA_WEBSERVICE_BASE_URL;
+    private $apiVersion = self::API_VERSION;
+    private ?string $lastURL = null;
 
-    /**
-     * @var Logger
-     */
-    private $logger;
-
-    public function __construct($logger, $uid, $password, $security_key, $language)
+    public function __construct(
+        private readonly Logger $logger,
+        private readonly string $apiUsername, // aka userId
+        private readonly string $apiKey,
+        private readonly string $apiSalt,
+        private readonly string $apiLanguage
+    )
     {
-        $this->logger = $logger;
-
-        $this->baseUrl = self::TOPDATA_WEBSERVICE_BASE_URL;
-        $this->uid = $uid;
-        $this->password = $password;
-        $this->security_key = $security_key;
-        $this->lg = $language;
-        $this->version = self::API_VERSION;
-        $this->lastURL = false;
     }
 
     public function getLastURL()
@@ -51,7 +39,7 @@ class TopdataWebserviceClient
 
     private function getParams(): string
     {
-        return 'uid=' . $this->uid . '&security_key=' . $this->security_key . '&password=' . $this->password . '&version=' . $this->version . '&language=' . $this->lg . '&filter=all';
+        return 'uid=' . $this->apiUsername . '&security_key=' . $this->apiSalt . '&password=' . $this->apiKey . '&version=' . $this->apiVersion . '&language=' . $this->apiLanguage . '&filter=all';
     }
 
     /**
