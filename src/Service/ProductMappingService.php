@@ -43,19 +43,19 @@ class ProductMappingService
                 TRUNCATE TABLE topdata_to_product;
             ');
             switch ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE)) {
-                case MappingTypeConstants::MAPPING_TYPE_PRODUCT_NUMBER_AS_WS_ID:
+                case MappingTypeConstants::PRODUCT_NUMBER_AS_WS_ID:
                     $this->mapProductNumberAsWsId();
                     break;
 
-                case MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_DEFAULT:
-                case MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_CUSTOM:
-                case MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_CUSTOM_FIELD:
+                case MappingTypeConstants::DISTRIBUTOR_DEFAULT:
+                case MappingTypeConstants::DISTRIBUTOR_CUSTOM:
+                case MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD:
                     $this->mapDistributor();
                     break;
 
-                case MappingTypeConstants::MAPPING_TYPE_DEFAULT:
-                case MappingTypeConstants::MAPPING_TYPE_CUSTOM:
-                case MappingTypeConstants::MAPPING_TYPE_CUSTOM_FIELD:
+                case MappingTypeConstants::DEFAULT:
+                case MappingTypeConstants::CUSTOM:
+                case MappingTypeConstants::CUSTOM_FIELD:
                 default:
                     $this->mapDefault();
                     break;
@@ -115,16 +115,12 @@ class ProductMappingService
     {
         $dataInsert = [];
 
-        if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_CUSTOM && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
-            $artnos = $this->fixMultiArrayBinaryIds(
-                $this->getKeysByOptionValueUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER))
-            );
-        } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_DISTRIBUTOR_CUSTOM_FIELD && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
+        if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::DISTRIBUTOR_CUSTOM && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
+            $artnos = $this->fixMultiArrayBinaryIds($this->getKeysByOptionValueUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER)));
+        } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
             $artnos = $this->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER));
         } else {
-            $artnos = $this->fixMultiArrayBinaryIds(
-                $this->getKeysByOrdernumber()
-            );
+            $artnos = $this->fixMultiArrayBinaryIds($this->getKeysByOrdernumber());
         }
 
         if (count($artnos) == 0) {
@@ -201,7 +197,7 @@ class ProductMappingService
         $oems = [];
         $eans = [];
         // Determine the mapping type and fetch the corresponding product data
-        if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_CUSTOM) {
+        if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::CUSTOM) {
             if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
                 $oems = $this->fixArrayBinaryIds(
                     $this->getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number')
@@ -212,7 +208,7 @@ class ProductMappingService
                     $this->getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean')
                 );
             }
-        } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::MAPPING_TYPE_CUSTOM_FIELD) {
+        } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::CUSTOM_FIELD) {
             if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
                 $oems = $this->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number');
             }
