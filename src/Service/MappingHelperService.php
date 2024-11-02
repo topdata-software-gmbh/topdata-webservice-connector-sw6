@@ -1667,7 +1667,7 @@ class MappingHelperService
      * @return bool Returns true if the operation is successful, false otherwise.
      * @throws \Exception If there is an error fetching data from the remote server.
      */
-    public function setProductInformation(bool $onlyMedia = false): bool
+    public function setProductInformation(bool $onlyMedia): bool
     {
         if ($onlyMedia) {
             $this->cliStyle->section("\n\nProduct media");
@@ -1698,7 +1698,7 @@ class MappingHelperService
 
             $this->progressLoggingService->activity('Getting data from remote server part ' . ($k + 1) . '/' . count($topids) . ' (' . count($prs) . ' products)...');
 
-            // Fetch product data from the remote server
+            // Fetch product data from the webservice
             $products = $this->topdataWebserviceClient->myProductList([
                 'products' => implode(',', $prs),
                 'filter'   => 'all',
@@ -1717,15 +1717,17 @@ class MappingHelperService
             }
 
             // Load product import settings
-            $this->loadProductImportSettings($currentChunkProductIds);
+            $this->_loadProductImportSettings($currentChunkProductIds);
 
+            // ---- unlink stuff before re-linking
             if (!$onlyMedia) {
-                $this->unlinkProducts($currentChunkProductIds);
-                $this->unlinkProperties($currentChunkProductIds);
-                $this->unlinkCategories($currentChunkProductIds);
+                $this->_unlinkProducts($currentChunkProductIds);
+                $this->_unlinkProperties($currentChunkProductIds);
+                $this->_unlinkCategories($currentChunkProductIds);
             }
-            $this->unlinkImages($currentChunkProductIds);
+            $this->_unlinkImages($currentChunkProductIds);
 
+            // ---- process products
             foreach ($products->products as $product) {
                 if (!isset($topid_products[$product->products_id])) {
                     continue;
@@ -1818,7 +1820,7 @@ class MappingHelperService
     }
 
 
-    private function unlinkProperties(array $productIds): void
+    private function _unlinkProperties(array $productIds): void
     {
         if (!count($productIds)) {
             return;
@@ -1832,7 +1834,7 @@ class MappingHelperService
         }
     }
 
-    private function unlinkImages(array $productIds): void
+    private function _unlinkImages(array $productIds): void
     {
         if (!count($productIds)) {
             return;
@@ -1850,7 +1852,7 @@ class MappingHelperService
         }
     }
 
-    private function unlinkCategories(array $productIds): void
+    private function _unlinkCategories(array $productIds): void
     {
         if (!count($productIds)
             || !$this->optionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS)
@@ -1864,23 +1866,36 @@ class MappingHelperService
         $this->connection->executeStatement("UPDATE product SET category_tree = NULL WHERE id IN ($idsString)");
     }
 
-    private function loadProductImportSettings(array $productIds): void
+    /**
+     * Loads product import settings for the given product IDs.
+     *
+     * This method fetches the category paths for the given product IDs and then loads the import settings
+     * for each category. The settings are then mapped to the corresponding products.
+     *
+     * @param array $productIds An array of product IDs for which to load import settings.
+     * @return void
+     */
+    private function _loadProductImportSettings(array $productIds): void
     {
+        // Initialize the product import settings array
         $this->productImportSettings = [];
 
+        // Return early if no product IDs are provided
         if (!count($productIds)) {
             return;
         }
-        //load each product category path
+
+        // Load each product category path
         $productCategories = [];
         $allCategories = [];
         $ids = '0x' . implode(',0x', $productIds);
         $temp = $this->connection->fetchAllAssociative('
-            SELECT LOWER(HEX(id)) as id, category_tree
-              FROM product 
-              WHERE (category_tree is NOT NULL)AND(id IN (' . $ids . '))
-        ');
+        SELECT LOWER(HEX(id)) as id, category_tree
+          FROM product 
+          WHERE (category_tree is NOT NULL)AND(id IN (' . $ids . '))
+    ');
 
+        // Parse the category tree for each product
         foreach ($temp as $item) {
             $parsedIds = json_decode($item['category_tree'], true);
             foreach ($parsedIds as $id) {
@@ -1891,23 +1906,25 @@ class MappingHelperService
             }
         }
 
+        // Return early if no categories are found
         if (!count($allCategories)) {
             return;
         }
 
-        //load each category settings
+        // Load each category's settings
         $ids = '0x' . implode(',0x', array_keys($allCategories));
         $temp = $this->connection->fetchAllAssociative('
-            SELECT LOWER(HEX(category_id)) as id, import_settings
-              FROM topdata_category_extension 
-              WHERE (plugin_settings=0)AND(category_id IN (' . $ids . '))
-        ');
+        SELECT LOWER(HEX(category_id)) as id, import_settings
+          FROM topdata_category_extension 
+          WHERE (plugin_settings=0) AND (category_id IN (' . $ids . '))
+    ');
 
+        // Map the settings to the corresponding categories
         foreach ($temp as $item) {
             $allCategories[$item['id']] = json_decode($item['import_settings'], true);
         }
 
-        //set product settings based on category
+        // Set product settings based on category
         foreach ($productCategories as $productId => $categoryTree) {
             for ($i = (count($categoryTree) - 1); $i >= 0; $i--) {
                 if (isset($allCategories[$categoryTree[$i]])
@@ -1921,7 +1938,8 @@ class MappingHelperService
         }
     }
 
-    private function getProductExtraOption(string $optionName, string $productId): bool
+
+    private function _getProductExtraOption(string $optionName, string $productId): bool
     {
         if (isset($this->productImportSettings[$productId])) {
             if (
@@ -1979,7 +1997,7 @@ class MappingHelperService
     private function getProductOption(string $optionName, string $productId): bool
     {
         if (isset($this->productImportSettings[$productId])) {
-            return $this->getProductExtraOption($this->mapProductOption($optionName), $productId);
+            return $this->_getProductExtraOption($this->mapProductOption($optionName), $productId);
         }
 
         return $this->optionsHelperService->getOption($optionName) ? true : false;
@@ -1997,7 +2015,7 @@ class MappingHelperService
         return $returnIds;
     }
 
-    private function unlinkProducts(array $productIds): void
+    private function _unlinkProducts(array $productIds): void
     {
         if (!count($productIds)) {
             return;

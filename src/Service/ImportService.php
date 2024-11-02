@@ -36,12 +36,12 @@ class ImportService
     private CliStyle $cliStyle;
 
     public function __construct(
-        private readonly SystemConfigService   $systemConfigService,
-        private readonly LoggerInterface       $logger,
-        private readonly MappingHelperService  $mappingHelperService,
-        private readonly ConfigCheckerService  $configCheckerService,
-        private readonly OptionsHelperService  $optionsHelperService,
-        private readonly PluginHelperService   $pluginHelperService
+        private readonly SystemConfigService  $systemConfigService,
+        private readonly LoggerInterface      $logger,
+        private readonly MappingHelperService $mappingHelperService,
+        private readonly ConfigCheckerService $configCheckerService,
+        private readonly OptionsHelperService $optionsHelperService,
+        private readonly PluginHelperService  $pluginHelperService
     )
     {
     }
@@ -251,38 +251,43 @@ class ImportService
     /**
      * Handles product information import operations.
      */
+    /**
+     * Handles product information import operations.
+     */
     private function _handleProductInformation(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
-        if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceProductInformation()) {
-            // ---- Load product information
-            if ($this->pluginHelperService->isPluginActive('Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6')) {
-                $this->optionsHelperService->loadTopdataTopFeedPluginConfig();
-                if (!$this->mappingHelperService->setProductInformation()) {
-                    if ($this->verbose) {
-                        $this->cliStyle->error('Load product information failed!');
-                    }
-                    return self::ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED;
-                }
-            } elseif ($cliOptionsDto->isServiceProductInformation() && $this->verbose) {
+        // ---- Determine if product-related operation should be processed based on CLI options.
+        if (
+            !$cliOptionsDto->isServiceAll() &&
+            !$cliOptionsDto->isServiceProductInformation() &&
+            !$cliOptionsDto->isServiceProductMediaOnly()
+        ) {
+            return null;
+        }
+
+        // ---- Check if TopFeed plugin is available
+        if (!$this->pluginHelperService->isTopFeedPluginAvailable()) {
+            if($this->verbose) {
                 $this->cliStyle->writeln('You need TopFeed plugin to update product information!');
             }
-        } elseif ($cliOptionsDto->isServiceProductMedia()) {
-            // ---- Update only product media
-            if ($this->pluginHelperService->isPluginActive('Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6')) {
-                $this->optionsHelperService->loadTopdataTopFeedPluginConfig();
-                if (!$this->mappingHelperService->setProductInformation(true)) {
-                    if ($this->verbose) {
-                        $this->cliStyle->error('Load product information failed!');
-                    }
-                    return self::ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED;
-                }
-            } elseif ($this->verbose) {
-                $this->cliStyle->writeln('You need TopFeed plugin to update product information!');
+            return null;
+        }
+
+        // ---- go
+        $this->optionsHelperService->loadTopdataTopFeedPluginConfig();
+
+        // ---- Load product information or update media
+        $isMediaOnlyUpdate = $cliOptionsDto->isServiceProductMediaOnly();
+        if (!$this->mappingHelperService->setProductInformation($isMediaOnlyUpdate)) {
+            if ($this->verbose) {
+                $this->cliStyle->error('Load product information failed!');
             }
+            return self::ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED;
         }
 
         return null;
     }
+
 
     /**
      * Handles product variations import operations.

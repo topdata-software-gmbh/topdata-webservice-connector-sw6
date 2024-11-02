@@ -18,7 +18,7 @@ class TopdataWebserviceClient
     const TOPDATA_WEBSERVICE_BASE_URL = 'https://ws.topdata.de';
     const CURL_TIMEOUT                = 30;  // seconds
 
-    private $url;
+    private $baseUrl;
     private $uid;
     private $password;
     private $security_key;
@@ -35,13 +35,13 @@ class TopdataWebserviceClient
     {
         $this->logger = $logger;
 
-        $this->url          = self::TOPDATA_WEBSERVICE_BASE_URL;
-        $this->uid          = $uid;
-        $this->password     = $password;
+        $this->baseUrl = self::TOPDATA_WEBSERVICE_BASE_URL;
+        $this->uid = $uid;
+        $this->password = $password;
         $this->security_key = $security_key;
-        $this->lg           = $language;
-        $this->version      = self::API_VERSION;
-        $this->lastURL      = false;
+        $this->lg = $language;
+        $this->version = self::API_VERSION;
+        $this->lastURL = false;
     }
 
     public function getLastURL()
@@ -49,14 +49,13 @@ class TopdataWebserviceClient
         return $this->lastURL;
     }
 
-    private function getParams()
+    private function getParams(): string
     {
         return 'uid=' . $this->uid . '&security_key=' . $this->security_key . '&password=' . $this->password . '&version=' . $this->version . '&language=' . $this->lg . '&filter=all';
     }
 
     /**
-     * @param             $url
-     * @param  null       $xml_data
+     * @param null $xml_data
      * @return bool|mixed
      * @throws \Exception
      */
@@ -64,7 +63,7 @@ class TopdataWebserviceClient
     {
         try {
             $this->lastURL = $url;
-            $ch            = curl_init($url);
+            $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, self::CURL_TIMEOUT);
             curl_setopt($ch, CURLOPT_TIMEOUT, self::CURL_TIMEOUT);
@@ -82,7 +81,7 @@ class TopdataWebserviceClient
             $header = curl_getinfo($ch);
             if ($header['http_code'] == 400) {
                 $header_size = strpos($output, '{');
-                $output      = substr($output, $header_size);
+                $output = substr($output, $header_size);
             }
             // ----------------------------------------------------
             curl_close($ch);
@@ -98,6 +97,9 @@ class TopdataWebserviceClient
         return $json;
     }
 
+    /**
+     * 11/2024 unused?
+     */
     public function getFinder($finder, $step, $params = [])
     {
         $p = [];
@@ -105,7 +107,7 @@ class TopdataWebserviceClient
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
-        $url = $this->url . '/finder/' . $finder . '/' . $step . '?' . implode('&', $p);
+        $url = $this->baseUrl . '/finder/' . $finder . '/' . $step . '?' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
@@ -117,11 +119,14 @@ class TopdataWebserviceClient
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
-        $url = $this->url . '/product/' . $id . '?' . implode('&', $p);
+        $url = $this->baseUrl . '/product/' . $id . '?' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
 
+    /**
+     * 11/2024 unused?
+     */
     public function myProducts($params = [])
     {
         $p = [];
@@ -129,24 +134,30 @@ class TopdataWebserviceClient
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
-        $url = $this->url . '/my_products?' . implode('&', $p);
+        $url = $this->baseUrl . '/my_products?' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
 
+    /**
+     * 11/2024 unused?
+     */
     public function myProductsOfWaregroup($waregroupId)
     {
         if (!is_int($waregroupId)) {
             return false;
         }
 
-        $p   = [];
+        $p = [];
         $p[] = $this->getParams();
-        $url = $this->url . "/waregroup/$waregroupId?" . implode('&', $p);
+        $url = $this->baseUrl . "/waregroup/$waregroupId?" . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
 
+    /**
+     * 11/2024 unused?
+     */
     public function myDistributorProducts($params = [])
     {
         $p = [];
@@ -154,11 +165,14 @@ class TopdataWebserviceClient
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
-        $url = $this->url . '/distributor_products?' . implode('&', $p);
+        $url = $this->baseUrl . '/distributor_products?' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
 
+    /**
+     * 11/2024 unused?
+     */
     public function myWaregroups($params = [])
     {
         $p = [];
@@ -166,7 +180,7 @@ class TopdataWebserviceClient
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
-        $url = $this->url . '/waregroups?' . implode('&', $p);
+        $url = $this->baseUrl . '/waregroups?' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
@@ -178,7 +192,7 @@ class TopdataWebserviceClient
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
-        $url = $this->url . '/match/oem?' . implode('&', $p);
+        $url = $this->baseUrl . '/match/oem?' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
@@ -190,7 +204,7 @@ class TopdataWebserviceClient
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
-        $url = $this->url . '/match/pcd?' . implode('&', $p);
+        $url = $this->baseUrl . '/match/pcd?' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
@@ -202,7 +216,7 @@ class TopdataWebserviceClient
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
-        $url = $this->url . '/match/ean?' . implode('&', $p);
+        $url = $this->baseUrl . '/match/ean?' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
@@ -214,12 +228,23 @@ class TopdataWebserviceClient
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
-        $url = $this->url . '/match/distributor?' . implode('&', $p);
-        echo "---- $url\n";
+        $url = $this->baseUrl . '/match/distributor?' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
 
+    /**
+     * Retrieves the list of products based on the provided parameters.
+     *
+     * This method constructs a URL with the given parameters and sends a GET request
+     * to the Topdata webservice to retrieve the product list.
+     *
+     * @param array $params An associative array of parameters to be included in the request.
+     *                      Each key-value pair will be URL-encoded and appended to the URL.
+     * @return bool|mixed The response from the Topdata webservice, decoded from JSON format.
+     *                    Returns false if the request fails.
+     * @throws \Exception If there is an error during the cURL request or if the webservice returns an error.
+     */
     public function myProductList($params = [])
     {
         $p = [];
@@ -227,11 +252,12 @@ class TopdataWebserviceClient
             $p[] = $k . '=' . rawurlencode($v);
         }
         $p[] = $this->getParams();
-        $url = $this->url . '/product_list?' . implode('&', $p);
+        $url = $this->baseUrl . '/product_list?' . implode('&', $p);
 
         //debug($url);
         return $this->getCURLResponse($url);
     }
+
 
     /**
      * @return bool|mixed
@@ -240,7 +266,7 @@ class TopdataWebserviceClient
     public function getBrands()
     {
         $p[] = $this->getParams();
-        $url = $this->url . '/finder/ink_toner/brands?' . implode('&', $p);
+        $url = $this->baseUrl . '/finder/ink_toner/brands?' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
@@ -251,7 +277,7 @@ class TopdataWebserviceClient
         if ($brandId) {
             $p['brand_id'] = $brandId;
         }
-        $url = $this->url . '/finder/ink_toner/devicetypes?' . implode('&', $p);
+        $url = $this->baseUrl . '/finder/ink_toner/devicetypes?' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
@@ -262,7 +288,7 @@ class TopdataWebserviceClient
         if ($brandId) {
             $p['brand_id'] = $brandId;
         }
-        $url = $this->url . '/finder/ink_toner/modelseries?' . implode('&', $p);
+        $url = $this->baseUrl . '/finder/ink_toner/modelseries?' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
@@ -270,7 +296,7 @@ class TopdataWebserviceClient
     public function getModelsBySeriesId($brandId, $seriesId)
     {
         $p[] = $this->getParams();
-        $url = $this->url . '/finder/ink_toner/models?brand_id=' . $brandId . '&modelserie_id=' . $seriesId . '&' . implode('&', $p);
+        $url = $this->baseUrl . '/finder/ink_toner/models?brand_id=' . $brandId . '&modelserie_id=' . $seriesId . '&' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
@@ -278,7 +304,7 @@ class TopdataWebserviceClient
     public function getModels($limit = 500, $start = 0)
     {
         $p[] = $this->getParams();
-        $url = $this->url . '/finder/ink_toner/models?limit=' . $limit . '&start=' . $start . '&' . implode('&', $p);
+        $url = $this->baseUrl . '/finder/ink_toner/models?limit=' . $limit . '&start=' . $start . '&' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
@@ -286,7 +312,7 @@ class TopdataWebserviceClient
     public function getModelsByBrandId($brandId)
     {
         $p[] = $this->getParams();
-        $url = $this->url . '/finder/ink_toner/models?brand_id=' . $brandId . '&' . implode('&', $p);
+        $url = $this->baseUrl . '/finder/ink_toner/models?brand_id=' . $brandId . '&' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
@@ -294,11 +320,14 @@ class TopdataWebserviceClient
     public function getUserInfo()
     {
         $p[] = $this->getParams();
-        $url = $this->url . '/user/user_info?' . implode('&', $p);
+        $url = $this->baseUrl . '/user/user_info?' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }
 
+    /**
+     * 11/2024 unused?
+     */
     public function productAccessories($id, $params = [])
     {
         $p = [];
@@ -308,7 +337,7 @@ class TopdataWebserviceClient
             }
         }
         $p[] = $this->getParams();
-        $url = $this->url . '/product_accessories/' . (int) $id . '?' . implode('&', $p);
+        $url = $this->baseUrl . '/product_accessories/' . (int)$id . '?' . implode('&', $p);
 
         return $this->getCURLResponse($url);
     }

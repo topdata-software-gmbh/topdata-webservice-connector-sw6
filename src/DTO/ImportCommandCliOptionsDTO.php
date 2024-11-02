@@ -22,7 +22,7 @@ class ImportCommandCliOptionsDTO
     private bool $isServiceDeviceSynonyms;
     private bool $isServiceProduct;
     private bool $isServiceProductInformation;
-    private bool $isServiceProductMedia; // --product-media-only
+    private bool $isServiceProductMediaOnly; // --product-media-only
     private bool $isProductVariations;
 
     public function __construct(InputInterface $input)
@@ -35,7 +35,7 @@ class ImportCommandCliOptionsDTO
         $this->isServiceDeviceSynonyms     = (bool) $input->getOption('device-synonyms'); // link active devices to synonyms
         $this->isServiceProduct            = (bool) $input->getOption('product'); // link devices to products on the store
         $this->isServiceProductInformation = (bool) $input->getOption('product-info'); // update product information from webservice (TopFeed plugin needed)
-        $this->isServiceProductMedia       = (bool) $input->getOption('product-media-only'); // update only product media from webservice (TopFeed plugin needed)
+        $this->isServiceProductMediaOnly   = (bool) $input->getOption('product-media-only'); // update only product media from webservice (TopFeed plugin needed)
         $this->isProductVariations         = (bool) $input->getOption('product-variated'); // Generate variated products based on color and capacity information
     }
 
@@ -79,9 +79,9 @@ class ImportCommandCliOptionsDTO
         return $this->isServiceProductInformation;
     }
 
-    public function isServiceProductMedia(): bool
+    public function isServiceProductMediaOnly(): bool
     {
-        return $this->isServiceProductMedia;
+        return $this->isServiceProductMediaOnly;
     }
 
     public function isProductVariations(): bool
@@ -100,7 +100,7 @@ class ImportCommandCliOptionsDTO
             'isServiceDeviceSynonyms'     => $this->isServiceDeviceSynonyms,
             'isServiceProduct'            => $this->isServiceProduct,
             'isServiceProductInformation' => $this->isServiceProductInformation,
-            'isServiceProductMedia'       => $this->isServiceProductMedia,
+            'isServiceProductMedia'       => $this->isServiceProductMediaOnly,
             'isProductVariations'         => $this->isProductVariations,
         ];
     }
