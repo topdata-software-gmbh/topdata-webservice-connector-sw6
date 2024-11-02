@@ -7,7 +7,6 @@ namespace Topdata\TopdataConnectorSW6\Service;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
@@ -36,20 +35,8 @@ class ImportService
     private bool $verbose = true;
     private CliStyle $cliStyle;
 
-
-    /**
-     * Constructor for ImportService.
-     *
-     * @param SystemConfigService $systemConfigService
-     * @param ContainerBagInterface $containerBag
-     * @param LoggerInterface $logger
-     * @param MappingHelperService $mappingHelperService
-     * @param ConfigCheckerService $configCheckerService
-     * @param OptionsHelperService $optionsHelperService
-     */
     public function __construct(
         private readonly SystemConfigService   $systemConfigService,
-        private readonly ContainerBagInterface $containerBag,
         private readonly LoggerInterface       $logger,
         private readonly MappingHelperService  $mappingHelperService,
         private readonly ConfigCheckerService  $configCheckerService,
