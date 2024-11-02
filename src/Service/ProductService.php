@@ -14,7 +14,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\DTO\CsvConfiguration;
 use Topdata\TopdataConnectorSW6\Service\ProductCsvReader;
-use Topdata\TopdataFoundationSw6\Service\LocaleHelperService;
+use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
 
 /**
  * 10/2024 created (extracted from "ProductsCommand")

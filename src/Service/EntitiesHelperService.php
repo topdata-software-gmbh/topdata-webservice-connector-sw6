@@ -15,7 +15,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Util\UtilUuid;
-use Topdata\TopdataFoundationSw6\Service\LocaleHelperService;
+use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
 
 /**
  * Note: this is also used by the TopdataTopfinderProSW6 plugin.
@@ -61,8 +61,7 @@ class EntitiesHelperService
     protected function loadPropertyGroups(): void
     {
         $this->propertyGroups = $this->propertyGroupRepository->search(
-            (new Criteria())
-                ->addAssociation('options'),
+            (new Criteria())->addAssociation('options'),
             $this->context
         )->getEntities();
     }
