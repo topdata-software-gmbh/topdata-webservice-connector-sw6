@@ -77,13 +77,10 @@
         <service id="Topdata\TopdataConnectorSW6\Command\ImportCommand" autowire="true">
             <tag name="console.command"/>
         </service>
-        <service id="Topdata\TopdataConnectorSW6\Command\ProductsCommand" autowire="true">
-            <tag name="console.command"/>
-        </service>
 
         <!-- SERVICES -->
         <service id="Topdata\TopdataConnectorSW6\Service\DemoDataImportService" autowire="true"/>
-        <service id="Topdata\TopdataConnectorSW6\Service\LocaleHelperService" autowire="true"/>
+        <service id="Topdata\TopdataFoundationSW6\Service\LocaleHelperService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ProductCsvReader" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ProductService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ConfigCheckerService" autowire="true"/>

@@ -13,6 +13,7 @@
     ],
     "require": {
         "shopware/core": "6.6.*",
+        "topdata/topdata-foundation-sw6": "^1.0",
         "ext-curl":      "*"
     },
     "extra": {

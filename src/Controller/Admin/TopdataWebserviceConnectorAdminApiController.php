@@ -15,11 +15,8 @@ use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
-use Topdata\TopdataConnectorSW6\Command\ProductsCommand;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
-use Topdata\TopdataConnectorSW6\Service\DemoDataImportService;
-use Topdata\TopdataConnectorSW6\Service\ProductService;
 use Topdata\TopdataConnectorSW6\Service\TopdataBrandService;
 
 /**
@@ -34,7 +31,6 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
         private readonly LoggerInterface       $logger,
         private readonly ContainerBagInterface $containerBag,
         private readonly ConfigCheckerService  $configCheckerService,
-        private readonly DemoDataImportService $demoDataImportService,
         private readonly TopdataBrandService   $topdataBrandService,
     )
     {
@@ -159,21 +155,5 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
         $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
 
         return new JsonResponse($config);
-    }
-
-    /**
-     * Install demo data.
-     * FIXME: inject the ProductsCommand into the controller (later, make a service, eg DemoDataService)
-     */
-    #[Route(
-        path: '/api/topdata/connector-install-demodata',
-        name: 'api.action.topdata.connector-install-demodata',
-        methods: ['GET']
-    )]
-    public function installDemoData(Request $request, Context $context): JsonResponse
-    {
-        $result = $this->demoDataImportService->installDemoData();
-
-        return new JsonResponse($result);
     }
 }

@@ -14,13 +14,13 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\DTO\CsvConfiguration;
 use Topdata\TopdataConnectorSW6\Service\ProductCsvReader;
+use Topdata\TopdataFoundationSw6\Service\LocaleHelperService;
 
 /**
  * 10/2024 created (extracted from "ProductsCommand")
  */
 class ProductService
 {
-    private ?array $_manufacturers = null;
     private string $systemDefaultLocaleCode;
     private Context $context;
 
@@ -69,42 +69,6 @@ class ProductService
 
         return (string)$result;
     }
-
-    private function getManufacturersArray(): void
-    {
-        $criteria = new Criteria();
-        $manufacturers = $this->productManufacturerRepository->search($criteria, $this->context)->getEntities();
-        $ret = [];
-        foreach ($manufacturers as $manufacturer) {
-            $ret[$manufacturer->getName()] = $manufacturer->getId();
-        }
-        $this->_manufacturers = $ret;
-    }
-
-    public function getManufacturerIdByName(string $manufacturerName): string
-    {
-        if ($this->_manufacturers === null) {
-            $this->getManufacturersArray();
-        }
-
-        if (isset($this->_manufacturers[$manufacturerName])) {
-            $manufacturerId = $this->_manufacturers[$manufacturerName];
-        } else {
-            $manufacturerId = Uuid::randomHex();
-            $this->productManufacturerRepository->create([
-                [
-                    'id'   => $manufacturerId,
-                    'name' => [
-                        $this->systemDefaultLocaleCode => $manufacturerName,
-                    ],
-                ],
-            ], $this->context);
-            $this->_manufacturers[$manufacturerName] = $manufacturerId;
-        }
-
-        return $manufacturerId;
-    }
-
 
     public function parseProductsFromCsv(string $filePath, CsvConfiguration $config): array
     {
@@ -197,7 +161,6 @@ class ProductService
 
         return $rezProducts;
     }
-
 
 
 }

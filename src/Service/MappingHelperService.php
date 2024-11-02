@@ -24,6 +24,8 @@ use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Helper\CliStyle;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
+use Topdata\TopdataFoundationSw6\Service\LocaleHelperService;
+use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
 
 /**
  * MappingHelperService class.
@@ -133,7 +135,7 @@ class MappingHelperService
         private readonly EntityRepository       $topdataSeriesRepository,
         private readonly EntityRepository       $topdataDeviceTypeRepository,
         private readonly EntityRepository       $productRepository,
-        private readonly ProductsCommand        $productCommand, // TODO: remove this dependency
+//        private readonly ProductsCommand        $productCommand, // TODO: remove this dependency
         private readonly EntitiesHelperService  $entitiesHelperService,
         private readonly EntityRepository       $productCrossSellingRepository,
         private readonly EntityRepository       $productCrossSellingAssignedProductsRepository,
@@ -141,6 +143,7 @@ class MappingHelperService
         private readonly OptionsHelperService   $optionsHelperService,
         private readonly ProgressLoggingService $progressLoggingService,
         private readonly LocaleHelperService    $localeHelperService,
+        private readonly ManufacturerService    $manufacturerService,
     )
     {
         $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();
@@ -1340,7 +1343,7 @@ class MappingHelperService
         //         $productData['description'] = $remoteProductData->short_description;
 
         if (!$onlyMedia && $this->getProductOption('productBrand', $productId) && $remoteProductData->manufacturer != '') {
-            $productData['manufacturerId'] = $this->productCommand->getManufacturerIdByName($remoteProductData->manufacturer);
+            $productData['manufacturerId'] = $this->manufacturerService->getManufacturerIdByName($remoteProductData->manufacturer); // fixme
         }
         if (!$onlyMedia && $this->getProductOption('productEan', $productId) && count($remoteProductData->eans)) {
             $productData['ean'] = $remoteProductData->eans[0];
