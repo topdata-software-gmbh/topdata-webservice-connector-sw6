@@ -15,10 +15,13 @@ use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Helper\CliStyle;
 
 /**
- * 11/2024 created (extracted from ImportCommand)
+ * Service class responsible for handling the import operations.
+ *
+ * @package Topdata\TopdataConnectorSW6\Service
  */
 class ImportService
 {
+    // Error codes for various failure scenarios
     const ERROR_CODE_PLUGIN_INACTIVE                  = 1;
     const ERROR_CODE_MISSING_PLUGIN_CONFIGURATION     = 2;
     const ERROR_CODE_MAPPING_PRODUCTS_FAILED          = 3;
@@ -31,6 +34,16 @@ class ImportService
 
     private bool $verbose = true;
 
+    /**
+     * Constructor for ImportService.
+     *
+     * @param SystemConfigService $systemConfigService
+     * @param ContainerBagInterface $containerBag
+     * @param LoggerInterface $logger
+     * @param MappingHelperService $mappingHelperService
+     * @param ConfigCheckerService $configCheckerService
+     * @param OptionsHelperService $optionsHelperService
+     */
     public function __construct(
         private readonly SystemConfigService   $systemConfigService,
         private readonly ContainerBagInterface $containerBag,
@@ -42,6 +55,11 @@ class ImportService
     {
     }
 
+    /**
+     * Sets the verbosity of the service.
+     *
+     * @param bool $verbose
+     */
     public function setVerbose(bool $verbose): void
     {
         $this->verbose = $verbose;
@@ -49,9 +67,11 @@ class ImportService
     }
 
     /**
-     * ===== MAIN ====
+     * Main execution method for the import service.
      *
-     * 11/2024 created
+     * @param ImportCommandCliOptionsDTO $cliOptionsDto
+     * @param CliStyle $cliStyle
+     * @return int
      */
     public function execute(ImportCommandCliOptionsDTO $cliOptionsDto, CliStyle $cliStyle): int
     {
@@ -94,6 +114,9 @@ class ImportService
         return Command::SUCCESS;
     }
 
+    /**
+     * Initializes the webservice client with the plugin configuration.
+     */
     private function initializeWebserviceClient(): void
     {
         $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
@@ -122,6 +145,14 @@ class ImportService
         ]);
     }
 
+    /**
+     * Executes the import operations based on the provided CLI options.
+     *
+     * @param ImportCommandCliOptionsDTO $cliOptionsDto
+     * @param array $activePlugins
+     * @param CliStyle $cliStyle
+     * @return int|null
+     */
     private function executeImportOperations(
         ImportCommandCliOptionsDTO $cliOptionsDto,
         array                      $activePlugins,
@@ -152,6 +183,13 @@ class ImportService
         return null;
     }
 
+    /**
+     * Handles device-related import operations.
+     *
+     * @param ImportCommandCliOptionsDTO $cliOptionsDto
+     * @param CliStyle $cliStyle
+     * @return int|null
+     */
     private function handleDeviceOperations(ImportCommandCliOptionsDTO $cliOptionsDto, CliStyle $cliStyle): ?int
     {
         if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceDevice()) {
@@ -178,6 +216,14 @@ class ImportService
         return null;
     }
 
+    /**
+     * Handles product-related import operations.
+     *
+     * @param ImportCommandCliOptionsDTO $cliOptionsDto
+     * @param array $activePlugins
+     * @param CliStyle $cliStyle
+     * @return int|null
+     */
     private function handleProductOperations(
         ImportCommandCliOptionsDTO $cliOptionsDto,
         array                      $activePlugins,
@@ -227,6 +273,14 @@ class ImportService
         return null;
     }
 
+    /**
+     * Handles product information import operations.
+     *
+     * @param ImportCommandCliOptionsDTO $cliOptionsDto
+     * @param array $activePlugins
+     * @param CliStyle $cliStyle
+     * @return int|null
+     */
     private function handleProductInformation(
         ImportCommandCliOptionsDTO $cliOptionsDto,
         array                      $activePlugins,
@@ -262,6 +316,14 @@ class ImportService
         return null;
     }
 
+    /**
+     * Handles product variations import operations.
+     *
+     * @param ImportCommandCliOptionsDTO $cliOptionsDto
+     * @param array $activePlugins
+     * @param CliStyle $cliStyle
+     * @return int|null
+     */
     private function handleProductVariations(
         ImportCommandCliOptionsDTO $cliOptionsDto,
         array                      $activePlugins,
