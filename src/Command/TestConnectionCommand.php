@@ -12,11 +12,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
+use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
 
 /**
  * Test connection to the TopData webservice.
  */
-class TestConnectionCommand extends AbstractCommand
+class TestConnectionCommand extends AbstractTopdataCommand
 {
     const ERROR_CODE_TOPDATA_WEBSERVICE_CONNECTOR_PLUGIN_INACTIVE = 1;
     const ERROR_CODE_MISSING_CONFIG                               = 2;

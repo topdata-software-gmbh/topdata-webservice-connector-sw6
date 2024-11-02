@@ -14,7 +14,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Topdata\TopdataConnectorSW6\Util\UtilUuid;
+use Topdata\TopdataFoundationSW6\Util\UtilUuid;
 use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
 
 /**

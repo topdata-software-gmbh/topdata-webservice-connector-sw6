@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Topdata\TopdataConnectorSW6\Command;
 
 use Psr\Log\LoggerInterface;
-use Shopware\Core\Content\ImportExport\Processing\Mapping\Mapping;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -19,11 +18,12 @@ use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
 use Topdata\TopdataConnectorSW6\Service\MappingHelperService;
 use Topdata\TopdataConnectorSW6\Service\OptionsHelperService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
+use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
 
 /**
  * This command imports data from the TopData Webservice.
  */
-class ImportCommand extends AbstractCommand
+class ImportCommand extends AbstractTopdataCommand
 {
     const ERROR_CODE_PLUGIN_INACTIVE                  = 1;
     const ERROR_CODE_MISSING_PLUGIN_CONFIGURATION     = 2;
@@ -38,13 +38,14 @@ class ImportCommand extends AbstractCommand
     private bool $verbose = true;
 
     public function __construct(
-        private readonly SystemConfigService $systemConfigService,
+        private readonly SystemConfigService   $systemConfigService,
         private readonly ContainerBagInterface $containerBag,
-        private readonly LoggerInterface $logger,
-        private readonly MappingHelperService $mappingHelperService,
-        private readonly ConfigCheckerService $configCheckerService,
-        private readonly OptionsHelperService $optionsHelperService,
-    ) {
+        private readonly LoggerInterface       $logger,
+        private readonly MappingHelperService  $mappingHelperService,
+        private readonly ConfigCheckerService  $configCheckerService,
+        private readonly OptionsHelperService  $optionsHelperService,
+    )
+    {
         parent::__construct();
     }
 
@@ -85,7 +86,7 @@ class ImportCommand extends AbstractCommand
         $this->cliStyle->dumpDict($cliOptionsDto->toDict(), 'CLI Options DTO');
 
         // ---- init webservice client
-        $pluginConfig            = $this->systemConfigService->get('TopdataConnectorSW6.config');
+        $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
         $topdataWebserviceClient = new TopdataWebserviceClient(
             $this->logger,
             $pluginConfig['apiUsername'],
@@ -110,10 +111,10 @@ class ImportCommand extends AbstractCommand
 
         if (!$cliOptionsDto->isServiceAll()) {
             if ($input->getOption('start')) {
-                $this->optionsHelperService->setOption(OptionConstants::START, (int) $input->getOption('start'));
+                $this->optionsHelperService->setOption(OptionConstants::START, (int)$input->getOption('start'));
             }
             if ($input->getOption('end')) {
-                $this->optionsHelperService->setOption(OptionConstants::END, (int) $input->getOption('end'));
+                $this->optionsHelperService->setOption(OptionConstants::END, (int)$input->getOption('end'));
             }
         }
 
