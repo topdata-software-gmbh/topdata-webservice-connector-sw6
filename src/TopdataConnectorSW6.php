@@ -13,7 +13,7 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 //use Shopware\Core\Framework\DataAbstractionLayer\Indexing\MessageQueue\IndexerMessageSender;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
-use Topdata\TopdataControlCenterSW6\DependencyInjection\TopConfigServiceCompilerPass;
+use Topdata\TopdataFoundationSW6\DependencyInjection\TopConfigServiceCompilerPass;
 
 //use Shopware\Core\Framework\Plugin\Context\InstallContext;
 //use Shopware\Core\Framework\Plugin\Context\UpdateContext;
