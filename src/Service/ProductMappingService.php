@@ -24,12 +24,13 @@ class ProductMappingService
     private Context $context;
     private TopdataWebserviceClient $topdataWebserviceClient;
 
+
     public function __construct(
-        private readonly LoggerInterface        $logger,
-        private readonly Connection             $connection,
-        private readonly EntityRepository       $topdataToProductRepository,
-        private readonly OptionsHelperService   $optionsHelperService,
-        private readonly ProgressLoggingService $progressLoggingService,
+        private readonly LoggerInterface               $logger,
+        private readonly Connection                    $connection,
+        private readonly OptionsHelperService          $optionsHelperService,
+        private readonly ProgressLoggingService        $progressLoggingService,
+        private readonly TopdataToProductHelperService $topdataToProductHelperService,
     )
     {
         $this->context = Context::createDefaultContext();
@@ -178,7 +179,7 @@ class ProductMappingService
                                     'productVersionId' => $artnosValue['version_id'],
                                 ];
                                 if (count($dataInsert) > 500) {
-                                    $this->topdataToProductRepository->create($dataInsert, $this->context);
+                                    $this->topdataToProductHelperService->insertMany($dataInsert);
                                     $dataInsert = [];
                                 }
                             }
@@ -196,7 +197,7 @@ class ProductMappingService
             }
         }
         if (count($dataInsert) > 0) {
-            $this->topdataToProductRepository->create($dataInsert, $this->context);
+            $this->topdataToProductHelperService->insertMany($dataInsert);
         }
         $this->progressLoggingService->writeln("\n" . $stored . ' - stored topdata products');
         unset($artnos);
@@ -216,7 +217,6 @@ class ProductMappingService
     private function mapDefault(): void
     {
         $this->cliStyle->section('ProductMappingService::mapDefault()');
-        $dataInsert = [];
 
         $oems = [];
         $eans = [];
@@ -270,20 +270,15 @@ class ProductMappingService
         $setted = [];
         // Process EAN mappings
         if (count($eanMap) > 0) {
-            $this->processEANs($eanMap, $setted, $dataInsert);
+            $this->_processEANs($eanMap, $setted);
         }
 
         // Process OEM and PCD mappings
         if (count($oemMap) > 0) {
-            $this->processOEMs($oemMap, $setted, $dataInsert);
-            $this->processPCDs($oemMap, $setted, $dataInsert);
+            $this->_processOEMs($oemMap, $setted);
+            $this->_processPCDs($oemMap, $setted);
         }
 
-        // Insert the mapped data into the repository
-        if (count($dataInsert) > 0) {
-            $this->topdataToProductRepository->create($dataInsert, $this->context);
-            $dataInsert = [];
-        }
         unset($setted);
         unset($oemMap);
         unset($eanMap);
@@ -298,8 +293,9 @@ class ProductMappingService
      *
      * @throws \Exception if the web service does not return the expected number of pages
      */
-    private function processEANs(array $eanMap, array &$setted, array &$dataInsert): void
+    private function _processEANs(array $eanMap, array &$setted): void
     {
+        $dataInsert = [];
         $this->progressLoggingService->writeln('fetching EANs from Webservice...');
         $total = 0;
         for ($i = 1; ; $i++) {
@@ -325,7 +321,7 @@ class ProductMappingService
                                 'productVersionId' => $product['version_id'],
                             ];
                             if (count($dataInsert) > 500) {
-                                $this->topdataToProductRepository->create($dataInsert, $this->context);
+                                $this->topdataToProductHelperService->insertMany($dataInsert);
                                 $dataInsert = [];
                             }
                             $setted[$key] = true;
@@ -338,6 +334,7 @@ class ProductMappingService
                 break;
             }
         }
+        $this->topdataToProductHelperService->insertMany($dataInsert);
         $this->progressLoggingService->writeln("DONE. fetched {$total} EANs from Webservice");
         ImportReport::setCounter('Fetched EANs', $total);
     }
@@ -347,12 +344,12 @@ class ProductMappingService
      *
      * @param array $oemMap an associative array mapping OEMs to product data
      * @param array &$setted A reference to an array that keeps track of already processed products
-     * @param array &$dataInsert A reference to an array that accumulates data to be inserted into the repository
      *
      * @throws \Exception if the web service does not return the expected number of pages
      */
-    private function processOEMs(array $oemMap, array &$setted, array &$dataInsert): void
+    private function _processOEMs(array $oemMap, array &$setted): void
     {
+        $dataInsert = [];
         $this->progressLoggingService->writeln('fetching OEMs from Webservice...');
         $total = 0;
         for ($i = 1; ; $i++) {
@@ -377,7 +374,7 @@ class ProductMappingService
                                 'productVersionId' => $product['version_id'],
                             ];
                             if (count($dataInsert) > 500) {
-                                $this->topdataToProductRepository->create($dataInsert, $this->context);
+                                $this->topdataToProductHelperService->insertMany($dataInsert);
                                 $dataInsert = [];
                             }
 
@@ -391,6 +388,7 @@ class ProductMappingService
                 break;
             }
         }
+        $this->topdataToProductHelperService->insertMany($dataInsert);
         $this->progressLoggingService->writeln("DONE. fetched {$total} OEMs from Webservice");
         ImportReport::setCounter('Fetched OEMs', $total);
     }
@@ -400,12 +398,12 @@ class ProductMappingService
      *
      * @param array $oemMap an associative array mapping OEMs to product data
      * @param array &$setted A reference to an array that keeps track of already processed products
-     * @param array &$dataInsert A reference to an array that accumulates data to be inserted into the repository
      *
      * @throws \Exception if the web service does not return the expected number of pages
      */
-    private function processPCDs(array $oemMap, array &$setted, array &$dataInsert): void
+    private function _processPCDs(array $oemMap, array &$setted): void
     {
+        $dataInsert = [];
         $total = 0;
         for ($i = 1; ; $i++) {
             $all_artnr = $this->topdataWebserviceClient->matchMyPcds(['page' => $i]);
@@ -429,7 +427,7 @@ class ProductMappingService
                                 'productVersionId' => $product['version_id'],
                             ];
                             if (count($dataInsert) > 500) {
-                                $this->topdataToProductRepository->create($dataInsert, $this->context);
+                                $this->topdataToProductHelperService->insertMany($dataInsert);
                                 $dataInsert = [];
                             }
 
@@ -443,6 +441,7 @@ class ProductMappingService
                 break;
             }
         }
+        $this->topdataToProductHelperService->insertMany($dataInsert);
         $this->progressLoggingService->writeln("DONE. fetched {$total} PCDs from Webservice");
         ImportReport::setCounter('Fetched PCDs', $total);
     }
@@ -642,4 +641,5 @@ class ProductMappingService
     {
         $this->topdataWebserviceClient = $topdataWebserviceClient;
     }
+
 }

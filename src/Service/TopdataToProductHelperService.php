@@ -3,6 +3,7 @@
 namespace Topdata\TopdataConnectorSW6\Service;
 
 use Doctrine\DBAL\Connection;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
 
 /**
@@ -17,8 +18,10 @@ class TopdataToProductHelperService
      */
     private ?array $topidProducts = null;
 
+
     public function __construct(
-        private readonly Connection $connection,
+        private readonly Connection       $connection,
+        private readonly EntityRepository $topdataToProductRepository
     )
     {
     }
@@ -61,4 +64,15 @@ class TopdataToProductHelperService
 
         return $this->topidProducts;
     }
+
+
+    /**
+     * 11/2024 created
+     */
+    public function insertMany(array $dataInsert)
+    {
+        $this->topdataToProductRepository->create($dataInsert, $this->context);
+    }
+
+
 }
