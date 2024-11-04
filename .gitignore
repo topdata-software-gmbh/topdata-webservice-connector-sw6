@@ -2,12 +2,14 @@
 vendor
 composer.lock
 var
+.aider*
+.php-cs-fixer.cache
+.env
+builds/
+
+
 
 # +----------------------------+
 # |    Keep .gitkeep files     |
 # +----------------------------+
 !/**/.gitkeep
-.aider*
-
-.php-cs-fixer.cache
-.env

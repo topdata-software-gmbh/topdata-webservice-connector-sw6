@@ -4,15 +4,23 @@ declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Command;
 
+use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Topdata\TopdataConnectorSW6\Service\ConnectionTestService;
 use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
+use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 
 /**
  * Test connection to the TopData webservice.
  */
+#[AsCommand(
+    name: 'topdata:connector:test-connection',
+    description: 'Test connection to the TopData webservice',
+)]
 class TestConnectionCommand extends AbstractTopdataCommand
 {
     const ERROR_CODE_TOPDATA_WEBSERVICE_CONNECTOR_PLUGIN_INACTIVE = 1;
@@ -22,7 +30,9 @@ class TestConnectionCommand extends AbstractTopdataCommand
 
 
     public function __construct(
-        private readonly ConnectionTestService $connectionTestService
+        private readonly ConnectionTestService $connectionTestService,
+        private readonly SystemConfigService   $systemConfigService,
+        private readonly PluginHelperService   $pluginHelperService
     )
     {
         parent::__construct();
@@ -30,14 +40,25 @@ class TestConnectionCommand extends AbstractTopdataCommand
 
     protected function configure(): void
     {
-        $this->setName('topdata:connector:test-connection');
-        $this->setDescription('Test connection to the TopData webservice');
+        $this->addOption('print-config', 'p', InputOption::VALUE_NONE, 'Print the current configuration and exit');
     }
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
+
+        // ---- print config and exit
+        if ($input->getOption('print-config')) {
+            $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
+            $this->cliStyle->dumpDict($config, 'TopdataConnectorSW6.config');
+            $this->done();
+            return Command::SUCCESS;
+        }
+
+        // ---- check connection to webservice
+        $this->cliStyle->section('Test connection to the TopData webservice');
+
         $this->cliStyle->writeln('Check plugin is active...');
-        if (!$this->connectionTestService->checkPluginActive('Topdata\TopdataConnectorSW6\TopdataConnectorSW6')) {
+        if (!$this->pluginHelperService->isWebserviceConnectorPluginAvailable()) {
             $this->cliStyle->error('The TopdataConnectorSW6 plugin is inactive!');
             $this->cliStyle->writeln('Activate the TopdataConnectorSW6 plugin first. Abort.');
             return self::ERROR_CODE_TOPDATA_WEBSERVICE_CONNECTOR_PLUGIN_INACTIVE;

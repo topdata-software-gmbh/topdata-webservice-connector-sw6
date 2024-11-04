@@ -18,13 +18,7 @@ class ConnectionTestService
         private readonly SystemConfigService   $systemConfigService,
         private readonly LoggerInterface       $logger,
         private readonly ConfigCheckerService  $configCheckerService,
-        private readonly PluginHelperService   $pluginHelperService,
     ) {
-    }
-
-    public function checkPluginActive(string $pluginClass): bool
-    {
-        return $this->pluginHelperService->isPluginActive($pluginClass);
     }
 
     public function testConnection(): array

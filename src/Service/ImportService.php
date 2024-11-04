@@ -66,7 +66,7 @@ class ImportService
         }
 
         // Check if plugin is active
-        if (!$this->pluginHelperService->isPluginActive('Topdata\TopdataConnectorSW6\TopdataConnectorSW6')) {
+        if (!$this->pluginHelperService->isWebserviceConnectorPluginAvailable()) {
             if ($this->verbose) {
                 $this->cliStyle->error('The TopdataConnectorSW6 plugin is inactive!');
             }
