@@ -83,8 +83,6 @@
         <service id="Topdata\TopdataConnectorSW6\Service\ConnectionTestService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ImportService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\DemoDataImportService" autowire="true"/>
-        <service id="Topdata\TopdataConnectorSW6\Service\ProductCsvReader" autowire="true"/>
-        <service id="Topdata\TopdataConnectorSW6\Service\ProductService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ConfigCheckerService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\EntitiesHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\OptionsHelperService" autowire="true"/>

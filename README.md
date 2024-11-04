@@ -97,30 +97,6 @@ Command order is important, for example --device-media (4) downloads images only
 `--start` and `--end` keys, depending on command it use chunk numbers or element counts (you can see this numbers if verbose output is enabled)
 
 
-### topdata:connector:products
-- a console command for import products from csv file
-- example usage:
- 
-```bash
-bin/console topdata:connector:products --file=prods2020-07-26.csv --start=1 --end=1000 --number=4 --wsid=4 --name=11 --brand=10
-```
-
-`--file`  specify filename
-
-`--start`  start line of a file, default is 1 (first line is 0, it usually have column titles)
-
-`--end`  end line of a file, by default file will be read until the end
-
-`--number`  column with unique product number
-
-`--wsid`  column with Webservice id (if csv is given from TopData it may have this column), if it is set product will be mapped to Top Data Webserivce products
-
-`--name`  column with product name
-
-`--brand`  column with product brand name (will be created if is not present yet)
-
-It is recommended to limit product count with start/end, depending on server RAM. Then you can read next chunk of products in second command.
-
 ## Advices and examples
 
 ### use --start and --end options
