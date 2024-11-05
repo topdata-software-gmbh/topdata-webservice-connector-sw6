@@ -1,6 +1,6 @@
 <?php
 
-namespace Topdata\TopdataWebserviceConnectorSW6\Service;
+namespace Topdata\TopdataConnectorSW6\Service;
 
 use Shopware\Core\Content\Media\MediaService;
 use Shopware\Core\Framework\Context;
