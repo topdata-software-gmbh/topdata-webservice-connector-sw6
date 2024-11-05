@@ -144,6 +144,7 @@ class MappingHelperService
         private readonly LocaleHelperService           $localeHelperService,
         private readonly ManufacturerService           $manufacturerService,
         private readonly TopdataToProductHelperService $topdataToProductHelperService,
+        private readonly MediaHelperService            $mediaHelperService,
     )
     {
         $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();
@@ -971,7 +972,7 @@ class MappingHelperService
                     $imageDate = strtotime(explode(' ', $s->img_date)[0]);
 
                     try {
-                        $mediaId = $this->entitiesHelperService->getMediaId($s->img, $imageDate, self::IMAGE_PREFIX);
+                        $mediaId = $this->mediaHelperService->getMediaId($s->img, $imageDate, self::IMAGE_PREFIX);
                         if ($mediaId) {
                             $topdataDeviceRepository->update([
                                 [
@@ -1363,7 +1364,7 @@ class MappingHelperService
 
                     try {
                         $echoMediaDownload = $this->verbose ? 'd' : '';
-                        $mediaId = $this->entitiesHelperService->getMediaId(
+                        $mediaId = $this->mediaHelperService->getMediaId(
                             $imageUrl,
                             $imageDate,
                             $k . '-' . $remoteProductData->products_id . '-',

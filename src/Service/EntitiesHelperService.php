@@ -25,8 +25,6 @@ use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
 class EntitiesHelperService
 {
     const LANGUAGE_NAME       = 'English';
-    const DEFAULT_MAIN_FOLDER = 'product';
-    const UPLOAD_FOLDER_NAME  = 'TopData';
 
     private ?array $propertyGroups = null;
     private ?array $categoryTree = null;
@@ -35,7 +33,6 @@ class EntitiesHelperService
     private ?string $defaultCmsListingPageId = null;
     private mixed $temp;
     private ?array $propertyGroupsOptionsArray = null;
-    private ?string $uploadFolderId = null;
     private ?string $enLangID = null;
     private ?string $deLangID = null;
     private readonly string $systemDefaultLocaleCode;
@@ -43,12 +40,9 @@ class EntitiesHelperService
 
     public function __construct(
         private readonly Connection          $connection,
-        private readonly EntityRepository    $mediaRepository,
-        private readonly MediaService        $mediaService,
         private readonly EntityRepository    $propertyGroupRepository,
         private readonly EntityRepository    $categoryRepository,
         private readonly EntityRepository    $productManufacturerRepository,
-        private readonly EntityRepository    $mediaFolderRepository,
         private readonly EntityRepository    $propertyGroupOptionRepository,
         private readonly LocaleHelperService $localeHelperService,
     )
@@ -475,134 +469,7 @@ class EntitiesHelperService
         return $this->defaultCmsListingPageId;
     }
 
-    private function generateMediaName(string $path, int $timestamp): string
-    {
-        $fileName = pathinfo($path, PATHINFO_FILENAME) . '-' . $timestamp;
 
-        return $fileName;
-    }
-
-    /**
-     * Retrieves the media ID for a given image path. If the media does not exist, it creates a new media entry.
-     *
-     * @param string $imagePath The path to the image file.
-     * @param int $imageTimestamp The timestamp to append to the image name. Default is 0.
-     * @param string $imagePrefix The prefix to prepend to the image name. Default is an empty string.
-     * @param string $echoDownload The message to echo if the image needs to be downloaded. Default is an empty string.
-     * @return string The media ID of the image.
-     */
-    public function getMediaId(string $imagePath, int $imageTimestamp = 0, string $imagePrefix = '', $echoDownload = ''): string
-    {
-        // Generate the image name using the provided path, timestamp, and prefix.
-        $imageName = $imagePrefix . $this->generateMediaName($imagePath, $imageTimestamp);
-
-        // Search for existing media with the generated image name.
-        $existingMedia = $this->mediaRepository
-            ->search(
-                (new Criteria())
-                    ->addFilter(new EqualsFilter('fileName', $imageName))
-                    ->setLimit(1),
-                $this->context
-            )
-            ->getEntities()
-            ->first();
-
-        // If the media exists, return its ID.
-        if ($existingMedia) {
-            $mediaId = $existingMedia->getId();
-        } else {
-            // If the media does not exist, echo the download message.
-            echo $echoDownload;
-
-            // Read the file content from the provided image path.
-            $fileContent = file_get_contents($imagePath);
-
-            // If the file content could not be read, return an empty string.
-            if ($fileContent === false) {
-                return '';
-            }
-
-            // Create a new media entry in the upload folder.
-            $mediaId = $this->createMediaInFolder();
-
-            // Save the file content as a new media entry and get its ID.
-            $mediaId = $this->mediaService->saveFile(
-                $fileContent,
-                'jpg',
-                'image/jpeg',
-                $imageName,
-                $this->context,
-                null,
-                $mediaId,
-                false
-            );
-        }
-
-        // Return the media ID.
-        return $mediaId;
-    }
-
-    protected function createMediaInFolder(): string
-    {
-        if (!$this->uploadFolderId) {
-            $this->createUploadFolder();
-        }
-
-        $mediaId = Uuid::randomHex();
-        $this->mediaRepository->create(
-            [
-                [
-                    'id'            => $mediaId,
-                    'private'       => false,
-                    'mediaFolderId' => $this->uploadFolderId,
-                ],
-            ],
-            $this->context
-        );
-
-        return $mediaId;
-    }
-
-    protected function createUploadFolder(): void
-    {
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('media_folder.defaultFolder.entity', self::DEFAULT_MAIN_FOLDER));
-        $criteria->addAssociation('defaultFolder');
-        $criteria->setLimit(1);
-        $defaultFolder = $this->mediaFolderRepository->search($criteria, $this->context)->first();
-
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('name', self::UPLOAD_FOLDER_NAME));
-        $criteria->addFilter(new EqualsFilter('parentId', $defaultFolder->getId()));
-        $criteria->setLimit(1);
-        $uploadFolder = $this
-            ->mediaFolderRepository
-            ->search(
-                $criteria,
-                $this->context
-            )
-            ->first();
-
-        if ($uploadFolder) {
-            $this->uploadFolderId = $uploadFolder->getId();
-
-            return;
-        }
-
-        $this->uploadFolderId = Uuid::randomHex();
-        $this->mediaFolderRepository->create(
-            [
-                [
-                    'id'              => $this->uploadFolderId,
-                    'private'         => false,
-                    'name'            => self::UPLOAD_FOLDER_NAME,
-                    'parentId'        => $defaultFolder->getId(),
-                    'configurationId' => $defaultFolder->getConfigurationId(),
-                ],
-            ],
-            $this->context
-        );
-    }
 
     protected function loadManufacturers(): void
     {

@@ -89,6 +89,7 @@
         <service id="Topdata\TopdataConnectorSW6\Service\ProgressLoggingService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\MappingHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\TopdataBrandService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\MediaHelperService " autowire="true" />
 
         <!-- Controllers -->
         <service id="Topdata\TopdataConnectorSW6\Controller\Admin\TopdataWebserviceConnectorAdminApiController" public="true" autowire="true">
