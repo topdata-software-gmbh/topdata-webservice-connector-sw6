@@ -283,7 +283,7 @@ class ImportService
     private function _handleProductVariations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
         if ($cliOptionsDto->isProductVariations()) {
-            if ($this->pluginHelperService->isPluginActive('Topdata\TopdataTopFeedSW6\TopdataTopFeedSW6')) {
+            if ($this->pluginHelperService->isTopFeedPluginAvailable()) {
                 if (!$this->mappingHelperService->setProductColorCapacityVariants()) {
                     if ($this->verbose) {
                         $this->cliStyle->error('Set device synonyms failed!');
