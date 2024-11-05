@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Controller\Admin;
 
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Exception;
-use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
@@ -54,7 +51,7 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
         }
 
         try {
-            $webservice = new TopdataWebserviceClient($this->logger, $config['apiUsername'], $config['apiKey'], $config['apiSalt'], $config['apiLanguage']);
+            $webservice = new TopdataWebserviceClient($config['apiUsername'], $config['apiKey'], $config['apiSalt'], $config['apiLanguage']);
             $info = $webservice->getUserInfo();
 
             if (isset($info->error)) {

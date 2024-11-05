@@ -104,7 +104,6 @@ class ImportService
     {
         $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
         $topdataWebserviceClient = new TopdataWebserviceClient(
-            $this->logger,
             $pluginConfig['apiUsername'],
             $pluginConfig['apiKey'],
             $pluginConfig['apiSalt'],

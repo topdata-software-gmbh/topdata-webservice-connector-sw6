@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Service;
 
-use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
@@ -16,7 +15,6 @@ class ConnectionTestService
 {
     public function __construct(
         private readonly SystemConfigService   $systemConfigService,
-        private readonly LoggerInterface       $logger,
         private readonly ConfigCheckerService  $configCheckerService,
     ) {
     }
@@ -34,7 +32,6 @@ class ConnectionTestService
 
         try {
             $webservice = new TopdataWebserviceClient(
-                $this->logger,
                 $config['apiUsername'],
                 $config['apiKey'],
                 $config['apiSalt'],

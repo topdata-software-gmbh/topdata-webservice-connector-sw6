@@ -7,8 +7,6 @@
 
 namespace Topdata\TopdataConnectorSW6\Helper;
 
-use Monolog\Logger;
-
 /**
  * A simple http client for the topdata webservice.
  */
@@ -23,7 +21,6 @@ class TopdataWebserviceClient
     private ?string $lastURL = null;
 
     public function __construct(
-        private readonly Logger $logger,
         private readonly string $apiUsername, // aka userId
         private readonly string $apiKey,
         private readonly string $apiSalt,
@@ -49,37 +46,32 @@ class TopdataWebserviceClient
      */
     public function getCURLResponse($url, $xml_data = null, $attempt = 1)
     {
-        try {
-            $this->lastURL = $url;
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, self::CURL_TIMEOUT);
-            curl_setopt($ch, CURLOPT_TIMEOUT, self::CURL_TIMEOUT);
-            $output = curl_exec($ch);
+        $this->lastURL = $url;
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, self::CURL_TIMEOUT);
+        curl_setopt($ch, CURLOPT_TIMEOUT, self::CURL_TIMEOUT);
+        $output = curl_exec($ch);
 
-            if (curl_errno($ch)) {
-                if (curl_errno($ch) == 28 && $attempt < 3) { //TIMEOUT
-                    echo 'cURL-ERROR: ' . curl_error($ch) . "\n" . $url . "\n" . ' ... DO RETRY ' . ($attempt + 1) . "\n";
+        if (curl_errno($ch)) {
+            if (curl_errno($ch) == 28 && $attempt < 3) { //TIMEOUT
+                echo 'cURL-ERROR: ' . curl_error($ch) . "\n" . $url . "\n" . ' ... DO RETRY ' . ($attempt + 1) . "\n";
 
-                    return $this->getCURLResponse($url, $xml_data, ($attempt + 1));
-                }
-                throw new \Exception('cURL-ERROR: ' . curl_error($ch));
+                return $this->getCURLResponse($url, $xml_data, ($attempt + 1));
             }
-            // Dirty Hack for Curl Bad Request 400
-            $header = curl_getinfo($ch);
-            if ($header['http_code'] == 400) {
-                $header_size = strpos($output, '{');
-                $output = substr($output, $header_size);
-            }
-            // ----------------------------------------------------
-            curl_close($ch);
-            $json = json_decode($output);
-            if (isset($json->error)) {
-                throw new \Exception($json->error[0]->error_message . ' @topdataconnector webservice error');
-            }
-        } catch (\Exception $e) {
-            $this->logger->error($e->getMessage());
-            throw new \Exception($e->getMessage(), 0, $e);
+            throw new \Exception('cURL-ERROR: ' . curl_error($ch));
+        }
+        // Dirty Hack for Curl Bad Request 400
+        $header = curl_getinfo($ch);
+        if ($header['http_code'] == 400) {
+            $header_size = strpos($output, '{');
+            $output = substr($output, $header_size);
+        }
+        // ----------------------------------------------------
+        curl_close($ch);
+        $json = json_decode($output);
+        if (isset($json->error)) {
+            throw new \Exception($json->error[0]->error_message . ' @topdataconnector webservice error');
         }
 
         return $json;
