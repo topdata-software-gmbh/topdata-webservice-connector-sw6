@@ -3,6 +3,7 @@
 namespace Topdata\TopdataConnectorSW6\Service;
 
 use Doctrine\DBAL\Connection;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
 
@@ -17,6 +18,7 @@ class TopdataToProductHelperService
      * it is a map with format: [top_data_id => [product_id, product_version_id, parent_id]]
      */
     private ?array $topidProducts = null;
+    private Context $context; // default context
 
 
     public function __construct(
@@ -24,11 +26,13 @@ class TopdataToProductHelperService
         private readonly EntityRepository $topdataToProductRepository
     )
     {
+        $this->context = Context::createDefaultContext();
     }
 
 
     /**
      * it populates $this->topidProducts once, unless $forceReload is true.
+     * and returns the map.
      */
     public function getTopidProducts(bool $forceReload = false): array
     {
@@ -69,7 +73,7 @@ class TopdataToProductHelperService
     /**
      * 11/2024 created
      */
-    public function insertMany(array $dataInsert)
+    public function insertMany(array $dataInsert): void
     {
         $this->topdataToProductRepository->create($dataInsert, $this->context);
     }

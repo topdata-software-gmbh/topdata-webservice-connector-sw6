@@ -482,10 +482,21 @@ class EntitiesHelperService
         return $fileName;
     }
 
+    /**
+     * Retrieves the media ID for a given image path. If the media does not exist, it creates a new media entry.
+     *
+     * @param string $imagePath The path to the image file.
+     * @param int $imageTimestamp The timestamp to append to the image name. Default is 0.
+     * @param string $imagePrefix The prefix to prepend to the image name. Default is an empty string.
+     * @param string $echoDownload The message to echo if the image needs to be downloaded. Default is an empty string.
+     * @return string The media ID of the image.
+     */
     public function getMediaId(string $imagePath, int $imageTimestamp = 0, string $imagePrefix = '', $echoDownload = ''): string
     {
+        // Generate the image name using the provided path, timestamp, and prefix.
         $imageName = $imagePrefix . $this->generateMediaName($imagePath, $imageTimestamp);
 
+        // Search for existing media with the generated image name.
         $existingMedia = $this->mediaRepository
             ->search(
                 (new Criteria())
@@ -496,18 +507,25 @@ class EntitiesHelperService
             ->getEntities()
             ->first();
 
+        // If the media exists, return its ID.
         if ($existingMedia) {
             $mediaId = $existingMedia->getId();
         } else {
+            // If the media does not exist, echo the download message.
             echo $echoDownload;
+
+            // Read the file content from the provided image path.
             $fileContent = file_get_contents($imagePath);
 
+            // If the file content could not be read, return an empty string.
             if ($fileContent === false) {
                 return '';
             }
 
+            // Create a new media entry in the upload folder.
             $mediaId = $this->createMediaInFolder();
 
+            // Save the file content as a new media entry and get its ID.
             $mediaId = $this->mediaService->saveFile(
                 $fileContent,
                 'jpg',
@@ -520,6 +538,7 @@ class EntitiesHelperService
             );
         }
 
+        // Return the media ID.
         return $mediaId;
     }
 

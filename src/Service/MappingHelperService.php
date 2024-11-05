@@ -100,6 +100,7 @@ class MappingHelperService
         8   => 'Leergut',
         30  => 'Marketingtext',
     ];
+    const IMAGE_PREFIX = 'td-';
 
     private array $productImportSettings = [];
     private ?array $brandWsArray = null; // aka mapWsIdToBrand
@@ -970,7 +971,7 @@ class MappingHelperService
                     $imageDate = strtotime(explode(' ', $s->img_date)[0]);
 
                     try {
-                        $mediaId = $this->entitiesHelperService->getMediaId($s->img, $imageDate, 'td-');
+                        $mediaId = $this->entitiesHelperService->getMediaId($s->img, $imageDate, self::IMAGE_PREFIX);
                         if ($mediaId) {
                             $topdataDeviceRepository->update([
                                 [
@@ -1958,6 +1959,16 @@ class MappingHelperService
         return $ret;
     }
 
+    /**
+     * Retrieves the value of a product option based on the provided option name and product ID.
+     *
+     * This method first checks if the product has specific import settings. If so, it retrieves the option value
+     * from these settings. If not, it falls back to the global option settings.
+     *
+     * @param string $optionName The name of the option to retrieve.
+     * @param string $productId The ID of the product for which to retrieve the option.
+     * @return bool Returns true if the option is enabled, false otherwise.
+     */
     private function getProductOption(string $optionName, string $productId): bool
     {
         if (isset($this->productImportSettings[$productId])) {
