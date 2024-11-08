@@ -12,6 +12,7 @@ use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
 use Topdata\TopdataConnectorSW6\Service\TopdataBrandService;
@@ -47,7 +48,7 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
         $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
         if ($this->configCheckerService->isConfigEmpty()) {
             $credentialsValid = 'no';
-            $additionalData .= 'Fill in the connection parameters in admin: Extensions > My Extensions > Topdata Webservice Connector > [...] > Configure';
+            $additionalData .= GlobalPluginConstants::ERROR_MESSAGE_NO_WEBSERVICE_CREDENTIALS;
         }
 
         try {

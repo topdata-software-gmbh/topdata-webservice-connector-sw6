@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Topdata\TopdataConnectorSW6\Service;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 
@@ -26,7 +27,7 @@ class ConnectionTestService
         if ($this->configCheckerService->isConfigEmpty()) {
             return [
                 'success' => false,
-                'message' => 'Fill in the connection parameters in admin: Extensions > My Extensions > Topdata Webservice Connector > [...] > Configure'
+                'message' => GlobalPluginConstants::ERROR_MESSAGE_NO_WEBSERVICE_CREDENTIALS
             ];
         }
 

@@ -7,6 +7,7 @@ namespace Topdata\TopdataConnectorSW6\Service;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\Console\Command\Command;
+use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
@@ -24,6 +25,7 @@ class ImportService
     use CliStyleTrait;
 
     // Error codes for various failure scenarios
+    const ERROR_CODE_SUCCESS                          = 0;
     const ERROR_CODE_PLUGIN_INACTIVE                  = 1;
     const ERROR_CODE_MISSING_PLUGIN_CONFIGURATION     = 2;
     const ERROR_CODE_MAPPING_PRODUCTS_FAILED          = 3;
@@ -34,7 +36,6 @@ class ImportService
     const ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED       = 8;
     const ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED_2     = 9;
 
-    private bool $verbose = true;
 
     public function __construct(
         private readonly SystemConfigService  $systemConfigService,
@@ -47,37 +48,20 @@ class ImportService
     {
     }
 
-    /**
-     * Sets the verbosity of the service.
-     *
-     * @param bool $verbose
-     */
-    public function setVerbose(bool $verbose): void
-    {
-        $this->verbose = $verbose;
-        $this->mappingHelperService->setVerbose($verbose);
-    }
-
     public function execute(ImportCommandCliOptionsDTO $cliOptionsDto): int
     {
-
-        if ($this->verbose) {
-            $this->cliStyle->writeln('Starting work...');
-        }
+        $this->cliStyle->writeln('Starting work...');
 
         // Check if plugin is active
         if (!$this->pluginHelperService->isWebserviceConnectorPluginAvailable()) {
-            if ($this->verbose) {
-                $this->cliStyle->error('The TopdataConnectorSW6 plugin is inactive!');
-            }
+            $this->cliStyle->error('The TopdataConnectorSW6 plugin is inactive!');
             return self::ERROR_CODE_PLUGIN_INACTIVE;
         }
 
         // Check if plugin is configured
         if ($this->configCheckerService->isConfigEmpty()) {
-            if ($this->verbose) {
-                $this->cliStyle->writeln('Fill in the connection parameters in admin: Extensions > My Extensions > Topdata Webservice Connector > [...] > Configure');
-            }
+            $this->cliStyle->warning(GlobalPluginConstants::ERROR_MESSAGE_NO_WEBSERVICE_CREDENTIALS);
+
             return self::ERROR_CODE_MISSING_PLUGIN_CONFIGURATION;
         }
 
@@ -94,7 +78,7 @@ class ImportService
         // Dump report
         $this->cliStyle->dumpCounters(ImportReport::getCountersSorted(), 'Report');
 
-        return Command::SUCCESS;
+        return self::ERROR_CODE_SUCCESS;
     }
 
     /**
@@ -129,6 +113,7 @@ class ImportService
 
     /**
      * Executes the import operations based on the provided CLI options.
+     * @return int|null the error code or null if no error occurred
      */
     private function executeImportOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
@@ -136,9 +121,8 @@ class ImportService
         if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceMapping()) {
             $this->cliStyle->section('Mapping Products');
             if (!$this->mappingHelperService->mapProducts()) {
-                if ($this->verbose) {
-                    $this->cliStyle->error('Mapping failed!');
-                }
+                $this->cliStyle->error('Mapping failed!');
+
                 return self::ERROR_CODE_MAPPING_PRODUCTS_FAILED;
             }
         }
@@ -171,16 +155,14 @@ class ImportService
                 || !$this->mappingHelperService->setDeviceTypes()
                 || !$this->mappingHelperService->setDevices()
             ) {
-                if ($this->verbose) {
-                    $this->cliStyle->error('Device import failed!');
-                }
+                $this->cliStyle->error('Device import failed!');
+
                 return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
             }
         } elseif ($cliOptionsDto->isServiceDeviceOnly()) {
             if (!$this->mappingHelperService->setDevices()) {
-                if ($this->verbose) {
-                    $this->cliStyle->error('Device import failed!');
-                }
+                $this->cliStyle->error('Device import failed!');
+
                 return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
             }
         }
@@ -196,9 +178,8 @@ class ImportService
         // Product to device linking
         if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceProduct()) {
             if (!$this->mappingHelperService->setProducts()) {
-                if ($this->verbose) {
-                    $this->cliStyle->error('Set products to devices failed!');
-                }
+                $this->cliStyle->error('Set products to devices failed!');
+
                 return self::ERROR_CODE_PRODUCT_TO_DEVICE_LINKING_FAILED;
             }
         }
@@ -206,9 +187,7 @@ class ImportService
         // Device media
         if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceDeviceMedia()) {
             if (!$this->mappingHelperService->setDeviceMedia()) {
-                if ($this->verbose) {
-                    $this->cliStyle->error('Load device media failed!');
-                }
+                $this->cliStyle->error('Load device media failed!');
                 return self::ERROR_CODE_LOAD_DEVICE_MEDIA_FAILED;
             }
         }
@@ -221,9 +200,8 @@ class ImportService
         // Device synonyms
         if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceDeviceSynonyms()) {
             if (!$this->mappingHelperService->setDeviceSynonyms()) {
-                if ($this->verbose) {
-                    $this->cliStyle->error('Set device synonyms failed!');
-                }
+                $this->cliStyle->error('Set device synonyms failed!');
+
                 return self::ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED;
             }
         }
@@ -255,9 +233,8 @@ class ImportService
 
         // ---- Check if TopFeed plugin is available
         if (!$this->pluginHelperService->isTopFeedPluginAvailable()) {
-            if ($this->verbose) {
-                $this->cliStyle->writeln('You need TopFeed plugin to update product information!');
-            }
+            $this->cliStyle->writeln('You need TopFeed plugin to update product information!');
+
             return null;
         }
 
@@ -267,9 +244,8 @@ class ImportService
         // ---- Load product information or update media
         $isMediaOnlyUpdate = $cliOptionsDto->isServiceProductMediaOnly();
         if (!$this->mappingHelperService->setProductInformation($isMediaOnlyUpdate)) {
-            if ($this->verbose) {
-                $this->cliStyle->error('Load product information failed!');
-            }
+            $this->cliStyle->error('Load product information failed!');
+
             return self::ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED;
         }
 
@@ -285,12 +261,11 @@ class ImportService
         if ($cliOptionsDto->isProductVariations()) {
             if ($this->pluginHelperService->isTopFeedPluginAvailable()) {
                 if (!$this->mappingHelperService->setProductColorCapacityVariants()) {
-                    if ($this->verbose) {
-                        $this->cliStyle->error('Set device synonyms failed!');
-                    }
+                    $this->cliStyle->error('Set device synonyms failed!');
+
                     return self::ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED_2;
                 }
-            } elseif ($this->verbose) {
+            } else {
                 $this->cliStyle->warning('You need TopFeed plugin to create variated products!');
             }
         }

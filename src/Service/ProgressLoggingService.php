@@ -2,17 +2,21 @@
 
 namespace Topdata\TopdataConnectorSW6\Service;
 
+use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
+
 /**
  * 10/2024 created (extracted from MappingHelperService)
  * TODO: merge this into CliStyle.
  */
 class ProgressLoggingService
 {
-    private bool $verbose;
+    use CliStyleTrait;
+
     private float $microtime;
 
     public function __construct()
     {
+        $this->beVerboseOnCli();
         $this->microtime = microtime(true);
     }
 
@@ -21,11 +25,9 @@ class ProgressLoggingService
      */
     public function activity(string $str = '.', bool $newLine = false): void
     {
-        if ($this->verbose) {
-            echo $str;
-            if ($newLine) {
-                echo "\n";
-            }
+        $this->cliStyle->write($str);
+        if ($newLine) {
+            $this->cliStyle->write("\n");
         }
     }
 
@@ -47,15 +49,10 @@ class ProgressLoggingService
 
             return '';
         }
-        $lapTime         = microtime(true) - $this->microtime;
+        $lapTime = microtime(true) - $this->microtime;
         $this->microtime = microtime(true);
 
-        return (string) round($lapTime, 3);
-    }
-
-    public function setVerbose(bool $verbose): void
-    {
-        $this->verbose = $verbose;
+        return (string)round($lapTime, 3);
     }
 
     /**
@@ -63,9 +60,6 @@ class ProgressLoggingService
      */
     public function writeln(string $string): void
     {
-        if (!$this->verbose) {
-            return;
-        }
-        echo $string . "\n";
+        $this->cliStyle->writeln($string);
     }
 }

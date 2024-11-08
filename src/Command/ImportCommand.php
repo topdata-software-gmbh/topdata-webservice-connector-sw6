@@ -28,7 +28,6 @@ class ImportCommand extends AbstractTopdataCommand
      */
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->importService->setVerbose($input->getOption('verbose') >= 1);
         $this->importService->setCliStyle($this->cliStyle);
         $cliOptionsDto = new ImportCommandCliOptionsDTO($input);
         

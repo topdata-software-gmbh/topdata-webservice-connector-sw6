@@ -122,7 +122,6 @@ class MappingHelperService
      *  ]
      */
     private TopdataWebserviceClient $topdataWebserviceClient;
-    private bool $verbose = false;
     private Context $context;
     private string $systemDefaultLocaleCode;
 
@@ -162,16 +161,6 @@ class MappingHelperService
         $this->topdataWebserviceClient = $topDataApi;
     }
 
-    /**
-     * Set the verbose mode.
-     *
-     * @param bool $verbose Whether to enable verbose mode
-     */
-    public function setVerbose(bool $verbose): void
-    {
-        $this->verbose = $verbose;
-        $this->progressLoggingService->setVerbose($verbose);
-    }
 
     //    /**
     //     * 10/2024 UNUSED --> commented out
@@ -1363,7 +1352,7 @@ class MappingHelperService
                     }
 
                     try {
-                        $echoMediaDownload = $this->verbose ? 'd' : '';
+                        $echoMediaDownload = 'd';
                         $mediaId = $this->mediaHelperService->getMediaId(
                             $imageUrl,
                             $imageDate,
