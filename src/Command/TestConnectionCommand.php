@@ -14,6 +14,7 @@ use Topdata\TopdataConnectorSW6\Service\ConnectionTestService;
 use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 use Topdata\TopdataFoundationSW6\Service\TopConfigRegistry;
+use Topdata\TopdataFoundationSW6\Util\Configuration\UtilToml;
 use TopdataSoftwareGmbH\Util\UtilDebug;
 
 /**
@@ -56,7 +57,7 @@ class TestConnectionCommand extends AbstractTopdataCommand
         // ---- print config and exit
         if ($input->getOption('print-config')) {
             $pluginSystemConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
-            $topConfigToml = $this->topConfigRegistry->getTopConfig('TopdataConnectorSW6')->getToml();
+            $topConfigToml = UtilToml::flatConfigToToml($this->topConfigRegistry->getTopConfig('TopdataConnectorSW6')->getFlatConfig());
             $topConfigFlat = $this->topConfigRegistry->getTopConfig('TopdataConnectorSW6')->getFlatConfig();
             $this->cliStyle->writeln($topConfigToml);
 //            $this->cliStyle->dumpDict($pluginSystemConfig, 'TopdataConnectorSW6.config');
