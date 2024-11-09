@@ -13,25 +13,20 @@ namespace Topdata\TopdataConnectorSW6\Helper;
 class TopdataWebserviceClient
 {
     const API_VERSION                 = '108';
-    const TOPDATA_WEBSERVICE_BASE_URL = 'https://ws.topdata.de';
     const CURL_TIMEOUT                = 30;  // seconds
 
-    private string $baseUrl = self::TOPDATA_WEBSERVICE_BASE_URL;
     private $apiVersion = self::API_VERSION;
-    private ?string $lastURL = null;
+    private string $baseUrl; // without trailing slash
 
     public function __construct(
+        string $baseUrl,
         private readonly string $apiUsername, // aka userId
         private readonly string $apiKey,
         private readonly string $apiSalt,
         private readonly string $apiLanguage
     )
     {
-    }
-
-    public function getLastURL()
-    {
-        return $this->lastURL;
+        $this->baseUrl = rtrim($baseUrl, '/');
     }
 
     private function getParams(): string
@@ -46,7 +41,6 @@ class TopdataWebserviceClient
      */
     public function getCURLResponse($url, $xml_data = null, $attempt = 1)
     {
-        $this->lastURL = $url;
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, self::CURL_TIMEOUT);

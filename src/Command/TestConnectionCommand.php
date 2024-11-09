@@ -13,6 +13,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Topdata\TopdataConnectorSW6\Service\ConnectionTestService;
 use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
+use Topdata\TopdataFoundationSW6\Service\TopConfigRegistry;
+use TopdataSoftwareGmbH\Util\UtilDebug;
 
 /**
  * Test connection to the TopData webservice.
@@ -31,7 +33,8 @@ class TestConnectionCommand extends AbstractTopdataCommand
 
     public function __construct(
         private readonly ConnectionTestService $connectionTestService,
-        private readonly SystemConfigService   $systemConfigService,
+        private readonly SystemConfigService   $systemConfigService, // legacy
+        private readonly TopConfigRegistry     $topConfigRegistry, // new
         private readonly PluginHelperService   $pluginHelperService
     )
     {
@@ -43,13 +46,21 @@ class TestConnectionCommand extends AbstractTopdataCommand
         $this->addOption('print-config', 'p', InputOption::VALUE_NONE, 'Print the current configuration and exit');
     }
 
+    /**
+     * ==== MAIN ====
+     * 11/2024 created
+     */
     public function execute(InputInterface $input, OutputInterface $output): int
     {
 
         // ---- print config and exit
         if ($input->getOption('print-config')) {
-            $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
-            $this->cliStyle->dumpDict($config, 'TopdataConnectorSW6.config');
+            $pluginSystemConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
+            $topConfigToml = $this->topConfigRegistry->getTopConfig('TopdataConnectorSW6')->getToml();
+            $topConfigFlat = $this->topConfigRegistry->getTopConfig('TopdataConnectorSW6')->getFlatConfig();
+            $this->cliStyle->writeln($topConfigToml);
+//            $this->cliStyle->dumpDict($pluginSystemConfig, 'TopdataConnectorSW6.config');
+//            $this->cliStyle->dumpDict($topConfigFlat, 'topConfigFlat(TopdataConnectorSW6)');
             $this->done();
             return Command::SUCCESS;
         }

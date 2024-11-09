@@ -5,28 +5,21 @@ declare(strict_types=1);
 namespace Topdata\TopdataConnectorSW6;
 
 use Doctrine\DBAL\Connection;
-use Shopware\Core\Framework\DataAbstractionLayer\Indexing\Indexer\InheritanceIndexer;
 use Shopware\Core\Framework\Plugin;
-use Shopware\Core\Framework\Plugin\Context\ActivateContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
-use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-
-//use Shopware\Core\Framework\DataAbstractionLayer\Indexing\MessageQueue\IndexerMessageSender;
-use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 use Topdata\TopdataFoundationSW6\DependencyInjection\TopConfigRegistryCompilerPass;
 
-//use Shopware\Core\Framework\Plugin\Context\InstallContext;
-//use Shopware\Core\Framework\Plugin\Context\UpdateContext;
-//use Shopware\Core\Framework\Plugin\Context\ActivateContext;
-//use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
-//use Symfony\Component\DependencyInjection\ContainerBuilder;
-//use Symfony\Component\Routing\RouteCollectionBuilder;
 
 class TopdataConnectorSW6 extends Plugin
 {
     const MAPPINGS = [
-        // TODO...
+        'apiBaseUrl'  => 'topdataWebservice.baseUrl',
+        'apiUsername' => 'topdataWebservice.credentials.username',
+        'apiKey'      => 'topdataWebservice.credentials.key',
+        'apiSalt'     => 'topdataWebservice.credentials.salt',
+        'apiLanguage' => 'topdataWebservice.language',
+        'mappingType' => 'import.mappingType',
     ];
 
     public function build(ContainerBuilder $container): void

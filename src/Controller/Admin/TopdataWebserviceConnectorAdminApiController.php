@@ -52,7 +52,13 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
         }
 
         try {
-            $webservice = new TopdataWebserviceClient($config['apiUsername'], $config['apiKey'], $config['apiSalt'], $config['apiLanguage']);
+            $webservice = new TopdataWebserviceClient(
+                $config['apiBaseUrl'],
+                $config['apiUsername'],
+                $config['apiKey'],
+                $config['apiSalt'],
+                $config['apiLanguage']
+            );
             $info = $webservice->getUserInfo();
 
             if (isset($info->error)) {
