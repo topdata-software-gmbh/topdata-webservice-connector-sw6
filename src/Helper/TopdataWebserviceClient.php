@@ -7,11 +7,15 @@
 
 namespace Topdata\TopdataConnectorSW6\Helper;
 
+use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
+
 /**
  * A simple http client for the topdata webservice.
  */
 class TopdataWebserviceClient
 {
+    use CliStyleTrait;
+
     const API_VERSION                 = '108';
     const CURL_TIMEOUT                = 30;  // seconds
 
@@ -26,6 +30,7 @@ class TopdataWebserviceClient
         private readonly string $apiLanguage
     )
     {
+        $this->beVerboseOnCli();
         $this->baseUrl = rtrim($baseUrl, '/');
     }
 
@@ -39,8 +44,9 @@ class TopdataWebserviceClient
      * @return bool|mixed
      * @throws \Exception
      */
-    public function getCURLResponse($url, $xml_data = null, $attempt = 1)
+    public function getCURLResponse(string $url, $xml_data = null, $attempt = 1)
     {
+        $this->cliStyle->writeln("fetching $url");
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, self::CURL_TIMEOUT);
@@ -49,7 +55,7 @@ class TopdataWebserviceClient
 
         if (curl_errno($ch)) {
             if (curl_errno($ch) == 28 && $attempt < 3) { //TIMEOUT
-                echo 'cURL-ERROR: ' . curl_error($ch) . "\n" . $url . "\n" . ' ... DO RETRY ' . ($attempt + 1) . "\n";
+                $this->cliStyle->warning( 'cURL-ERROR: ' . curl_error($ch) . "\n" . $url . "\n" . ' ... DO RETRY ' . ($attempt + 1) . "\n");
 
                 return $this->getCURLResponse($url, $xml_data, ($attempt + 1));
             }
@@ -159,6 +165,7 @@ class TopdataWebserviceClient
         return $this->getCURLResponse($url);
     }
 
+    // FIXME: it should be named "fetchMyOEMs" ?
     public function matchMyOems($params = [])
     {
         $p = [];
@@ -171,6 +178,7 @@ class TopdataWebserviceClient
         return $this->getCURLResponse($url);
     }
 
+    // FIXME: it should be named "fetchMyPCDs" ?
     public function matchMyPcds($params = [])
     {
         $p = [];
@@ -183,6 +191,7 @@ class TopdataWebserviceClient
         return $this->getCURLResponse($url);
     }
 
+    // FIXME: it should be named "fetchMyEANs" ?
     public function matchMyEANs($params = [])
     {
         $p = [];
@@ -195,6 +204,7 @@ class TopdataWebserviceClient
         return $this->getCURLResponse($url);
     }
 
+    // FIXME: it should be named "fetchMyDistributors" ?
     public function matchMyDistributer($params = [])
     {
         $p = [];
