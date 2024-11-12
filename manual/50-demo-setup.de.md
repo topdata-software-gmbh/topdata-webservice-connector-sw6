@@ -1,4 +1,8 @@
-# Demo-Installation von "TopCONNECTOR"
+---
+title: Demo-Installation
+---
+
+## Demo-Installation von "TopCONNECTOR"
 
 Sie können eine Demoversion von "TopCONNECTOR" installieren, um unsere Daten-Plugins zu testen.
 

@@ -1,3 +1,7 @@
+---
+title: Setup
+---
+
 # Setting up your "TopCONNECTOR" Step by Step
 
 1. Download "TopCONNECTOR" for free from the Shopware Community Store

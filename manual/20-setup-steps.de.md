@@ -1,3 +1,7 @@
+---
+title: Einrichtung
+---
+
 # Die Einrichtung Ihres "TopCONNECTOR" Schritt für Schritt
 
 1. Downloaden Sie "TopCONNECTOR" kostenlos im Shopware-Community Store

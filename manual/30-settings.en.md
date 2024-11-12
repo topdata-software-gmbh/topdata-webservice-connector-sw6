@@ -1,3 +1,6 @@
+---
+title: Settings
+
 # Settings of your "TopCONNECTOR"
 
 Configure "TopCONNECTOR" according to your needs:

@@ -1,3 +1,7 @@
+---
+title: Demo Setup
+---
+
 # Demo Installation of "TopCONNECTOR"
 
 You can install a demo version of "TopCONNECTOR" to test our data plugins.
