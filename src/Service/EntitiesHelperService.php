@@ -14,7 +14,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Topdata\TopdataConnectorSW6\Util\UtilUuid;
+use Topdata\TopdataFoundationSW6\Util\UtilUuid;
+use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
 
 /**
  * Note: this is also used by the TopdataTopfinderProSW6 plugin.
@@ -24,106 +25,37 @@ use Topdata\TopdataConnectorSW6\Util\UtilUuid;
 class EntitiesHelperService
 {
     const LANGUAGE_NAME       = 'English';
-    const DEFAULT_MAIN_FOLDER = 'product';
-    const UPLOAD_FOLDER_NAME  = 'TopData';
 
-    private $propertyGroups          = null;
-    private $categoryTree            = null;
-    private $manufacturers           = null;
-    private $rootCategoryId          = null;
-    private $defaultCmsListingPageId = null;
-    private $temp;
-    private $propertyGroupsOptionsArray = null;
-    private $uploadFolderId             = null;
-    private $enLangID                   = null;
-    private $deLangID                   = null;
-
-    /**
-     * @var Connection
-     */
-    private $connection;
-
-    /**
-     * @var MediaService
-     */
-    private $mediaService;
-
-    /**
-     * @var EntityRepository
-     */
-    private $mediaRepository;
-
-    /**
-     * @param Context
-     */
-    private $context;
-
-    /**
-     * @var EntityRepository
-     */
-    private $propertyGroupRepository;
-
-    /**
-     * @var EntityRepository
-     */
-    private $propertyGroupOptionRepository;
-
-    /**
-     * @var EntityRepository
-     */
-    private $categoryRepository;
-
-    /**
-     * @var EntityRepository
-     */
-    private $manufacturerRepository;
-
-    /**
-     * @var EntityRepository
-     */
-    private $mediaFolderRepository;
-
-    /** @var string */
-    private $systemDefaultLocaleCode;
+    private ?array $propertyGroups = null;
+    private ?array $categoryTree = null;
+    private ?array $manufacturers = null;
+    private ?string $rootCategoryId = null;
+    private ?string $defaultCmsListingPageId = null;
+    private mixed $temp;
+    private ?array $propertyGroupsOptionsArray = null;
+    private ?string $enLangID = null;
+    private ?string $deLangID = null;
+    private readonly string $systemDefaultLocaleCode;
+    private readonly Context $context;
 
     public function __construct(
-        Connection $connection,
-        EntityRepository $mediaRepository,
-        MediaService $mediaService,
-        EntityRepository $propertyGroupRepository,
-        EntityRepository $categoryRepository,
-        EntityRepository $manufacturerRepository,
-        EntityRepository $mediaFolderRepository,
-        EntityRepository $propertyGroupOptionRepository
-    ) {
-        $this->connection              = $connection;
-        $this->mediaRepository         = $mediaRepository;
-        $this->mediaService            = $mediaService;
-        $this->propertyGroupRepository = $propertyGroupRepository;
-        $this->categoryRepository      = $categoryRepository;
-        $this->manufacturerRepository  = $manufacturerRepository;
-        $this->mediaFolderRepository   = $mediaFolderRepository;
-
-        $this->propertyGroupOptionRepository = $propertyGroupOptionRepository;
-
-        $this->systemDefaultLocaleCode = $this->getLocaleCodeOfSystemLanguage();
-        $this->context                 = Context::createDefaultContext();
-    }
-
-    private function getLocaleCodeOfSystemLanguage(): string
+        private readonly Connection          $connection,
+        private readonly EntityRepository    $propertyGroupRepository,
+        private readonly EntityRepository    $categoryRepository,
+        private readonly EntityRepository    $productManufacturerRepository,
+        private readonly EntityRepository    $propertyGroupOptionRepository,
+        private readonly LocaleHelperService $localeHelperService,
+    )
     {
-        return $this->connection
-            ->fetchOne(
-                'SELECT lo.code FROM language as la JOIN locale as lo on lo.id = la.locale_id  WHERE la.id = UNHEX(:systemLanguageId)',
-                ['systemLanguageId' => Defaults::LANGUAGE_SYSTEM]
-            );
+        $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();
+        $this->context = Context::createDefaultContext();
     }
+
 
     protected function loadPropertyGroups(): void
     {
         $this->propertyGroups = $this->propertyGroupRepository->search(
-            (new Criteria())
-                ->addAssociation('options'),
+            (new Criteria())->addAssociation('options'),
             $this->context
         )->getEntities();
     }
@@ -197,14 +129,14 @@ class EntitiesHelperService
     {
         $propGroups = $this->getPropertyGroupsOptionsArray();
 
-        $currentGroup    = null;
-        $currentGroupId  = null;
+        $currentGroup = null;
+        $currentGroupId = null;
         $currentOptionId = Uuid::randomHex();
 
         foreach ($propGroups as $id => $propertyGroup) {
             if ($propertyGroup['name'] == $propGroupName) {
                 $currentGroupId = $id;
-                $currentGroup   = $propertyGroup;
+                $currentGroup = $propertyGroup;
                 break;
             }
         }
@@ -221,7 +153,7 @@ class EntitiesHelperService
                     'name'        => [
                         $this->systemDefaultLocaleCode => $propGroupName,
                     ],
-                    'options' => [
+                    'options'     => [
                         [
                             'id'   => $currentOptionId,
                             'name' => [
@@ -269,8 +201,8 @@ class EntitiesHelperService
         //            ]
         //        ], $this->context);
         $currentDateTime = date('Y-m-d H:i:s');
-        $enId            = $this->getEnID();
-        $deId            = $this->getDeID();
+        $enId = $this->getEnID();
+        $deId = $this->getDeID();
         $this->connection->executeStatement('
             INSERT INTO property_group_option 
             (id, property_group_id, created_at) 
@@ -344,7 +276,7 @@ class EntitiesHelperService
 
     protected function loadCategoryTree()
     {
-        $categories         = $this->categoryRepository->search(new Criteria(), $this->context)->getEntities();
+        $categories = $this->categoryRepository->search(new Criteria(), $this->context)->getEntities();
         $this->categoryTree = $this->buildCategorySubTree(null, $categories);
     }
 
@@ -416,8 +348,8 @@ class EntitiesHelperService
     }
 
     /**
-     * @param  array  $categoriesChain
-     * @param  string $parentId
+     * @param array $categoriesChain
+     * @param string $parentId
      * @return string Id of a last created child category
      */
     private function createBranch(array $categoriesChain, ?string $parentId): string
@@ -467,7 +399,7 @@ class EntitiesHelperService
             foreach ($categoriesChain as $key => $category) {
                 $temp = $this->findInBranch($category['waregroup'], $branch);
                 if ($temp) {
-                    $branch   = $temp;
+                    $branch = $temp;
                     $parentId = $temp['id'];
                 } else {
                     $parentId = $this->createBranch(array_slice($categoriesChain, $key), $parentId);
@@ -493,7 +425,7 @@ class EntitiesHelperService
                 }
                 $temp = $this->findInBranch($category['waregroup'], $branch);
                 if ($temp) {
-                    $branch   = $temp;
+                    $branch = $temp;
                     $parentId = $temp['id'];
                 } else {
                     $parentId = $this->createBranch(array_slice($categoriesChain, $key), $parentId);
@@ -532,125 +464,17 @@ class EntitiesHelperService
             throw new \RuntimeException('Default Cms Listing page not found');
         }
 
-        $this->defaultCmsListingPageId = Uuid::fromBytesToHex((string) $result);
+        $this->defaultCmsListingPageId = Uuid::fromBytesToHex((string)$result);
 
         return $this->defaultCmsListingPageId;
     }
 
-    private function generateMediaName(string $path, int $timestamp): string
-    {
-        $fileName = pathinfo($path, PATHINFO_FILENAME) . '-' . $timestamp;
 
-        return $fileName;
-    }
-
-    public function getMediaId(string $imagePath, int $imageTimestamp = 0, string $imagePrefix = '', $echoDownload = ''): string
-    {
-        $imageName = $imagePrefix . $this->generateMediaName($imagePath, $imageTimestamp);
-
-        $existingMedia = $this->mediaRepository
-            ->search(
-                (new Criteria())
-                    ->addFilter(new EqualsFilter('fileName', $imageName))
-                    ->setLimit(1),
-                $this->context
-            )
-            ->getEntities()
-            ->first();
-
-        if ($existingMedia) {
-            $mediaId = $existingMedia->getId();
-        } else {
-            echo $echoDownload;
-            $fileContent = file_get_contents($imagePath);
-
-            if ($fileContent === false) {
-                return '';
-            }
-
-            $mediaId = $this->createMediaInFolder();
-
-            $mediaId = $this->mediaService->saveFile(
-                $fileContent,
-                'jpg',
-                'image/jpeg',
-                $imageName,
-                $this->context,
-                null,
-                $mediaId,
-                false
-            );
-        }
-
-        return $mediaId;
-    }
-
-    protected function createMediaInFolder(): string
-    {
-        if (!$this->uploadFolderId) {
-            $this->createUploadFolder();
-        }
-
-        $mediaId = Uuid::randomHex();
-        $this->mediaRepository->create(
-            [
-                [
-                    'id'            => $mediaId,
-                    'private'       => false,
-                    'mediaFolderId' => $this->uploadFolderId,
-                ],
-            ],
-            $this->context
-        );
-
-        return $mediaId;
-    }
-
-    protected function createUploadFolder(): void
-    {
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('media_folder.defaultFolder.entity', self::DEFAULT_MAIN_FOLDER));
-        $criteria->addAssociation('defaultFolder');
-        $criteria->setLimit(1);
-        $defaultFolder = $this->mediaFolderRepository->search($criteria, $this->context)->first();
-
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('name', self::UPLOAD_FOLDER_NAME));
-        $criteria->addFilter(new EqualsFilter('parentId', $defaultFolder->getId()));
-        $criteria->setLimit(1);
-        $uploadFolder = $this
-            ->mediaFolderRepository
-            ->search(
-                $criteria,
-                $this->context
-            )
-            ->first();
-
-        if ($uploadFolder) {
-            $this->uploadFolderId = $uploadFolder->getId();
-
-            return;
-        }
-
-        $this->uploadFolderId = Uuid::randomHex();
-        $this->mediaFolderRepository->create(
-            [
-                [
-                    'id'              => $this->uploadFolderId,
-                    'private'         => false,
-                    'name'            => self::UPLOAD_FOLDER_NAME,
-                    'parentId'        => $defaultFolder->getId(),
-                    'configurationId' => $defaultFolder->getConfigurationId(),
-                ],
-            ],
-            $this->context
-        );
-    }
 
     protected function loadManufacturers(): void
     {
-        $manufacturers = $this->manufacturerRepository->search(new Criteria(), $this->context)->getEntities();
-        $ret           = [];
+        $manufacturers = $this->productManufacturerRepository->search(new Criteria(), $this->context)->getEntities();
+        $ret = [];
         foreach ($manufacturers as $manufacturer) {
             $ret[$manufacturer->getName()] = $manufacturer->getId();
         }
@@ -667,7 +491,7 @@ class EntitiesHelperService
             $manufacturerId = $this->manufacturers[$manufacturerName];
         } else {
             $manufacturerId = Uuid::randomHex();
-            $this->manufacturerRepository->create([
+            $this->productManufacturerRepository->create([
                 [
                     'id'   => $manufacturerId,
                     'name' => [

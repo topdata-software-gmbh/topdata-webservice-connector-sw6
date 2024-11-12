@@ -77,54 +77,22 @@
         <service id="Topdata\TopdataConnectorSW6\Command\ImportCommand" autowire="true">
             <tag name="console.command"/>
         </service>
-        <service id="Topdata\TopdataConnectorSW6\Command\ProductsCommand">
-            <argument type="service" id="product_manufacturer.repository" />
-            <argument type="service" id="product.repository" />
-            <argument type="service" id="Doctrine\DBAL\Connection" />
-            <tag name="console.command"/>
-        </service>
 
         <!-- SERVICES -->
+        <service id="Topdata\TopdataConnectorSW6\Service\TopdataToProductHelperService" autowire="true"/>
+        <service id="Topdata\TopdataConnectorSW6\Service\ConnectionTestService" autowire="true"/>
+        <service id="Topdata\TopdataConnectorSW6\Service\ImportService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ConfigCheckerService" autowire="true"/>
-        <service id="Topdata\TopdataConnectorSW6\Service\EntitiesHelperService">
-            <argument type="service" id="Doctrine\DBAL\Connection" />
-            <argument type="service" id="media.repository"/>
-            <argument type="service" id="Shopware\Core\Content\Media\MediaService"/>
-            <argument type="service" id="property_group.repository"/>
-            <argument type="service" id="category.repository"/>
-            <argument type="service" id="product_manufacturer.repository"/>
-            <argument type="service" id="media_folder.repository"/>
-            <argument type="service" id="property_group_option.repository"/>
-        </service>
-
+        <service id="Topdata\TopdataConnectorSW6\Service\EntitiesHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\OptionsHelperService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ProductMappingService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ProgressLoggingService" autowire="true"/>
-        <service id="Topdata\TopdataConnectorSW6\Service\MappingHelperService" autowire="true">
-<!--            <argument type="service" id="logger" />-->
-<!--            <argument type="service" id="Doctrine\DBAL\Connection" />-->
-<!--            <argument type="service" id="topdata_brand.repository"/>-->
-<!--            <argument type="service" id="topdata_device.repository"/>-->
-<!--            <argument type="service" id="topdata_series.repository"/>-->
-<!--            <argument type="service" id="topdata_device_type.repository"/>-->
-<!--            <argument type="service" id="topdata_to_product.repository"/>-->
-<!--            <argument type="service" id="media.repository"/>-->
-<!--            <argument type="service" id="Shopware\Core\Content\Media\MediaService"/>-->
-<!--            <argument type="service" id="product.repository"/>-->
-<!--            <argument type="service" id="Topdata\TopdataConnectorSW6\Command\ProductsCommand"/>-->
-<!--            <argument type="service" id="property_group.repository"/>-->
-<!--            <argument type="service" id="Topdata\TopdataConnectorSW6\Service\EntitiesHelperService"/>-->
-<!--            <argument type="service" id="product_cross_selling.repository"/>-->
-<!--            <argument type="service" id="product_cross_selling_assigned_products.repository"/>-->
-        </service>
-        
+        <service id="Topdata\TopdataConnectorSW6\Service\MappingHelperService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\TopdataBrandService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\MediaHelperService" autowire="true" />
+
         <!-- Controllers -->
-        <service id="Topdata\TopdataConnectorSW6\Controller\TopdataConnectorController" public="true">
-            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
-            <argument type="service" id="logger" />
-            <argument type="service" id="parameter_bag" />
-            <argument type="service" id="Doctrine\DBAL\Connection" />
-            <argument type="service" id="topdata_brand.repository"/>
+        <service id="Topdata\TopdataConnectorSW6\Controller\Admin\TopdataWebserviceConnectorAdminApiController" public="true" autowire="true">
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
@@ -134,6 +102,7 @@
         <service id="Topdata\TopdataConnectorSW6\ScheduledTask\ConnectorImportTask">
             <tag name="shopware.scheduled.task" />
         </service>
+
         <service id="Topdata\TopdataConnectorSW6\ScheduledTask\ConnectorImportTaskHandler">
             <argument type="service" id="scheduled_task.repository" />
             <argument type="service" id="parameter_bag" />

@@ -6,6 +6,14 @@
         <title>API Configuration</title>
         <title lang="de-DE">API Einstellungen</title>
         <input-field>
+            <name>apiBaseUrl</name>
+            <label>API Base URL</label>
+            <label lang="de-DE">API Basis-URL</label>
+            <defaultValue>https://ws.topdata.de</defaultValue>
+            <helpText>Enter the base URL for the Topdata webservice (default: https://ws.topdata.de)</helpText>
+            <helpText lang="de-DE">Geben Sie die Basis-URL für den Topdata-Webservice ein (Standard: https://ws.topdata.de)</helpText>
+        </input-field>
+        <input-field>
             <name>apiUsername</name>
             <label>API User-ID | DEMO User-ID: 6</label>
             <label lang="de-DE">API User-ID | DEMO User-ID: 6</label>

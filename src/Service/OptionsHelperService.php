@@ -39,10 +39,10 @@ class OptionsHelperService
      */
     public function loadTopdataTopFeedPluginConfig(): void
     {
-        $pluginConfig = $this->systemConfigService->get('TopdataTopFeedSW6.config');
-        $this->setOptions($pluginConfig);
-        $this->setOption(OptionConstants::PRODUCT_COLOR_VARIANT, $pluginConfig['productVariantColor']); // FIXME? 'productColorVariant' != 'productVariantColor'
-        $this->setOption(OptionConstants::PRODUCT_CAPACITY_VARIANT, $pluginConfig['productVariantCapacity']); // FIXME? 'productCapacityVariant' != 'productVariantCapacity'
+        $topfeedPluginConfig = $this->systemConfigService->get('TopdataTopFeedSW6.config');
+        $this->setOptions($topfeedPluginConfig); // FIXME: what a mess! it MERGES system config of the Topfeed plugin with the options array
+        $this->setOption(OptionConstants::PRODUCT_COLOR_VARIANT, $topfeedPluginConfig['productVariantColor']); // FIXME? 'productColorVariant' != 'productVariantColor'
+        $this->setOption(OptionConstants::PRODUCT_CAPACITY_VARIANT, $topfeedPluginConfig['productVariantCapacity']); // FIXME? 'productCapacityVariant' != 'productVariantCapacity'
     }
 
     /**

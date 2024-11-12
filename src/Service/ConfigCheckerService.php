@@ -11,11 +11,9 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
  */
 class ConfigCheckerService
 {
-    private SystemConfigService $systemConfigService;
-
-    public function __construct(SystemConfigService $systemConfigService)
+    public function __construct(
+        private readonly SystemConfigService $systemConfigService)
     {
-        $this->systemConfigService = $systemConfigService;
     }
 
     /**

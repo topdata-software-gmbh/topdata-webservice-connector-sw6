@@ -5,39 +5,53 @@ declare(strict_types=1);
 namespace Topdata\TopdataConnectorSW6;
 
 use Doctrine\DBAL\Connection;
-use Shopware\Core\Framework\DataAbstractionLayer\Indexing\Indexer\InheritanceIndexer;
 use Shopware\Core\Framework\Plugin;
-use Shopware\Core\Framework\Plugin\Context\ActivateContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
-use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-//use Shopware\Core\Framework\DataAbstractionLayer\Indexing\MessageQueue\IndexerMessageSender;
-use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
+use Topdata\TopdataFoundationSW6\DependencyInjection\TopConfigRegistryCompilerPass;
 
-//use Shopware\Core\Framework\Plugin\Context\InstallContext;
-//use Shopware\Core\Framework\Plugin\Context\UpdateContext;
-//use Shopware\Core\Framework\Plugin\Context\ActivateContext;
-//use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
-//use Symfony\Component\DependencyInjection\ContainerBuilder;
-//use Symfony\Component\Routing\RouteCollectionBuilder;
 
 class TopdataConnectorSW6 extends Plugin
 {
+    const MAPPINGS = [
+        'apiBaseUrl'  => 'topdataWebservice.baseUrl',
+        'apiUsername' => 'topdataWebservice.credentials.username',
+        'apiKey'      => 'topdataWebservice.credentials.key',
+        'apiSalt'     => 'topdataWebservice.credentials.salt',
+        'apiLanguage' => 'topdataWebservice.language',
+        'mappingType' => 'import.mappingType',
+    ];
+
     public function build(ContainerBuilder $container): void
     {
         parent::build($container);
+
+        // ---- register the plugin in Topdata Configration Center's TopConfigRegistry
+        if (class_exists(TopConfigRegistryCompilerPass::class)) {
+            $container->addCompilerPass(new TopConfigRegistryCompilerPass(__CLASS__, self::MAPPINGS));
+        }
+
+
     }
 
+    /**
+     * Uninstalls the plugin and removes all related database tables and fields.
+     *
+     * @param UninstallContext $context The context of the uninstallation process.
+     */
     public function uninstall(UninstallContext $context): void
     {
         parent::uninstall($context);
 
+        // ---- Check if user data should be kept
         if ($context->keepUserData()) {
             return;
         }
 
+        // ---- Get the database connection
         $connection = $this->container->get(Connection::class);
 
+        // ---- Drop plugin-related tables if they exist
         $connection->executeStatement('DROP TABLE IF EXISTS `topdata_brand`');
         $connection->executeStatement('DROP TABLE IF EXISTS `topdata_device`');
         $connection->executeStatement('DROP TABLE IF EXISTS `topdata_device_to_product`');
@@ -54,26 +68,30 @@ class TopdataConnectorSW6 extends Plugin
         $connection->executeStatement('DROP TABLE IF EXISTS `topdata_product_to_capacity_variant`');
         $connection->executeStatement('DROP TABLE IF EXISTS `topdata_product_to_variant`');
 
+        // ---- Fetch and store customer table fields
         $customerFields = [];
-        $temp           = $connection->fetchAllAssociative('SHOW COLUMNS from `customer`');
+        $temp = $connection->fetchAllAssociative('SHOW COLUMNS from `customer`');
         foreach ($temp as $field) {
             if (isset($field['Field'])) {
                 $customerFields[$field['Field']] = $field['Field'];
             }
         }
 
+        // ---- Drop `devices` field from `customer` table if it exists
         if (isset($customerFields['devices'])) {
             $connection->executeStatement('ALTER TABLE `customer` DROP `devices`');
         }
 
+        // ---- Fetch and store product table fields
         $productFields = [];
-        $temp          = $connection->fetchAllAssociative('SHOW COLUMNS from `product`');
+        $temp = $connection->fetchAllAssociative('SHOW COLUMNS from `product`');
         foreach ($temp as $field) {
             if (isset($field['Field'])) {
                 $productFields[$field['Field']] = $field['Field'];
             }
         }
 
+        // ---- List of product fields to delete
         $productFieldsToDelete = [
             'devices',
             'topdata',
@@ -86,6 +104,7 @@ class TopdataConnectorSW6 extends Plugin
             'color_variant_products',
         ];
 
+        // ---- Drop specified fields from `product` table if they exist
         foreach ($productFieldsToDelete as $field) {
             if (isset($productFields[$field])) {
                 $connection->executeStatement('ALTER TABLE `product`  DROP `' . $field . '`');
