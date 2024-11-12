@@ -4,10 +4,10 @@
 
 ## Inhaltsverzeichnis
 
-1. [FAQ](faq-de.md)
-2. [Installation](installation-de.md)
-   * [Systemvoraussetzungen](installation-de.md#systemvoraussetzungen)
-   * [Wichtiger Hinweis](installation-de.md#wichtiger-hinweis)
-3. [Einrichtung](setup-steps-de.md)
-4. [Einstellungen](settings-de.md)
-5. [Demo-Installation](demo-setup-de.md)
+1. [FAQ](faq.md)
+2. [Installation](installation.md)
+   * [Systemvoraussetzungen](installation.md#systemvoraussetzungen)
+   * [Wichtiger Hinweis](installation.md#wichtiger-hinweis)
+3. [Einrichtung](setup-steps.md)
+4. [Einstellungen](settings.md)
+5. [Demo-Installation](demo-setup.md)
