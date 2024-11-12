@@ -4,10 +4,10 @@
 
 ## Table of Contents
 
-1. [FAQ](faq.md)
-2. [Installation](installation.md)
-   * [System Requirements](installation.md#system-requirements)
-   * [Important Notice](installation.md#important-notice)
-3. [Setup](setup-steps.md)
-4. [Settings](settings.md)
-5. [Demo Installation](demo-setup.md)
+1. [FAQ](faq.en.md)
+2. [Installation](installation.en.md)
+   * [System Requirements](installation.en.md#system-requirements)
+   * [Important Notice](installation.en.md#important-notice)
+3. [Setup](setup-steps.en.md)
+4. [Settings](settings.en.md)
+5. [Demo Installation](demo-setup.en.md)
