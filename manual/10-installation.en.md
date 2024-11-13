@@ -1,7 +1,7 @@
 ---
 title: Installation
 ---
-# TopCONNECTOR Installation Guide
+# Installation
 
 ## Introduction
 
@@ -30,3 +30,34 @@ Therefore, we generally recommend:
 * At least 4 GB of free disk space
 * Shell access is required to start the import
 * Recommended: memory_limit > 512M
+
+
+## Setting up your "TopCONNECTOR" Step by Step
+
+1. Download "TopCONNECTOR" for free from the Shopware Community Store
+2. Please complete the ordering process by adding "TopCONNECTOR" to your cart and completing the checkout process
+3. Download "TopCONNECTOR" in the admin area of your Shopware shop under the "Purchases" menu item and then install the plugin under "My Plugins"
+4. In the next step, activate your "TopCONNECTOR"
+5. Finally, configure your "TopCONNECTOR" according to your preferences
+
+
+## Webservice Credentials
+After installing the plugin, you need to fill in API credentials to connect to TopData Webservice.
+
+Settings - System - Plugins - TopdataConnector menu (... on the right) - Config
+
+TopData provides you with:
+
+- API User-ID
+- API Key
+- API Salt
+
+### Demo Credentials
+
+If you want to test the plugin with demo credentials, you can use the following:
+
+- API User-ID: 6
+- API Key: nTI9kbsniVWT13Ns
+- API Salt: oateouq974fpby5t6ldf8glzo85mr9t6aebozrox
+
+

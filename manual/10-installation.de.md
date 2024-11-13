@@ -3,7 +3,7 @@ title: Installation
 ---
 
 
-# TopCONNECTOR Installation Guide
+# Installation
 
 ## Einführung
 
@@ -30,5 +30,35 @@ Wir empfehlen Ihnen daher grundsätzlich:
 * MySQL >= 5.7 (außer 8.0.20 und 8.0.21)
 * Möglichkeit Cronjobs einzurichten
 * Mindestens 4 GB freier Speicherplatz
-* Es wird ein Shell-Zugang benötigt um den Import zu starten
+* Es wird ein Shell-Zugang benötigt, um den Import zu starten
 * Empfohlen: memory_limit > 512M
+
+
+## Die Einrichtung Ihres "TopCONNECTOR" Schritt für Schritt
+
+1. Downloaden Sie "TopCONNECTOR" kostenlos im Shopware-Community Store
+2. Bitte führen Sie den Bestellvorgang durch in dem Sie "TopCONNECTOR" in den Warenkorb legen und den Bestellprozess an der Kasse abschliessen
+3. Laden Sie "TopCONNECTOR" im Adminbereich Ihres Shopware-Shops unter dem Menüpunkt "Einkäufe" und installieren Sie das Plugin anschließend unter dem Menüpunkt "Meine Plugins"
+4. Im nächsten Schritt aktivieren Sie Ihren "TopCONNECTOR"
+5. Abschließend konfigurieren Sie Ihren "TopCONNECTOR" ganz nach Wunsch
+
+
+
+## Webservice Zugangsdaten
+Nach der Installation des Plugins müssen Sie die API-Zugangsdaten eingeben, um eine Verbindung zum TopData Webservice herzustellen.
+
+Einstellungen - System - Plugins - TopdataConnector Menü (... auf der rechten Seite) - Konfiguration
+
+TopData stellt Ihnen folgende Daten zur Verfügung:
+
+- API Benutzer-ID
+- APISchlüssel
+- API Salt
+
+### Demo Zugangsdaten
+
+Wenn Sie das Plugin mit Demo-Zugangsdaten testen möchten, können Sie folgende Daten verwenden:
+
+- API Benutzer-ID: 6
+- API Schlüssel: nTI9kbsniVWT13Ns
+- API Salt: oateouq974fpby5t6ldf8glzo85mr9t6aebozrox

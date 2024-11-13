@@ -1,5 +1,6 @@
 ---
 title: Settings
+---
 
 # Settings of your "TopCONNECTOR"
 
