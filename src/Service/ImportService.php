@@ -10,7 +10,7 @@ use Symfony\Component\Console\Command\Command;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
-use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient108;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
@@ -87,7 +87,7 @@ class ImportService
     private function initializeWebserviceClient(): void
     {
         $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
-        $topdataWebserviceClient = new TopdataWebserviceClient(
+        $topdataWebserviceClient = new TopdataWebserviceClient108(
             $pluginConfig['apiBaseUrl'],
             $pluginConfig['apiUsername'],
             $pluginConfig['apiKey'],

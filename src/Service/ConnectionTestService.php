@@ -6,7 +6,7 @@ namespace Topdata\TopdataConnectorSW6\Service;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
-use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient108;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 
 /**
@@ -32,7 +32,7 @@ class ConnectionTestService
         }
 
         try {
-            $webservice = new TopdataWebserviceClient(
+            $webservice = new TopdataWebserviceClient108(
                 $config['apiBaseUrl'],
                 $config['apiUsername'],
                 $config['apiKey'],

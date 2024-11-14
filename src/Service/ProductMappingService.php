@@ -10,7 +10,7 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataFoundationSW6\Helper\CliStyle;
-use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient108;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
 
@@ -22,7 +22,7 @@ class ProductMappingService
     use CliStyleTrait;
 
     private Context $context;
-    private TopdataWebserviceClient $topdataWebserviceClient;
+    private TopdataWebserviceClient108 $topdataWebserviceClient;
 
 
     public function __construct(
@@ -637,7 +637,7 @@ class ProductMappingService
         return $query->execute()->fetchAllAssociative();
     }
 
-    public function setTopdataWebserviceClient(TopdataWebserviceClient $topdataWebserviceClient): void
+    public function setTopdataWebserviceClient(TopdataWebserviceClient108 $topdataWebserviceClient): void
     {
         $this->topdataWebserviceClient = $topdataWebserviceClient;
     }

@@ -20,7 +20,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
-use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient108;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
 use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
@@ -121,7 +121,7 @@ class MappingHelperService
      *      ]
      *  ]
      */
-    private TopdataWebserviceClient $topdataWebserviceClient;
+    private TopdataWebserviceClient108 $topdataWebserviceClient;
     private Context $context;
     private string $systemDefaultLocaleCode;
 
@@ -154,9 +154,9 @@ class MappingHelperService
     /**
      * Set the Topdata webservice client.
      *
-     * @param TopdataWebserviceClient $topDataApi The webservice client
+     * @param TopdataWebserviceClient108 $topDataApi The webservice client
      */
-    public function setTopdataWebserviceClient(TopdataWebserviceClient $topDataApi): void
+    public function setTopdataWebserviceClient(TopdataWebserviceClient108 $topDataApi): void
     {
         $this->topdataWebserviceClient = $topDataApi;
     }
