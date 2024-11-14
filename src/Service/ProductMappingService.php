@@ -37,6 +37,10 @@ class ProductMappingService
     }
 
     /**
+     * This is executed if --mapping option is set.
+     *
+     * FIXME: `TRUNCATE topdata_to_product` shoukd be solved in a better way
+     *
      * Maps products based on the mapping type specified in the options.
      *
      * This method performs the following steps:
@@ -45,43 +49,32 @@ class ProductMappingService
      * 3. Determines the mapping type from the options and calls the appropriate mapping method.
      * 4. Returns `true` if the mapping process completes successfully.
      * 5. Catches any exceptions, logs the error, and returns `false`.
-     *
-     * @return bool Returns `true` if the mapping process completes successfully, `false` otherwise.
      */
-    public function mapProducts(): bool
+    public function mapProducts(): void
     {
         $this->cliStyle->info('ProductMappingService::mapProducts() - using mapping type: ' . $this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE));
 
-        try {
-            $this->connection->executeStatement('
-                TRUNCATE TABLE topdata_to_product;
-            ');
-            switch ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE)) {
-                case MappingTypeConstants::PRODUCT_NUMBER_AS_WS_ID:
-                    $this->mapProductNumberAsWsId();
-                    break;
+        // FIXME: TRUNCATE topdata_to_product shoukd be solved in a better way (temp table? transaction?)
+        $this->connection->executeStatement('TRUNCATE TABLE topdata_to_product');
 
-                case MappingTypeConstants::DISTRIBUTOR_DEFAULT:
-                case MappingTypeConstants::DISTRIBUTOR_CUSTOM:
-                case MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD:
-                    $this->mapDistributor();
-                    break;
+        switch ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE)) {
+            case MappingTypeConstants::PRODUCT_NUMBER_AS_WS_ID:
+                $this->mapProductNumberAsWsId();
+                break;
 
-                case MappingTypeConstants::DEFAULT:
-                case MappingTypeConstants::CUSTOM:
-                case MappingTypeConstants::CUSTOM_FIELD:
-                default:
-                    $this->mapDefault();
-                    break;
-            }
+            case MappingTypeConstants::DISTRIBUTOR_DEFAULT:
+            case MappingTypeConstants::DISTRIBUTOR_CUSTOM:
+            case MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD:
+                $this->mapDistributor();
+                break;
 
-            return true;
-        } catch (\Exception $e) {
-            $this->logger->error($e->getMessage());
-            $this->progressLoggingService->writeln("\nException abgefangen: " . $e->getMessage() . '');
+            case MappingTypeConstants::DEFAULT:
+            case MappingTypeConstants::CUSTOM:
+            case MappingTypeConstants::CUSTOM_FIELD:
+            default:
+                $this->mapDefault();
+                break;
         }
-
-        return false;
     }
 
     /**
@@ -190,7 +183,7 @@ class ProductMappingService
 
             $this->progressLoggingService->activity("\ndistributor $i/$available_pages");
             $this->progressLoggingService->mem();
-            $this->progressLoggingService->writeln('');
+            $this->cliStyle->writeln('');
 
             if ($i >= $available_pages) {
                 break;
@@ -199,7 +192,7 @@ class ProductMappingService
         if (count($dataInsert) > 0) {
             $this->topdataToProductHelperService->insertMany($dataInsert);
         }
-        $this->progressLoggingService->writeln("\n" . $stored . ' - stored topdata products');
+        $this->cliStyle->writeln("\n" . $stored . ' - stored topdata products');
         unset($artnos);
     }
 
@@ -218,54 +211,7 @@ class ProductMappingService
     {
         $this->cliStyle->section('ProductMappingService::mapDefault()');
 
-        $oems = [];
-        $eans = [];
-        // Determine the mapping type and fetch the corresponding product data
-        if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::CUSTOM) {
-            if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
-                $oems = $this->fixArrayBinaryIds(
-                    $this->getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number')
-                );
-            }
-            if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN) != '') {
-                $eans = $this->fixArrayBinaryIds(
-                    $this->getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean')
-                );
-            }
-        } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::CUSTOM_FIELD) {
-            if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
-                $oems = $this->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number');
-            }
-            if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN) != '') {
-                $eans = $this->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean');
-            }
-        } else {
-            $oems = $this->fixArrayBinaryIds($this->getKeysBySuppliernumber());
-            $eans = $this->fixArrayBinaryIds($this->getKeysByEan());
-        }
-
-        // Map OEM numbers to product data
-        $oemMap = [];
-        foreach ($oems as $oem) {
-            $oem['manufacturer_number'] = strtolower(ltrim(trim($oem['manufacturer_number']), '0'));
-            $oemMap[(string)$oem['manufacturer_number']][$oem['id'] . '-' . $oem['version_id']] = [
-                'id'         => $oem['id'],
-                'version_id' => $oem['version_id'],
-            ];
-        }
-        unset($oems);
-
-        // Map EAN numbers to product data
-        $eanMap = [];
-        foreach ($eans as $ean) {
-            $ean['ean'] = preg_replace('/[^0-9]/', '', $ean['ean']);
-            $ean['ean'] = ltrim(trim($ean['ean']), '0');
-            $eanMap[(string)$ean['ean']][$ean['id'] . '-' . $ean['version_id']] = [
-                'id'         => $ean['id'],
-                'version_id' => $ean['version_id'],
-            ];
-        }
-        unset($eans);
+        [$oemMap, $eanMap] = $this->_buildMaps();
 
         $setted = [];
         // Process EAN mappings
@@ -296,16 +242,16 @@ class ProductMappingService
     private function _processEANs(array $eanMap, array &$setted): void
     {
         $dataInsert = [];
-        $this->progressLoggingService->writeln('fetching EANs from Webservice...');
+        $this->cliStyle->writeln('fetching EANs from Webservice...');
         $total = 0;
         for ($i = 1; ; $i++) {
-            $all_artnr = $this->topdataWebserviceClient->matchMyEANs(['page' => $i]);
-            $total += count($all_artnr->match);
-            if (!isset($all_artnr->page->available_pages)) {
+            $response = $this->topdataWebserviceClient->matchMyEANs(['page' => $i]);
+            $total += count($response->match);
+            if (!isset($response->page->available_pages)) {
                 throw new \Exception('ean webservice no pages');
             }
-            $available_pages = $all_artnr->page->available_pages;
-            foreach ($all_artnr->match as $prod) {
+            $available_pages = $response->page->available_pages;
+            foreach ($response->match as $prod) {
                 foreach ($prod->values as $ean) {
                     $ean = (string)$ean;
                     $ean = ltrim(trim($ean), '0');
@@ -329,13 +275,13 @@ class ProductMappingService
                     }
                 }
             }
-            $this->progressLoggingService->writeln('fetched EANs page ' . $i . '/' . $available_pages);
+            $this->cliStyle->writeln('fetched EANs page ' . $i . '/' . $available_pages);
             if ($i >= $available_pages) {
                 break;
             }
         }
         $this->topdataToProductHelperService->insertMany($dataInsert);
-        $this->progressLoggingService->writeln("DONE. fetched {$total} EANs from Webservice");
+        $this->cliStyle->writeln("DONE. fetched {$total} EANs from Webservice");
         ImportReport::setCounter('Fetched EANs', $total);
     }
 
@@ -350,7 +296,7 @@ class ProductMappingService
     private function _processOEMs(array $oemMap, array &$setted): void
     {
         $dataInsert = [];
-        $this->progressLoggingService->writeln('fetching OEMs from Webservice...');
+        $this->cliStyle->writeln('fetching OEMs from Webservice...');
         $total = 0;
         for ($i = 1; ; $i++) {
             $all_artnr = $this->topdataWebserviceClient->matchMyOems(['page' => $i]);
@@ -383,13 +329,13 @@ class ProductMappingService
                     }
                 }
             }
-            $this->progressLoggingService->writeln('fetched OEMs page ' . $i . '/' . $available_pages);
+            $this->cliStyle->writeln('fetched OEMs page ' . $i . '/' . $available_pages);
             if ($i >= $available_pages) {
                 break;
             }
         }
         $this->topdataToProductHelperService->insertMany($dataInsert);
-        $this->progressLoggingService->writeln("DONE. fetched {$total} OEMs from Webservice");
+        $this->cliStyle->writeln("DONE. fetched {$total} OEMs from Webservice");
         ImportReport::setCounter('Fetched OEMs', $total);
     }
 
@@ -436,13 +382,13 @@ class ProductMappingService
                     }
                 }
             }
-            $this->progressLoggingService->writeln('fetched PCDs page ' . $i . '/' . $available_pages);
+            $this->cliStyle->writeln('fetched PCDs page ' . $i . '/' . $available_pages);
             if ($i >= $available_pages) {
                 break;
             }
         }
         $this->topdataToProductHelperService->insertMany($dataInsert);
-        $this->progressLoggingService->writeln("DONE. fetched {$total} PCDs from Webservice");
+        $this->cliStyle->writeln("DONE. fetched {$total} PCDs from Webservice");
         ImportReport::setCounter('Fetched PCDs', $total);
     }
 
@@ -640,6 +586,71 @@ class ProductMappingService
     public function setTopdataWebserviceClient(TopdataWebserviceClient108 $topdataWebserviceClient): void
     {
         $this->topdataWebserviceClient = $topdataWebserviceClient;
+    }
+
+    /**
+     * Builds mapping arrays for OEM and EAN numbers
+     *
+     * Creates two mapping arrays based on the configured mapping type (custom, custom field, or default).
+     * Normalizes manufacturer numbers and EAN codes by removing leading zeros and formatting.
+     *
+     * @return array[] Returns an array containing two maps:
+     *                 [0] => array of OEM numbers mapped to product IDs and version IDs
+     *                 [1] => array of EAN numbers mapped to product IDs and version IDs
+     */
+    public function _buildMaps(): array
+    {
+        $oems = [];
+        $eans = [];
+
+        // ---- Fetch product data based on mapping type configuration
+        if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::CUSTOM) {
+            if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
+                $oems = $this->fixArrayBinaryIds(
+                    $this->getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number')
+                );
+            }
+            if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN) != '') {
+                $eans = $this->fixArrayBinaryIds(
+                    $this->getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean')
+                );
+            }
+        } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::CUSTOM_FIELD) {
+            if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
+                $oems = $this->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number');
+            }
+            if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN) != '') {
+                $eans = $this->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean');
+            }
+        } else {
+            $oems = $this->fixArrayBinaryIds($this->getKeysBySuppliernumber());
+            $eans = $this->fixArrayBinaryIds($this->getKeysByEan());
+        }
+
+        // ---- Build OEM number mapping
+        $oemMap = [];
+        foreach ($oems as $oem) {
+            $oem['manufacturer_number'] = strtolower(ltrim(trim($oem['manufacturer_number']), '0'));
+            $oemMap[(string)$oem['manufacturer_number']][$oem['id'] . '-' . $oem['version_id']] = [
+                'id'         => $oem['id'],
+                'version_id' => $oem['version_id'],
+            ];
+        }
+        unset($oems);
+
+        // ---- Build EAN number mapping
+        $eanMap = [];
+        foreach ($eans as $ean) {
+            $ean['ean'] = preg_replace('/[^0-9]/', '', $ean['ean']);
+            $ean['ean'] = ltrim(trim($ean['ean']), '0');
+            $eanMap[(string)$ean['ean']][$ean['id'] . '-' . $ean['version_id']] = [
+                'id'         => $ean['id'],
+                'version_id' => $ean['version_id'],
+            ];
+        }
+        unset($eans);
+
+        return [$oemMap, $eanMap];
     }
 
 }

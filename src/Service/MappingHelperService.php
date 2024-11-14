@@ -154,11 +154,12 @@ class MappingHelperService
     /**
      * Set the Topdata webservice client.
      *
-     * @param TopdataWebserviceClient108 $topDataApi The webservice client
+     * @param TopdataWebserviceClient108 $topdataWebserviceClient The webservice client
      */
-    public function setTopdataWebserviceClient(TopdataWebserviceClient108 $topDataApi): void
+    public function setTopdataWebserviceClient(TopdataWebserviceClient108 $topdataWebserviceClient): void
     {
-        $this->topdataWebserviceClient = $topDataApi;
+        $this->topdataWebserviceClient = $topdataWebserviceClient;
+        $this->productMappingService->setTopdataWebserviceClient($topdataWebserviceClient);
     }
 
 
@@ -248,16 +249,6 @@ class MappingHelperService
     }
 
     /**
-     * This is executed if --mapping option is set.
-     */
-    public function mapProducts(): bool
-    {
-        $this->productMappingService->setTopdataWebserviceClient($this->topdataWebserviceClient);
-
-        return $this->productMappingService->mapProducts();
-    }
-
-    /**
      * Sets the brands by fetching data from the remote server and updating the local database.
      *
      * This method retrieves brand data from the remote server, processes the data, and updates the local database
@@ -273,7 +264,7 @@ class MappingHelperService
             $this->cliStyle->section("\n\nBrands");
 
             // Log the start of the data fetching process
-            $this->progressLoggingService->writeln('Getting data from remote server...');
+            $this->cliStyle->writeln('Getting data from remote server...');
             $this->progressLoggingService->lap(true);
 
             // Fetch the brands from the remote server
@@ -359,7 +350,7 @@ class MappingHelperService
             }
 
             // Log the completion of the brands process
-            $this->progressLoggingService->writeln("\nBrands done " . $this->progressLoggingService->lap() . 'sec');
+            $this->cliStyle->writeln("\nBrands done " . $this->progressLoggingService->lap() . 'sec');
             $topdataBrandRepository = null;
             $duplicates = null;
             $brands = null;
@@ -368,7 +359,7 @@ class MappingHelperService
         } catch (\Exception $e) {
             // Log any exceptions that occur
             $this->logger->error($e->getMessage());
-            $this->progressLoggingService->writeln('Exception abgefangen: ' . $e->getMessage());
+            $this->cliStyle->writeln('Exception abgefangen: ' . $e->getMessage());
         }
 
         return false;
@@ -378,7 +369,7 @@ class MappingHelperService
     {
         try {
             $this->cliStyle->section("\n\nSeries");
-            $this->progressLoggingService->writeln('Getting data from remote server...');
+            $this->cliStyle->writeln('Getting data from remote server...');
             $this->progressLoggingService->lap(true);
             $series = $this->topdataWebserviceClient->getModelSeriesByBrandId();
             $this->progressLoggingService->activity('Got ' . count($series->data) . " records from remote server\n");
@@ -453,14 +444,14 @@ class MappingHelperService
                 $topdataSeriesRepository->update($dataUpdate, $this->context);
                 $this->progressLoggingService->activity();
             }
-            $this->progressLoggingService->writeln("\nSeries done " . $this->progressLoggingService->lap() . 'sec');
+            $this->cliStyle->writeln("\nSeries done " . $this->progressLoggingService->lap() . 'sec');
             $series = null;
             $topdataSeriesRepository = null;
 
             return true;
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
-            $this->progressLoggingService->writeln('Exception abgefangen: ' . $e->getMessage());
+            $this->cliStyle->writeln('Exception abgefangen: ' . $e->getMessage());
         }
 
         return false;
@@ -482,7 +473,7 @@ class MappingHelperService
             $this->cliStyle->section("\n\nDevice type");
 
             // Log the activity of getting data from the remote server
-            $this->progressLoggingService->writeln('Getting data from remote server...');
+            $this->cliStyle->writeln('Getting data from remote server...');
             $this->progressLoggingService->lap(true);
 
             // Fetch device types from the remote server
@@ -580,13 +571,13 @@ class MappingHelperService
             $types = null;
 
             // Log the completion of the device type processing
-            $this->progressLoggingService->writeln("\nDeviceType done " . $this->progressLoggingService->lap() . 'sec');
+            $this->cliStyle->writeln("\nDeviceType done " . $this->progressLoggingService->lap() . 'sec');
 
             return true;
         } catch (\Exception $e) {
             // Log any exceptions that occur during the process
             $this->logger->error($e->getMessage());
-            $this->progressLoggingService->writeln("\n" . 'Exception occured: ' . $e->getMessage() . '');
+            $this->cliStyle->writeln("\n" . 'Exception occured: ' . $e->getMessage() . '');
         }
 
         return false;
@@ -608,9 +599,9 @@ class MappingHelperService
             $SQLlogger = $this->connection->getConfiguration()->getSQLLogger();
             $this->connection->getConfiguration()->setSQLLogger(null);
             $this->cliStyle->section('Devices');
-            $this->progressLoggingService->writeln("Devices begin (Chunk size is $limit devices)");
+            $this->cliStyle->writeln("Devices begin (Chunk size is $limit devices)");
             $this->progressLoggingService->mem();
-            $this->progressLoggingService->writeln('');
+            $this->cliStyle->writeln('');
             $functionTimeStart = microtime(true);
             $chunkNumber = 0;
             if ((int)$this->optionsHelperService->getOption(OptionConstants::START)) {
@@ -822,7 +813,7 @@ class MappingHelperService
 
             $models = null;
             $duplicates = null;
-            $this->progressLoggingService->writeln('');
+            $this->cliStyle->writeln('');
             $totalSecs = microtime(true) - $functionTimeStart;
 
             $this->cliStyle->dumpDict([
@@ -859,7 +850,7 @@ class MappingHelperService
     public function setDeviceMedia(): bool
     {
         // Log the start of the device media process
-        $this->progressLoggingService->writeln('Devices Media start');
+        $this->cliStyle->writeln('Devices Media start');
         $this->brandWsArray = null;
         try {
             $topdataDeviceRepository = $this->topdataDeviceRepository; // TODO: remove this
@@ -872,7 +863,7 @@ class MappingHelperService
             $availablePrintersCount = count($available_Printers);
             $processedPrintarsCount = 0;
             $limit = 5000;
-            $this->progressLoggingService->writeln("Chunk size is $limit devices");
+            $this->cliStyle->writeln("Chunk size is $limit devices");
             $start = 0;
             $chunkNumber = 0;
             if ((int)$this->optionsHelperService->getOption(OptionConstants::START)) {
@@ -890,7 +881,7 @@ class MappingHelperService
                 $models = $this->topdataWebserviceClient->getModels($limit, $start);
                 $this->progressLoggingService->activity($this->progressLoggingService->lap() . 'sec. ');
                 $this->progressLoggingService->mem();
-                $this->progressLoggingService->writeln('');
+                $this->cliStyle->writeln('');
                 if (!isset($models->data) || count($models->data) == 0) {
                     break;
                 }
@@ -972,10 +963,10 @@ class MappingHelperService
                         }
                     } catch (\Exception $e) {
                         $this->logger->error($e->getMessage());
-                        $this->progressLoggingService->writeln('Exception: ' . $e->getMessage());
+                        $this->cliStyle->writeln('Exception: ' . $e->getMessage());
                     }
                 }
-                $this->progressLoggingService->writeln("processed $processedPrintarsCount of $availablePrintersCount devices " . $this->progressLoggingService->lap() . 'sec. ');
+                $this->cliStyle->writeln("processed $processedPrintarsCount of $availablePrintersCount devices " . $this->progressLoggingService->lap() . 'sec. ');
                 $start += $limit;
                 if (count($models->data) < $limit) {
                     $repeat = false;
@@ -983,13 +974,13 @@ class MappingHelperService
                 }
             }
 
-            $this->progressLoggingService->writeln('');
-            $this->progressLoggingService->writeln('Devices Media done');
+            $this->cliStyle->writeln('');
+            $this->cliStyle->writeln('Devices Media done');
 
             return true;
         } catch (\Exception $e) {
             $this->logger->error($e->getMessage());
-            $this->progressLoggingService->writeln('Exception: ' . $e->getMessage());
+            $this->cliStyle->writeln('Exception: ' . $e->getMessage());
         }
 
         return false;
@@ -1193,7 +1184,7 @@ class MappingHelperService
             }
             $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
             //            $this->connection->commit();
-            $this->progressLoggingService->writeln('Devices to products linking done.');
+            $this->cliStyle->writeln('Devices to products linking done.');
 
             return true;
         } catch (\Exception $e) {
@@ -1368,7 +1359,7 @@ class MappingHelperService
                         }
                     } catch (\Exception $e) {
                         $this->logger->error($e->getMessage());
-                        $this->progressLoggingService->writeln('Exception: ' . $e->getMessage());
+                        $this->cliStyle->writeln('Exception: ' . $e->getMessage());
                     }
                 }
                 if (count($media)) {
@@ -1769,7 +1760,7 @@ class MappingHelperService
             $this->progressLoggingService->activity(' ' . $this->progressLoggingService->lap() . "sec\n");
         }
 
-        $this->progressLoggingService->activity("\nProduct information done!", true);
+        $this->cliStyle->writeln("\nProduct information done!");
 
         return true;
     }
@@ -2220,7 +2211,7 @@ class MappingHelperService
         $chunks = array_chunk($availableDevices, $chunkSize, true);
         $this->progressLoggingService->lap(true);
 
-        //        $this->progressLoggingService->activity(print_r([$topids[0], $topids[1]], true), true);
+        //        $this->cliStyle->writeln(print_r([$topids[0], $topids[1]], true));
         //        return true;
 
         foreach ($chunks as $k => $prs) {
@@ -2284,7 +2275,7 @@ class MappingHelperService
             }
             $this->progressLoggingService->activity($this->progressLoggingService->lap() . 'sec ');
             $this->progressLoggingService->mem();
-            $this->progressLoggingService->writeln('');
+            $this->cliStyle->writeln('');
         }
 
         return true;
@@ -2563,7 +2554,7 @@ SQL;
 
     public function setProductColorCapacityVariants(): bool
     {
-        $this->progressLoggingService->writeln("\nBegin generating variated products based on color and capacity information (Import variants with other colors, Import variants with other capacities should be enabled in TopFeed plugin, product information should be already imported)");
+        $this->cliStyle->writeln("\nBegin generating variated products based on color and capacity information (Import variants with other colors, Import variants with other capacities should be enabled in TopFeed plugin, product information should be already imported)");
         $groups = [];
         $this->progressLoggingService->lap(true);
         $groups = $this->collectColorVariants($groups);
@@ -2571,7 +2562,7 @@ SQL;
         $groups = $this->collectCapacityVariants($groups);
         //        echo "\nColor+capacity groups:".count($groups)."\n";
         $groups = $this->mergeIntersectedGroups($groups);
-        $this->progressLoggingService->activity('Found ' . count($groups) . ' groups to generate variated products', true);
+        $this->cliStyle->writeln('Found ' . count($groups) . ' groups to generate variated products');
 
         $invalidProd = true;
         for ($i = 0; $i < count($groups); $i++) {
@@ -2602,7 +2593,7 @@ SQL;
                     $product = $products->get($productId);
                     if (!$product) {
                         $invalidProd = true;
-                        $this->progressLoggingService->writeln("\nProduct id=$productId not found!");
+                        $this->cliStyle->writeln("\nProduct id=$productId not found!");
                         break;
                     }
 
@@ -2612,13 +2603,13 @@ SQL;
                         }
                         if ($parentId != $product->getParentId()) {
                             $invalidProd = true;
-                            $this->progressLoggingService->writeln("\nMany parent products error (last checked product id=$productId)!");
+                            $this->cliStyle->writeln("\nMany parent products error (last checked product id=$productId)!");
                             break;
                         }
                     }
 
                     if ($product->getChildCount() > 0) {
-                        $this->progressLoggingService->writeln("\nProduct id=$productId has childs!");
+                        $this->cliStyle->writeln("\nProduct id=$productId has childs!");
                         $invalidProd = true;
                         break;
                     }
@@ -2652,7 +2643,7 @@ SQL;
                         $prodOptions['skip'] = (bool)($product->getParentId());
                         $groups[$i]['options'][$productId] = $prodOptions;
                     } else {
-                        $this->progressLoggingService->writeln("\nProduct id=$productId has no valid properties!");
+                        $this->cliStyle->writeln("\nProduct id=$productId has no valid properties!");
                         $invalidProd = true;
                         break;
                     }
@@ -2672,18 +2663,18 @@ SQL;
 
             if ($invalidProd) {
                 $this->progressLoggingService->activity('Variated product for group will be skip, product ids: ');
-                $this->progressLoggingService->activity(implode(', ', $groups[$i]['ids']), true);
+                $this->cliStyle->writeln(implode(', ', $groups[$i]['ids']));
             }
 
             if ($groups[$i]['referenceProduct'] && !$invalidProd) {
                 $this->createVariatedProduct($groups[$i], $parentId);
             }
-            $this->progressLoggingService->activity('done', true);
+            $this->cliStyle->writeln('done');
         }
 
         $this->progressLoggingService->activity($this->progressLoggingService->lap() . 'sec ');
         $this->progressLoggingService->mem();
-        $this->progressLoggingService->writeln('Generating variated products done');
+        $this->cliStyle->writeln('Generating variated products done');
 
         return true;
     }

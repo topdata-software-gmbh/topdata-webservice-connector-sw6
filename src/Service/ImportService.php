@@ -38,12 +38,13 @@ class ImportService
 
 
     public function __construct(
-        private readonly SystemConfigService  $systemConfigService,
-        private readonly LoggerInterface      $logger,
-        private readonly MappingHelperService $mappingHelperService,
-        private readonly ConfigCheckerService $configCheckerService,
-        private readonly OptionsHelperService $optionsHelperService,
-        private readonly PluginHelperService  $pluginHelperService
+        private readonly SystemConfigService   $systemConfigService,
+        private readonly LoggerInterface       $logger,
+        private readonly MappingHelperService  $mappingHelperService,
+        private readonly ConfigCheckerService  $configCheckerService,
+        private readonly OptionsHelperService  $optionsHelperService,
+        private readonly PluginHelperService   $pluginHelperService,
+        private readonly ProductMappingService $productMappingService
     )
     {
     }
@@ -71,8 +72,8 @@ class ImportService
         $this->initializeWebserviceClient();
 
         // Execute import operations based on options
-        if ($result = $this->executeImportOperations($cliOptionsDto)) {
-            return $result;
+        if ($errorCode = $this->executeImportOperations($cliOptionsDto)) {
+            return $errorCode;
         }
 
         // Dump report
@@ -121,11 +122,7 @@ class ImportService
         // Mapping
         if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceMapping()) {
             $this->cliStyle->section('Mapping Products');
-            if (!$this->mappingHelperService->mapProducts()) {
-                $this->cliStyle->error('Mapping failed!');
-
-                return self::ERROR_CODE_MAPPING_PRODUCTS_FAILED;
-            }
+            $this->productMappingService->mapProducts();
         }
 
         // Device operations

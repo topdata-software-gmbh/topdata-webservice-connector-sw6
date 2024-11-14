@@ -3,6 +3,7 @@
 namespace Topdata\TopdataConnectorSW6\Helper;
 
 use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
+use TopdataSoftwareGmbH\Util\UtilDebug;
 
 /**
  * 11/2024 created (extracted from TopdataWebserviceClient)
@@ -61,12 +62,14 @@ class CurlHttpClient
 
         // ---- Clean up and process response
         curl_close($ch);
-        $json = json_decode($output);
-        if (isset($json->error)) {
-            throw new \Exception($json->error[0]->error_message . ' @topdataconnector webservice error');
+        $ret = json_decode($output);
+        if (isset($ret->error)) {
+            throw new \Exception($ret->error[0]->error_message . ' @topdataconnector webservice error');
         }
 
-        return $json;
+        // UtilDebug::d($ret);
+
+        return $ret;
     }
 
 }

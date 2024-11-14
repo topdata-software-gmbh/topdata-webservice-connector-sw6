@@ -55,11 +55,4 @@ class ProgressLoggingService
         return (string)round($lapTime, 3);
     }
 
-    /**
-     * 10/2024 created.
-     */
-    public function writeln(string $string): void
-    {
-        $this->cliStyle->writeln($string);
-    }
 }
