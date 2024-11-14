@@ -11,7 +11,15 @@ class CurlHttpClient
 {
     const CURL_TIMEOUT = 30;  // seconds
 
+    public function __construct()
+    {
+        $this->beVerboseOnCli();
+    }
+
     use CliStyleTrait;
+
+
+
 
     /**
      * Performs a cURL request to the specified URL and returns the JSON response
@@ -26,7 +34,8 @@ class CurlHttpClient
     public function get(string $url, $xml_data = null, $attempt = 1)
     {
         // ---- Initialize cURL request
-        $this->cliStyle->writeln("fetching $url");
+        $this->cliStyle->writeln("<gray>$url</gray>");
+
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, self::CURL_TIMEOUT);
