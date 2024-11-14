@@ -67,7 +67,8 @@ class CurlHttpClient
             throw new \Exception($ret->error[0]->error_message . ' @topdataconnector webservice error');
         }
 
-        // UtilDebug::d($ret);
+
+        $this->cliStyle->writeln('<gray>' . substr($output, 0, 180) . '...</gray>');
 
         return $ret;
     }
