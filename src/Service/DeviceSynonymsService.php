@@ -16,6 +16,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
+use Topdata\TopdataConnectorSW6\Constants\FilterTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
@@ -66,10 +67,10 @@ class DeviceSynonymsService
                 break;
             }
 
-            $this->progressLoggingService->activity('Getting data from remote server part ' . ($k + 1) . '/' . count($chunks) . '...');
+            $this->progressLoggingService->activity('xxx1 - Getting data from remote server part ' . ($k + 1) . '/' . count($chunks) . '...');
             $devices = $this->topdataWebserviceClient->myProductList([
                 'products' => implode(',', array_keys($prs)),
-                'filter'   => 'all',
+                'filter'   => FilterTypeConstants::all,
             ]);
             $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
 

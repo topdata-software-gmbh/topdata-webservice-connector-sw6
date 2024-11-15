@@ -22,6 +22,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
 use Topdata\TopdataConnectorSW6\Constants\CrossSellingTypeConstant;
+use Topdata\TopdataConnectorSW6\Constants\FilterTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
@@ -1068,12 +1069,12 @@ class MappingHelperService
             $enabledSeries = [];
             $enabledTypes = [];
 
-            $topids = array_chunk(array_keys($topidProducts), 100);
-            foreach ($topids as $k => $prs) {
-                $this->progressLoggingService->activity("\nGetting data from remote server part " . ($k + 1) . '/' . count($topids) . '...');
+            $topidsChunked = array_chunk(array_keys($topidProducts), 100);
+            foreach ($topidsChunked as $idxChunk => $productIds) {
+                $this->cliStyle->writeln("Getting data from remote server part " . ($idxChunk + 1) . '/' . count($topidsChunked) . '...');
                 $products = $this->topdataWebserviceClient->myProductList([
-                    'products' => implode(',', $prs),
-                    'filter'   => 'product_application_in',
+                    'products' => implode(',', $productIds),
+                    'filter'   => FilterTypeConstants::product_application_in,
                 ]);
                 $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
 
@@ -1081,7 +1082,7 @@ class MappingHelperService
                     throw new Exception($products->error[0]->error_message . 'webservice no pages');
                 }
                 $this->progressLoggingService->mem();
-                $this->progressLoggingService->activity("\nProcessing data...");
+                $this->progressLoggingService->activity("\nProcessing data of " . count($products->products) . " products ...");
                 $deviceWS = [];
                 foreach ($products->products as $product) {
                     if (!isset($topidProducts[$product->products_id])) {
@@ -1476,9 +1477,6 @@ class MappingHelperService
     }
 
 
-
-
-
     /**
      * Updates product information or media by fetching data from a remote server and updating the local database.
      *
@@ -1518,12 +1516,12 @@ class MappingHelperService
                 break;
             }
 
-            $this->progressLoggingService->activity('Getting data from remote server part ' . ($k + 1) . '/' . count($topids) . ' (' . count($prs) . ' products)...');
+            $this->progressLoggingService->activity('xxx3 - Getting data from remote server part ' . ($k + 1) . '/' . count($topids) . ' (' . count($prs) . ' products)...');
 
             // Fetch product data from the webservice
             $products = $this->topdataWebserviceClient->myProductList([
                 'products' => implode(',', $prs),
-                'filter'   => 'all',
+                'filter'   => FilterTypeConstants::all,
             ]);
             $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
 
@@ -1689,8 +1687,6 @@ class MappingHelperService
     }
 
 
-
-
     private function filterIdsByConfig(string $optionName, array $productIds): array
     {
         $returnIds = [];
@@ -1765,8 +1761,6 @@ class MappingHelperService
 
         return mb_substr(implode(' ', array_unique($result)), 0, 250);
     }
-
-
 
 
     private function capacityNames(): array
