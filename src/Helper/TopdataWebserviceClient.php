@@ -12,7 +12,7 @@ use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
 /**
  * A simple http client for the topdata webservice.
  */
-class TopdataWebserviceClient108
+class TopdataWebserviceClient
 {
     use CliStyleTrait;
 

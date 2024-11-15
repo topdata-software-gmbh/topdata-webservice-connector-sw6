@@ -22,7 +22,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
-use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient108;
+use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
 use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
@@ -36,6 +36,52 @@ use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
  * It handles various operations such as product mapping, device synchronization, and cross-selling setup.
  *
  * TODO: This class is quite large and should be refactored into smaller, more focused classes.
+ * this class is quite large and has multiple responsibilities. Here are several suggestions for extracting functionality into separate classes:
+ *
+ * 1 ProductVariantService
+ *
+ * • Extract all variant-related methods like setProductColorCapacityVariants(), createVariatedProduct(), collectColorVariants(), collectCapacityVariants()
+ * • This would handle all logic related to product variants and their creation
+ *
+ * 2 ProductCrossSellingService
+ *
+ * • Extract cross-selling related methods like addProductCrossSelling(), getCrossName(), getCrossTypes()
+ * • Would handle all cross-selling functionality
+ *
+ * 3 ProductImportSettingsService
+ *
+ * • Extract _loadProductImportSettings(), getProductOption(), _getProductExtraOption()
+ * • Would handle all product import configuration and settings
+ *
+ * 4 DeviceSynonymService
+ *
+ * • Extract setDeviceSynonyms() and related functionality
+ * • Would handle all device synonym operations
+ *
+ * 5 ProductMediaService
+ *
+ * • Extract media-related functionality from prepareProduct() and setProductInformation()
+ * • Would handle all product media operations
+ *
+ * 6 ProductPropertyService
+ *
+ * • Extract property-related functionality from prepareProduct()
+ * • Would handle all product property operations
+ *
+ * 8 ProductLinkingService
+ *
+ * • Extract linkProducts() and related methods like findRelatedProducts(), findBundledProducts(), etc.
+ * • Would handle all product linking operations
+ *
+ * The main MappingHelperService would then orchestrate these services and maintain only the core mapping logic between Topdata and Shopware 6.
+ *
+ * This separation would:
+ *
+ * • Make the code more maintainable
+ * • Make testing easier
+ * • Follow the Single Responsibility Principle better
+ * • Make the code more reusable
+ * • Reduce the complexity of the main service
  *
  * 04/2024 Renamed from MappingHelper to MappingHelperService
  */
@@ -124,7 +170,7 @@ class MappingHelperService
      *      ]
      *  ]
      */
-    private TopdataWebserviceClient108 $topdataWebserviceClient;
+    private TopdataWebserviceClient $topdataWebserviceClient;
     private Context $context;
     private string $systemDefaultLocaleCode;
 
@@ -147,6 +193,7 @@ class MappingHelperService
         private readonly ManufacturerService           $manufacturerService,
         private readonly TopdataToProductHelperService $topdataToProductHelperService,
         private readonly MediaHelperService            $mediaHelperService,
+        private readonly TopdataDeviceService          $topdataDeviceService,
     )
     {
         $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();
@@ -157,9 +204,9 @@ class MappingHelperService
     /**
      * Set the Topdata webservice client.
      *
-     * @param TopdataWebserviceClient108 $topdataWebserviceClient The webservice client
+     * @param TopdataWebserviceClient $topdataWebserviceClient The webservice client
      */
-    public function setTopdataWebserviceClient(TopdataWebserviceClient108 $topdataWebserviceClient): void
+    public function setTopdataWebserviceClient(TopdataWebserviceClient $topdataWebserviceClient): void
     {
         $this->topdataWebserviceClient = $topdataWebserviceClient;
         $this->productMappingService->setTopdataWebserviceClient($topdataWebserviceClient);
@@ -228,16 +275,6 @@ class MappingHelperService
     //        return $returnArray;
     //    }
 
-
-    private function _getEnabledDevices(): array
-    {
-        $query = $this->connection->createQueryBuilder();
-        $query->select(['*'])
-            ->from('topdata_device')
-            ->where('is_enabled = 1');
-
-        return $query->execute()->fetchAllAssociative();
-    }
 
     private function getTopdataCategory()
     {
@@ -860,7 +897,7 @@ class MappingHelperService
 
             // Fetch enabled devices
             $available_Printers = [];
-            foreach ($this->_getEnabledDevices() as $pr) {
+            foreach ($this->topdataDeviceService->_getEnabledDevices() as $pr) {
                 $available_Printers[$pr['ws_id']] = true;
             }
             $availablePrintersCount = count($available_Printers);
@@ -2191,89 +2228,6 @@ class MappingHelperService
         return mb_substr(implode(' ', array_unique($result)), 0, 250);
     }
 
-    public function setDeviceSynonyms(): bool
-    {
-        $this->cliStyle->section("\n\nDevice synonyms");
-        $availableDevices = [];
-        foreach ($this->_getEnabledDevices() as $pr) {
-            $availableDevices[$pr['ws_id']] = bin2hex($pr['id']);
-        }
-        $chunkSize = 50;
-
-        $chunks = array_chunk($availableDevices, $chunkSize, true);
-        $this->progressLoggingService->lap(true);
-
-        //        $this->cliStyle->writeln(print_r([$topids[0], $topids[1]], true));
-        //        return true;
-
-        foreach ($chunks as $k => $prs) {
-            if ($this->optionsHelperService->getOption(OptionConstants::START) && ($k + 1 < $this->optionsHelperService->getOption(OptionConstants::START))) {
-                continue;
-            }
-
-            if ($this->optionsHelperService->getOption(OptionConstants::END) && ($k + 1 > $this->optionsHelperService->getOption(OptionConstants::END))) {
-                break;
-            }
-
-            $this->progressLoggingService->activity('Getting data from remote server part ' . ($k + 1) . '/' . count($chunks) . '...');
-            $devices = $this->topdataWebserviceClient->myProductList([
-                'products' => implode(',', array_keys($prs)),
-                'filter'   => 'all',
-            ]);
-            $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
-
-            if (!isset($devices->page->available_pages)) {
-                throw new Exception($devices->error[0]->error_message . ' webservice no pages');
-            }
-            //            $this->progressLoggingService->mem();
-            $this->progressLoggingService->activity("\nProcessing data...");
-
-            $this->connection->executeStatement('DELETE FROM topdata_device_to_synonym WHERE device_id IN (0x' . implode(', 0x', $prs) . ')');
-
-            $variantsMap = [];
-            foreach ($devices->products as $product) {
-                if (isset($product->product_variants->products)) {
-                    foreach ($product->product_variants->products as $variant) {
-                        if (($variant->type == 'synonym')
-                            && isset($prs[$product->products_id])
-                            && isset($availableDevices[$variant->id])
-                        ) {
-                            $prodId = $prs[$product->products_id];
-                            if (!isset($variantsMap[$prodId])) {
-                                $variantsMap[$prodId] = [];
-                            }
-                            $variantsMap[$prodId][] = $availableDevices[$variant->id];
-                        }
-                    }
-                }
-            }
-
-            $dateTime = date('Y-m-d H:i:s');
-            $dataInsert = [];
-            foreach ($variantsMap as $deviceId => $synonymIds) {
-                foreach ($synonymIds as $synonymId) {
-                    $dataInsert[] = "(0x{$deviceId}, 0x{$synonymId}, '$dateTime')";
-                }
-            }
-
-            if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, 50);
-                foreach ($insertDataChunks as $dataChunk) {
-                    $this->connection->executeStatement(
-                        'INSERT INTO topdata_device_to_synonym (device_id, synonym_id, created_at) VALUES ' . implode(',', $dataChunk)
-                    );
-                    $this->progressLoggingService->activity();
-                }
-            }
-            $this->progressLoggingService->activity($this->progressLoggingService->lap() . 'sec ');
-            $this->progressLoggingService->mem();
-            $this->cliStyle->writeln('');
-        }
-
-        return true;
-    }
-
-
 
     public static function getCrossTypes(): array
     {
@@ -2839,7 +2793,6 @@ SQL;
             }
         }
     }
-
 
 
 }

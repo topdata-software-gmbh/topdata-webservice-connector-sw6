@@ -10,7 +10,7 @@ use Symfony\Component\Console\Command\Command;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
-use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient108;
+use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
@@ -44,7 +44,8 @@ class ImportService
         private readonly ConfigCheckerService  $configCheckerService,
         private readonly OptionsHelperService  $optionsHelperService,
         private readonly PluginHelperService   $pluginHelperService,
-        private readonly ProductMappingService $productMappingService
+        private readonly ProductMappingService $productMappingService,
+        private readonly DeviceSynonymsService $deviceSynonymsService,
     )
     {
     }
@@ -69,7 +70,7 @@ class ImportService
         $this->cliStyle->dumpDict($cliOptionsDto->toDict(), 'CLI Options DTO');
 
         // Init webservice client
-        $this->initializeWebserviceClient();
+        $this->initializeTopdataWebserviceClient();
 
         // Execute import operations based on options
         if ($errorCode = $this->executeImportOperations($cliOptionsDto)) {
@@ -85,10 +86,10 @@ class ImportService
     /**
      * Initializes the webservice client with the plugin configuration.
      */
-    private function initializeWebserviceClient(): void
+    private function initializeTopdataWebserviceClient(): void
     {
         $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
-        $topdataWebserviceClient = new TopdataWebserviceClient108(
+        $topdataWebserviceClient = new TopdataWebserviceClient(
             $pluginConfig['apiBaseUrl'],
             $pluginConfig['apiUsername'],
             $pluginConfig['apiKey'],
@@ -97,20 +98,7 @@ class ImportService
         );
         $this->mappingHelperService->setTopdataWebserviceClient($topdataWebserviceClient);
 
-        $configDefaults = [
-            'attributeOem'         => '',
-            'attributeEan'         => '',
-            'attributeOrdernumber' => '',
-        ];
-
-        $pluginConfig = array_merge($configDefaults, $pluginConfig);
-
-        $this->optionsHelperService->setOptions([
-            OptionConstants::MAPPING_TYPE          => $pluginConfig['mappingType'],
-            OptionConstants::ATTRIBUTE_OEM         => $pluginConfig['attributeOem'],
-            OptionConstants::ATTRIBUTE_EAN         => $pluginConfig['attributeEan'],
-            OptionConstants::ATTRIBUTE_ORDERNUMBER => $pluginConfig['attributeOrdernumber'],
-        ]);
+        $this->_initOptions();
     }
 
     /**
@@ -203,7 +191,7 @@ class ImportService
         // Device synonyms
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceSynonyms()) {
             $this->cliStyle->blue('--all || --device-synonyms');
-            if (!$this->mappingHelperService->setDeviceSynonyms()) {
+            if (!$this->deviceSynonymsService->setDeviceSynonyms()) {
                 $this->cliStyle->error('Set device synonyms failed!');
 
                 return self::ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED;
@@ -274,5 +262,24 @@ class ImportService
         }
 
         return null;
+    }
+
+    public function _initOptions(): void
+    {
+        $configDefaults = [
+            'attributeOem'         => '',
+            'attributeEan'         => '',
+            'attributeOrdernumber' => '',
+        ];
+
+        $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
+        $pluginConfig = array_merge($configDefaults, $pluginConfig);
+
+        $this->optionsHelperService->setOptions([
+            OptionConstants::MAPPING_TYPE          => $pluginConfig['mappingType'],
+            OptionConstants::ATTRIBUTE_OEM         => $pluginConfig['attributeOem'],
+            OptionConstants::ATTRIBUTE_EAN         => $pluginConfig['attributeEan'],
+            OptionConstants::ATTRIBUTE_ORDERNUMBER => $pluginConfig['attributeOrdernumber'],
+        ]);
     }
 }

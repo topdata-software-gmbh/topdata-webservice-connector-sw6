@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
-use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient108;
+use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
 use Topdata\TopdataConnectorSW6\Service\TopdataBrandService;
 
@@ -52,7 +52,7 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
         }
 
         try {
-            $webservice = new TopdataWebserviceClient108(
+            $webservice = new TopdataWebserviceClient(
                 $config['apiBaseUrl'],
                 $config['apiUsername'],
                 $config['apiKey'],
