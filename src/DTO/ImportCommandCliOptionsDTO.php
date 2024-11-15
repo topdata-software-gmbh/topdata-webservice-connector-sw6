@@ -14,94 +14,94 @@ use Symfony\Component\Console\Input\InputInterface;
  */
 class ImportCommandCliOptionsDTO
 {
-    private bool $isServiceAll;
-    private bool $isServiceMapping;
-    private bool $isServiceDevice;
-    private bool $isServiceDeviceOnly;
-    private bool $isServiceDeviceMedia;
-    private bool $isServiceDeviceSynonyms;
-    private bool $isServiceProduct;
-    private bool $isServiceProductInformation;
-    private bool $isServiceProductMediaOnly; // --product-media-only
-    private bool $isProductVariations;
+    private bool $optionAll; // --all
+    private bool $optionMapping; // --mapping
+    private bool $optionDevice; // --device
+    private bool $optionDeviceOnly; // --device-only
+    private bool $optionDeviceMedia; // --device-media
+    private bool $optionDeviceSynonyms; // --device-synonyms
+    private bool $optionProduct; // --product
+    private bool $optionProductInformation; // --product-information
+    private bool $optionProductMediaOnly; // --product-media-only
+    private bool $optionProductVariations; // --product-variated
 
     public function __construct(InputInterface $input)
     {
-        $this->isServiceAll                = (bool) $input->getOption('all'); // full update with webservice
-        $this->isServiceMapping            = (bool) $input->getOption('mapping'); // Mapping all existing products to webservice
-        $this->isServiceDevice             = (bool) $input->getOption('device'); // add devices from webservice
-        $this->isServiceDeviceOnly         = (bool) $input->getOption('device-only'); // add devices from webservice (no brands/series/types are fetched)
-        $this->isServiceDeviceMedia        = (bool) $input->getOption('device-media'); // update device media data
-        $this->isServiceDeviceSynonyms     = (bool) $input->getOption('device-synonyms'); // link active devices to synonyms
-        $this->isServiceProduct            = (bool) $input->getOption('product'); // link devices to products on the store
-        $this->isServiceProductInformation = (bool) $input->getOption('product-info'); // update product information from webservice (TopFeed plugin needed)
-        $this->isServiceProductMediaOnly   = (bool) $input->getOption('product-media-only'); // update only product media from webservice (TopFeed plugin needed)
-        $this->isProductVariations         = (bool) $input->getOption('product-variated'); // Generate variated products based on color and capacity information
+        $this->optionAll = (bool)$input->getOption('all'); // full update with webservice
+        $this->optionMapping = (bool)$input->getOption('mapping'); // Mapping all existing products to webservice
+        $this->optionDevice = (bool)$input->getOption('device'); // add devices from webservice
+        $this->optionDeviceOnly = (bool)$input->getOption('device-only'); // add devices from webservice (no brands/series/types are fetched)
+        $this->optionDeviceMedia = (bool)$input->getOption('device-media'); // update device media data
+        $this->optionDeviceSynonyms = (bool)$input->getOption('device-synonyms'); // link active devices to synonyms
+        $this->optionProduct = (bool)$input->getOption('product'); // link devices to products on the store
+        $this->optionProductInformation = (bool)$input->getOption('product-info'); // update product information from webservice (TopFeed plugin needed)
+        $this->optionProductMediaOnly = (bool)$input->getOption('product-media-only'); // update only product media from webservice (TopFeed plugin needed)
+        $this->optionProductVariations = (bool)$input->getOption('product-variated'); // Generate variated products based on color and capacity information
     }
 
-    public function isServiceAll(): bool
+    public function getOptionAll(): bool
     {
-        return $this->isServiceAll;
+        return $this->optionAll;
     }
 
-    public function isServiceMapping(): bool
+    public function getOptionMapping(): bool
     {
-        return $this->isServiceMapping;
+        return $this->optionMapping;
     }
 
-    public function isServiceDevice(): bool
+    public function getOptionDevice(): bool
     {
-        return $this->isServiceDevice;
+        return $this->optionDevice;
     }
 
-    public function isServiceDeviceOnly(): bool
+    public function getOptionDeviceOnly(): bool
     {
-        return $this->isServiceDeviceOnly;
+        return $this->optionDeviceOnly;
     }
 
-    public function isServiceDeviceMedia(): bool
+    public function getOptionDeviceMedia(): bool
     {
-        return $this->isServiceDeviceMedia;
+        return $this->optionDeviceMedia;
     }
 
-    public function isServiceDeviceSynonyms(): bool
+    public function getOptionDeviceSynonyms(): bool
     {
-        return $this->isServiceDeviceSynonyms;
+        return $this->optionDeviceSynonyms;
     }
 
-    public function isServiceProduct(): bool
+    public function getOptionProduct(): bool
     {
-        return $this->isServiceProduct;
+        return $this->optionProduct;
     }
 
-    public function isServiceProductInformation(): bool
+    public function getOptionProductInformation(): bool
     {
-        return $this->isServiceProductInformation;
+        return $this->optionProductInformation;
     }
 
-    public function isServiceProductMediaOnly(): bool
+    public function getOptionProductMediaOnly(): bool
     {
-        return $this->isServiceProductMediaOnly;
+        return $this->optionProductMediaOnly;
     }
 
-    public function isProductVariations(): bool
+    public function getOptionProductVariations(): bool
     {
-        return $this->isProductVariations;
+        return $this->optionProductVariations;
     }
 
     public function toDict(): array
     {
         return [
-            'isServiceAll'                => $this->isServiceAll,
-            'isServiceMapping'            => $this->isServiceMapping,
-            'isServiceDevice'             => $this->isServiceDevice,
-            'isServiceDeviceOnly'         => $this->isServiceDeviceOnly,
-            'isServiceDeviceMedia'        => $this->isServiceDeviceMedia,
-            'isServiceDeviceSynonyms'     => $this->isServiceDeviceSynonyms,
-            'isServiceProduct'            => $this->isServiceProduct,
-            'isServiceProductInformation' => $this->isServiceProductInformation,
-            'isServiceProductMedia'       => $this->isServiceProductMediaOnly,
-            'isProductVariations'         => $this->isProductVariations,
+            'optionAll'                => $this->optionAll,
+            'optionMapping'            => $this->optionMapping,
+            'optionDevice'             => $this->optionDevice,
+            'optionDeviceOnly'         => $this->optionDeviceOnly,
+            'optionDeviceMedia'        => $this->optionDeviceMedia,
+            'optionDeviceSynonyms'     => $this->optionDeviceSynonyms,
+            'optionProduct'            => $this->optionProduct,
+            'optionProductInformation' => $this->optionProductInformation,
+            'optionProductMedia'       => $this->optionProductMediaOnly,
+            'optionProductVariations'  => $this->optionProductVariations,
         ];
     }
 }

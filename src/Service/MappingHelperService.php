@@ -8,6 +8,8 @@
 namespace Topdata\TopdataConnectorSW6\Service;
 
 use Doctrine\DBAL\Connection;
+use Exception;
+use PDO;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingDefinition;
 use Shopware\Core\Content\Product\ProductEntity;
@@ -22,6 +24,7 @@ use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient108;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
+use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
 use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
 use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
 use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
@@ -245,7 +248,7 @@ class MappingHelperService
             ->andWhere('top_data_ws_id != \'\'')
             ->andWhere('top_data_ws_id is not null');
 
-        return $query->execute()->fetchAllAssociative(\PDO::FETCH_KEY_PAIR);
+        return $query->execute()->fetchAllAssociative(PDO::FETCH_KEY_PAIR);
     }
 
     /**
@@ -284,7 +287,7 @@ class MappingHelperService
                     continue;
                 }
 
-                $code = self::formCode($b->val);
+                $code = UtilStringFormatting::formCode($b->val);
                 if (isset($duplicates[$code])) {
                     continue;
                 }
@@ -356,7 +359,7 @@ class MappingHelperService
             $brands = null;
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Log any exceptions that occur
             $this->logger->error($e->getMessage());
             $this->cliStyle->writeln('Exception abgefangen: ' . $e->getMessage());
@@ -394,7 +397,7 @@ class MappingHelperService
                         }
                     }
 
-                    $code = $brand['code'] . '_' . $s->id . '_' . self::formCode($s->val);
+                    $code = $brand['code'] . '_' . $s->id . '_' . UtilStringFormatting::formCode($s->val);
 
                     if (!$serie) {
                         $dataCreate[] = [
@@ -449,7 +452,7 @@ class MappingHelperService
             $topdataSeriesRepository = null;
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logger->error($e->getMessage());
             $this->cliStyle->writeln('Exception abgefangen: ' . $e->getMessage());
         }
@@ -512,7 +515,7 @@ class MappingHelperService
                     }
 
                     // Generate a unique code for the type
-                    $code = $brand['code'] . '_' . $s->id . '_' . self::formCode($s->val);
+                    $code = $brand['code'] . '_' . $s->id . '_' . UtilStringFormatting::formCode($s->val);
 
                     // Prepare data for creating or updating the type
                     if (!$type) {
@@ -574,7 +577,7 @@ class MappingHelperService
             $this->cliStyle->writeln("\nDeviceType done " . $this->progressLoggingService->lap() . 'sec');
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Log any exceptions that occur during the process
             $this->logger->error($e->getMessage());
             $this->cliStyle->writeln("\n" . 'Exception occured: ' . $e->getMessage() . '');
@@ -644,7 +647,7 @@ class MappingHelperService
                         continue;
                     }
 
-                    $code = $brandArr['code'] . '_' . self::formCode($s->val);
+                    $code = $brandArr['code'] . '_' . UtilStringFormatting::formCode($s->val);
 
                     if (isset($duplicates[$code])) {
                         continue;
@@ -659,12 +662,12 @@ class MappingHelperService
                         . ' '
                         . $brandArr['label'];
 
-                    if (count($this->getWordsFromString($brandArr['label'])) > 1) {
-                        $search_keywords[] = $this->firstLetters($brandArr['label'])
+                    if (count(UtilStringFormatting::getWordsFromString($brandArr['label'])) > 1) {
+                        $search_keywords[] = UtilStringFormatting::firstLetters($brandArr['label'])
                             . ' '
                             . $s->val
                             . ' '
-                            . $this->firstLetters($brandArr['label']);
+                            . UtilStringFormatting::firstLetters($brandArr['label']);
                     }
 
                     $deviceArr = [];
@@ -825,7 +828,7 @@ class MappingHelperService
             $this->connection->getConfiguration()->setSQLLogger($SQLlogger);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logger->error($e->getMessage());
             $this->cliStyle->error('Exception abgefangen: ' . $e->getMessage());
         }
@@ -906,7 +909,7 @@ class MappingHelperService
                         continue;
                     }
 
-                    $code = $brand['code'] . '_' . self::formCode($s->val);
+                    $code = $brand['code'] . '_' . UtilStringFormatting::formCode($s->val);
                     $device = $topdataDeviceRepository
                         ->search(
                             (new Criteria())
@@ -961,7 +964,7 @@ class MappingHelperService
                                 ],
                             ], $this->context);
                         }
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         $this->logger->error($e->getMessage());
                         $this->cliStyle->writeln('Exception: ' . $e->getMessage());
                     }
@@ -978,7 +981,7 @@ class MappingHelperService
             $this->cliStyle->writeln('Devices Media done');
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logger->error($e->getMessage());
             $this->cliStyle->writeln('Exception: ' . $e->getMessage());
         }
@@ -1059,7 +1062,7 @@ class MappingHelperService
                 $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
 
                 if (!isset($products->page->available_pages)) {
-                    throw new \Exception($products->error[0]->error_message . 'webservice no pages');
+                    throw new Exception($products->error[0]->error_message . 'webservice no pages');
                 }
                 $this->progressLoggingService->mem();
                 $this->progressLoggingService->activity("\nProcessing data...");
@@ -1187,7 +1190,7 @@ class MappingHelperService
             $this->cliStyle->writeln('Devices to products linking done.');
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logger->error($e->getMessage());
             //            $this->connection->rollBack();
             $this->cliStyle->error('Exception: ' . $e->getMessage());
@@ -1196,17 +1199,6 @@ class MappingHelperService
         return false;
     }
 
-    /**
-     * 06/2024 made it static.
-     */
-    private static function formCode(string $label): string
-    {
-        $replacement = [
-            ' ' => '-',
-        ];
-
-        return strtolower(preg_replace('/[^a-zA-Z0-9\-]/', '', str_replace(array_keys($replacement), array_values($replacement), $label)));
-    }
 
     private function getDeviceArrayByWsIdArray(array $wsIds): array
     {
@@ -1357,7 +1349,7 @@ class MappingHelperService
                                 'mediaId'  => $mediaId,
                             ];
                         }
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         $this->logger->error($e->getMessage());
                         $this->cliStyle->writeln('Exception: ' . $e->getMessage());
                     }
@@ -1377,7 +1369,7 @@ class MappingHelperService
         ) {
             $propGroupName = 'Reference PCD';
             foreach ((array)$remoteProductData->reference_pcds as $propValue) {
-                $propValue = trim(substr($this->formatStringNoHTML($propValue), 0, 255));
+                $propValue = trim(substr(UtilStringFormatting::formatStringNoHTML($propValue), 0, 255));
                 if ($propValue == '') {
                     continue;
                 }
@@ -1398,7 +1390,7 @@ class MappingHelperService
         ) {
             $propGroupName = 'Reference OEM';
             foreach ((array)$remoteProductData->reference_oems as $propValue) {
-                $propValue = trim(substr($this->formatStringNoHTML($propValue), 0, 255));
+                $propValue = trim(substr(UtilStringFormatting::formatStringNoHTML($propValue), 0, 255));
                 if ($propValue == '') {
                     continue;
                 }
@@ -1421,11 +1413,11 @@ class MappingHelperService
                 if (isset($ignoreSpecs[$spec->specification_id])) {
                     continue;
                 }
-                $propGroupName = trim(substr(trim($this->formatStringNoHTML($spec->specification)), 0, 255));
+                $propGroupName = trim(substr(trim(UtilStringFormatting::formatStringNoHTML($spec->specification)), 0, 255));
                 if ($propGroupName == '') {
                     continue;
                 }
-                $propValue = trim(substr($this->formatStringNoHTML(($spec->count > 1 ? $spec->count . ' x ' : '') . $spec->attribute . (isset($spec->attribute_extension) ? ' ' . $spec->attribute_extension : '')), 0, 255));
+                $propValue = trim(substr(UtilStringFormatting::formatStringNoHTML(($spec->count > 1 ? $spec->count . ' x ' : '') . $spec->attribute . (isset($spec->attribute_extension) ? ' ' . $spec->attribute_extension : '')), 0, 255));
                 if ($propValue == '') {
                     continue;
                 }
@@ -1611,7 +1603,7 @@ class MappingHelperService
      *
      * @param bool $onlyMedia If true, only media information is updated; otherwise, all product information is updated.
      * @return bool Returns true if the operation is successful, false otherwise.
-     * @throws \Exception If there is an error fetching data from the remote server.
+     * @throws Exception If there is an error fetching data from the remote server.
      */
     public function setProductInformation(bool $onlyMedia): bool
     {
@@ -1652,7 +1644,7 @@ class MappingHelperService
             $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
 
             if (!isset($products->page->available_pages)) {
-                throw new \Exception($products->error[0]->error_message . 'webservice no pages');
+                throw new Exception($products->error[0]->error_message . 'webservice no pages');
             }
             $this->progressLoggingService->activity('Processing data...');
 
@@ -2231,7 +2223,7 @@ class MappingHelperService
             $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
 
             if (!isset($devices->page->available_pages)) {
-                throw new \Exception($devices->error[0]->error_message . ' webservice no pages');
+                throw new Exception($devices->error[0]->error_message . ' webservice no pages');
             }
             //            $this->progressLoggingService->mem();
             $this->progressLoggingService->activity("\nProcessing data...");
@@ -2281,15 +2273,7 @@ class MappingHelperService
         return true;
     }
 
-    public static function formatString($string)
-    {
-        return trim(preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/u', '', (string)$string));
-    }
 
-    public static function formatStringNoHTML($string)
-    {
-        return MappingHelperService::formatString(strip_tags((string)$string));
-    }
 
     public static function getCrossTypes(): array
     {
@@ -2856,28 +2840,6 @@ SQL;
         }
     }
 
-    private function getWordsFromString(string $string): array
-    {
-        $rez = [];
-        $string = str_replace(['-', '/', '+', '&', '.', ','], ' ', $string);
-        $words = explode(' ', $string);
-        foreach ($words as $word) {
-            if (trim($word)) {
-                $rez[] = trim($word);
-            }
-        }
 
-        return $rez;
-    }
-
-    private function firstLetters(string $string): string
-    {
-        $rez = '';
-        foreach ($this->getWordsFromString($string) as $word) {
-            $rez .= mb_substr($word, 0, 1);
-        }
-
-        return $rez;
-    }
 
 }

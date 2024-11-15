@@ -120,7 +120,8 @@ class ImportService
     private function executeImportOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
         // Mapping
-        if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceMapping()) {
+        if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionMapping()) {
+            $this->cliStyle->blue('--all || --mapping');
             $this->cliStyle->section('Mapping Products');
             $this->productMappingService->mapProducts();
         }
@@ -146,7 +147,8 @@ class ImportService
      */
     private function _handleDeviceOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
-        if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceDevice()) {
+        if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDevice()) {
+            $this->cliStyle->blue('--all || --device');
             if (
                 !$this->mappingHelperService->setBrands()
                 || !$this->mappingHelperService->setSeries()
@@ -157,7 +159,8 @@ class ImportService
 
                 return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
             }
-        } elseif ($cliOptionsDto->isServiceDeviceOnly()) {
+        } elseif ($cliOptionsDto->getOptionDeviceOnly()) {
+            $this->cliStyle->blue('--device-only');
             if (!$this->mappingHelperService->setDevices()) {
                 $this->cliStyle->error('Device import failed!');
 
@@ -174,7 +177,8 @@ class ImportService
     private function _handleProductOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
         // Product to device linking
-        if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceProduct()) {
+        if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionProduct()) {
+            $this->cliStyle->blue('--all || --product');
             if (!$this->mappingHelperService->setProducts()) {
                 $this->cliStyle->error('Set products to devices failed!');
 
@@ -183,7 +187,8 @@ class ImportService
         }
 
         // Device media
-        if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceDeviceMedia()) {
+        if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceMedia()) {
+            $this->cliStyle->blue('--all || --device-media');
             if (!$this->mappingHelperService->setDeviceMedia()) {
                 $this->cliStyle->error('Load device media failed!');
                 return self::ERROR_CODE_LOAD_DEVICE_MEDIA_FAILED;
@@ -196,7 +201,8 @@ class ImportService
         }
 
         // Device synonyms
-        if ($cliOptionsDto->isServiceAll() || $cliOptionsDto->isServiceDeviceSynonyms()) {
+        if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceSynonyms()) {
+            $this->cliStyle->blue('--all || --device-synonyms');
             if (!$this->mappingHelperService->setDeviceSynonyms()) {
                 $this->cliStyle->error('Set device synonyms failed!');
 
@@ -222,9 +228,9 @@ class ImportService
     {
         // ---- Determine if product-related operation should be processed based on CLI options.
         if (
-            !$cliOptionsDto->isServiceAll() &&
-            !$cliOptionsDto->isServiceProductInformation() &&
-            !$cliOptionsDto->isServiceProductMediaOnly()
+            !$cliOptionsDto->getOptionAll() &&
+            !$cliOptionsDto->getOptionProductInformation() &&
+            !$cliOptionsDto->getOptionProductMediaOnly()
         ) {
             return null;
         }
@@ -240,8 +246,7 @@ class ImportService
         $this->optionsHelperService->loadTopdataTopFeedPluginConfig();
 
         // ---- Load product information or update media
-        $isMediaOnlyUpdate = $cliOptionsDto->isServiceProductMediaOnly();
-        if (!$this->mappingHelperService->setProductInformation($isMediaOnlyUpdate)) {
+        if (!$this->mappingHelperService->setProductInformation($cliOptionsDto->getOptionProductMediaOnly())) {
             $this->cliStyle->error('Load product information failed!');
 
             return self::ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED;
@@ -256,7 +261,7 @@ class ImportService
      */
     private function _handleProductVariations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
-        if ($cliOptionsDto->isProductVariations()) {
+        if ($cliOptionsDto->getOptionProductVariations()) {
             if ($this->pluginHelperService->isTopFeedPluginAvailable()) {
                 if (!$this->mappingHelperService->setProductColorCapacityVariants()) {
                     $this->cliStyle->error('Set device synonyms failed!');
