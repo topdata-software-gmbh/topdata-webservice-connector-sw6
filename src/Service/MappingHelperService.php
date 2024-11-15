@@ -640,7 +640,7 @@ class MappingHelperService
                 if ((int)$this->optionsHelperService->getOption(OptionConstants::END) && ($chunkNumber > (int)$this->optionsHelperService->getOption(OptionConstants::END))) {
                     break;
                 }
-                $this->progressLoggingService->activity("\nGetting data chunk $chunkNumber from remote server...");
+                $this->progressLoggingService->activity("\nGetting device chunk $chunkNumber from remote server...");
                 ImportReport::incCounter('Device Chunks');
                 $models = $this->topdataWebserviceClient->getModels($limit, $start);
                 $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
@@ -895,7 +895,7 @@ class MappingHelperService
                 if ((int)$this->optionsHelperService->getOption(OptionConstants::END) && ($chunkNumber > (int)$this->optionsHelperService->getOption(OptionConstants::END))) {
                     break;
                 }
-                $this->progressLoggingService->activity("\nGetting data chunk $chunkNumber from remote server...");
+                $this->progressLoggingService->activity("\nGetting media chunk $chunkNumber from remote server...");
                 ImportReport::incCounter('Device Media Chunks');
                 $models = $this->topdataWebserviceClient->getModels($limit, $start);
                 $this->progressLoggingService->activity($this->progressLoggingService->lap() . 'sec. ');
