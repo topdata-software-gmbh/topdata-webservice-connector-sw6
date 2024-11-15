@@ -21,6 +21,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
+use Topdata\TopdataConnectorSW6\Constants\CrossSellingTypeConstant;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
@@ -43,20 +44,10 @@ use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
  * • Extract all variant-related methods like setProductColorCapacityVariants(), createVariatedProduct(), collectColorVariants(), collectCapacityVariants()
  * • This would handle all logic related to product variants and their creation
  *
- * 2 ProductCrossSellingService
- *
- * • Extract cross-selling related methods like addProductCrossSelling(), getCrossName(), getCrossTypes()
- * • Would handle all cross-selling functionality
- *
  * 3 ProductImportSettingsService
  *
  * • Extract _loadProductImportSettings(), getProductOption(), _getProductExtraOption()
  * • Would handle all product import configuration and settings
- *
- * 4 DeviceSynonymService
- *
- * • Extract setDeviceSynonyms() and related functionality
- * • Would handle all device synonym operations
  *
  * 5 ProductMediaService
  *
@@ -68,10 +59,6 @@ use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
  * • Extract property-related functionality from prepareProduct()
  * • Would handle all product property operations
  *
- * 8 ProductLinkingService
- *
- * • Extract linkProducts() and related methods like findRelatedProducts(), findBundledProducts(), etc.
- * • Would handle all product linking operations
  *
  * The main MappingHelperService would then orchestrate these services and maintain only the core mapping logic between Topdata and Shopware 6.
  *
@@ -89,16 +76,6 @@ class MappingHelperService
 {
     use CliStyleTrait;
 
-    /**
-     * Constants for cross-selling types.
-     */
-    const CROSS_SIMILAR          = 'similar';
-    const CROSS_ALTERNATE        = 'alternate';
-    const CROSS_RELATED          = 'related';
-    const CROSS_BUNDLED          = 'bundled';
-    const CROSS_COLOR_VARIANT    = 'colorVariant';
-    const CROSS_CAPACITY_VARIANT = 'capacityVariant';
-    const CROSS_VARIANT          = 'variant';
 
     /**
      * List of specifications to ignore during import.
@@ -194,6 +171,8 @@ class MappingHelperService
         private readonly TopdataToProductHelperService $topdataToProductHelperService,
         private readonly MediaHelperService            $mediaHelperService,
         private readonly TopdataDeviceService          $topdataDeviceService,
+        private readonly ProductLinkingService         $productLinkingService,
+        private readonly ProductImportSettingsService  $productImportSettingsService,
     )
     {
         $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();
@@ -1330,28 +1309,28 @@ class MappingHelperService
         $productData = [];
         $productId = $productId_versionId['product_id'];
 
-        if (!$onlyMedia && $this->getProductOption('productName', $productId) && $remoteProductData->short_description != '') {
+        if (!$onlyMedia && $this->productImportSettingsService->getProductOption('productName', $productId) && $remoteProductData->short_description != '') {
             $productData['name'] = trim(substr($remoteProductData->short_description, 0, 255));
         }
 
-        if (!$onlyMedia && $this->getProductOption('productDescription', $productId) && $remoteProductData->short_description != '') {
+        if (!$onlyMedia && $this->productImportSettingsService->getProductOption('productDescription', $productId) && $remoteProductData->short_description != '') {
             $productData['description'] = $remoteProductData->short_description;
         }
 
         //        $this->getOption('productLongDescription') ???
         //         $productData['description'] = $remoteProductData->short_description;
 
-        if (!$onlyMedia && $this->getProductOption('productBrand', $productId) && $remoteProductData->manufacturer != '') {
+        if (!$onlyMedia && $this->productImportSettingsService->getProductOption('productBrand', $productId) && $remoteProductData->manufacturer != '') {
             $productData['manufacturerId'] = $this->manufacturerService->getManufacturerIdByName($remoteProductData->manufacturer); // fixme
         }
-        if (!$onlyMedia && $this->getProductOption('productEan', $productId) && count($remoteProductData->eans)) {
+        if (!$onlyMedia && $this->productImportSettingsService->getProductOption('productEan', $productId) && count($remoteProductData->eans)) {
             $productData['ean'] = $remoteProductData->eans[0];
         }
-        if (!$onlyMedia && $this->getProductOption('productOem', $productId) && count($remoteProductData->oems)) {
+        if (!$onlyMedia && $this->productImportSettingsService->getProductOption('productOem', $productId) && count($remoteProductData->oems)) {
             $productData['manufacturerNumber'] = $remoteProductData->oems[0];
         }
 
-        if ($this->getProductOption('productImages', $productId)) {
+        if ($this->productImportSettingsService->getProductOption('productImages', $productId)) {
             if (isset($remoteProductData->images) && count($remoteProductData->images)) {
                 $media = [];
                 foreach ($remoteProductData->images as $k => $img) {
@@ -1400,7 +1379,7 @@ class MappingHelperService
         }
 
         if (!$onlyMedia
-            && $this->getProductOption('specReferencePCD', $productId)
+            && $this->productImportSettingsService->getProductOption('specReferencePCD', $productId)
             && isset($remoteProductData->reference_pcds)
             && count((array)$remoteProductData->reference_pcds)
         ) {
@@ -1421,7 +1400,7 @@ class MappingHelperService
         }
 
         if (!$onlyMedia
-            && $this->getProductOption('specReferenceOEM', $productId)
+            && $this->productImportSettingsService->getProductOption('specReferenceOEM', $productId)
             && isset($remoteProductData->reference_oems)
             && count((array)$remoteProductData->reference_oems)
         ) {
@@ -1441,7 +1420,7 @@ class MappingHelperService
         }
 
         if (!$onlyMedia
-            && $this->getProductOption('productSpecifications', $productId)
+            && $this->productImportSettingsService->getProductOption('productSpecifications', $productId)
             && isset($remoteProductData->specifications)
             && count($remoteProductData->specifications)
         ) {
@@ -1496,141 +1475,9 @@ class MappingHelperService
         return $productData;
     }
 
-    private function findRelatedProducts($remoteProductData): array
-    {
-        $relatedProducts = [];
-        $topid_products = $this->topdataToProductHelperService->getTopidProducts();
-        if (isset($remoteProductData->product_accessories->products) && count($remoteProductData->product_accessories->products)) {
-            foreach ($remoteProductData->product_accessories->products as $tid) {
-                if (!isset($topid_products[$tid])) {
-                    continue;
-                }
-                $relatedProducts[$tid] = $topid_products[$tid][0];
-            }
-        }
 
-        return $relatedProducts;
-    }
 
-    private function findBundledProducts($remoteProductData): array
-    {
-        $bundledProducts = [];
-        $topid_products = $this->topdataToProductHelperService->getTopidProducts();
-        if (isset($remoteProductData->bundle_content->products) && count($remoteProductData->bundle_content->products)) {
-            foreach ($remoteProductData->bundle_content->products as $tid) {
-                if (!isset($topid_products[$tid->products_id])) {
-                    continue;
-                }
-                $bundledProducts[$tid->products_id] = $topid_products[$tid->products_id][0];
-            }
-        }
 
-        return $bundledProducts;
-    }
-
-    private function findAlternateProducts($remoteProductData): array
-    {
-        $alternateProducts = [];
-        $topid_products = $this->topdataToProductHelperService->getTopidProducts();
-        if (isset($remoteProductData->product_alternates->products) && count($remoteProductData->product_alternates->products)) {
-            foreach ($remoteProductData->product_alternates->products as $tid) {
-                if (!isset($topid_products[$tid])) {
-                    continue;
-                }
-                $alternateProducts[$tid] = $topid_products[$tid][0];
-            }
-        }
-
-        return $alternateProducts;
-    }
-
-    private function findSimilarProducts($remoteProductData): array
-    {
-        $similarProducts = [];
-        $topid_products = $this->topdataToProductHelperService->getTopidProducts();
-
-        if (isset($remoteProductData->product_same_accessories->products) && count($remoteProductData->product_same_accessories->products)) {
-            foreach ($remoteProductData->product_same_accessories->products as $tid) {
-                if (!isset($topid_products[$tid])) {
-                    continue;
-                }
-                $similarProducts[$tid] = $topid_products[$tid][0];
-            }
-        }
-
-        if (isset($remoteProductData->product_same_application_in->products) && count($remoteProductData->product_same_application_in->products)) {
-            foreach ($remoteProductData->product_same_application_in->products as $tid) {
-                if (!isset($topid_products[$tid])) {
-                    continue;
-                }
-                $similarProducts[$tid] = $topid_products[$tid][0];
-            }
-        }
-
-        if (isset($remoteProductData->product_variants->products) && count($remoteProductData->product_variants->products)) {
-            foreach ($remoteProductData->product_variants->products as $rprod) {
-                if (!isset($topid_products[$rprod->id])) {
-                    continue;
-                }
-                $similarProducts[$rprod->id] = $topid_products[$rprod->id][0];
-            }
-        }
-
-        return $similarProducts;
-    }
-
-    private function findColorVariantProducts($remoteProductData): array
-    {
-        $linkedProducts = [];
-        $topid_products = $this->topdataToProductHelperService->getTopidProducts();
-        if (isset($remoteProductData->product_special_variants->color) && count($remoteProductData->product_special_variants->color)) {
-            foreach ($remoteProductData->product_special_variants->color as $tid) {
-                if (!isset($topid_products[$tid])) {
-                    continue;
-                }
-                $linkedProducts[$tid] = $topid_products[$tid][0];
-            }
-        }
-
-        return $linkedProducts;
-    }
-
-    private function findCapacityVariantProducts($remoteProductData): array
-    {
-        $linkedProducts = [];
-        $topid_products = $this->topdataToProductHelperService->getTopidProducts();
-        if (isset($remoteProductData->product_special_variants->capacity) && count($remoteProductData->product_special_variants->capacity)) {
-            foreach ($remoteProductData->product_special_variants->capacity as $tid) {
-                if (!isset($topid_products[$tid])) {
-                    continue;
-                }
-                $linkedProducts[$tid] = $topid_products[$tid][0];
-            }
-        }
-
-        return $linkedProducts;
-    }
-
-    private function findVariantProducts($remoteProductData): array
-    {
-        $products = [];
-        $topid_products = $this->topdataToProductHelperService->getTopidProducts();
-
-        if (isset($remoteProductData->product_variants->products) && count($remoteProductData->product_variants->products)) {
-            foreach ($remoteProductData->product_variants->products as $rprod) {
-                if ($rprod->type !== null) {
-                    continue;
-                }
-
-                if (!isset($topid_products[$rprod->id])) {
-                    continue;
-                }
-                $products[$rprod->id] = $topid_products[$rprod->id][0];
-            }
-        }
-
-        return $products;
-    }
 
     /**
      * Updates product information or media by fetching data from a remote server and updating the local database.
@@ -1645,7 +1492,7 @@ class MappingHelperService
     public function setProductInformation(bool $onlyMedia): bool
     {
         if ($onlyMedia) {
-            $this->cliStyle->section("\n\nProduct media");
+            $this->cliStyle->section("\n\nProduct media (--product-media-only)");
         } else {
             $this->cliStyle->section("\n\nProduct information");
         }
@@ -1692,7 +1539,7 @@ class MappingHelperService
             }
 
             // Load product import settings
-            $this->_loadProductImportSettings($currentChunkProductIds);
+            $this->productImportSettingsService->_loadProductImportSettings($currentChunkProductIds);
 
             // ---- unlink stuff before re-linking
             if (!$onlyMedia) {
@@ -1741,7 +1588,7 @@ class MappingHelperService
                 }
 
                 if (!$onlyMedia) {
-                    $this->linkProducts($topid_products[$product->products_id][0], $product);
+                    $this->productLinkingService->linkProducts($topid_products[$product->products_id][0], $product);
                 }
             }
             $this->progressLoggingService->mem();
@@ -1841,158 +1688,14 @@ class MappingHelperService
         $this->connection->executeStatement("UPDATE product SET category_tree = NULL WHERE id IN ($idsString)");
     }
 
-    /**
-     * Loads product import settings for the given product IDs.
-     *
-     * This method fetches the category paths for the given product IDs and then loads the import settings
-     * for each category. The settings are then mapped to the corresponding products.
-     *
-     * @param array $productIds An array of product IDs for which to load import settings.
-     * @return void
-     */
-    private function _loadProductImportSettings(array $productIds): void
-    {
-        // Initialize the product import settings array
-        $this->productImportSettings = [];
-
-        // Return early if no product IDs are provided
-        if (!count($productIds)) {
-            return;
-        }
-
-        // Load each product category path
-        $productCategories = [];
-        $allCategories = [];
-        $ids = '0x' . implode(',0x', $productIds);
-        $temp = $this->connection->fetchAllAssociative('
-        SELECT LOWER(HEX(id)) as id, category_tree
-          FROM product 
-          WHERE (category_tree is NOT NULL)AND(id IN (' . $ids . '))
-    ');
-
-        // Parse the category tree for each product
-        foreach ($temp as $item) {
-            $parsedIds = json_decode($item['category_tree'], true);
-            foreach ($parsedIds as $id) {
-                if (is_string($id) && Uuid::isValid($id)) {
-                    $productCategories[$item['id']][] = $id;
-                    $allCategories[$id] = false;
-                }
-            }
-        }
-
-        // Return early if no categories are found
-        if (!count($allCategories)) {
-            return;
-        }
-
-        // Load each category's settings
-        $ids = '0x' . implode(',0x', array_keys($allCategories));
-        $temp = $this->connection->fetchAllAssociative('
-        SELECT LOWER(HEX(category_id)) as id, import_settings
-          FROM topdata_category_extension 
-          WHERE (plugin_settings=0) AND (category_id IN (' . $ids . '))
-    ');
-
-        // Map the settings to the corresponding categories
-        foreach ($temp as $item) {
-            $allCategories[$item['id']] = json_decode($item['import_settings'], true);
-        }
-
-        // Set product settings based on category
-        foreach ($productCategories as $productId => $categoryTree) {
-            for ($i = (count($categoryTree) - 1); $i >= 0; $i--) {
-                if (isset($allCategories[$categoryTree[$i]])
-                    &&
-                    $allCategories[$categoryTree[$i]] !== false
-                ) {
-                    $this->productImportSettings[$productId] = $allCategories[$categoryTree[$i]];
-                    break;
-                }
-            }
-        }
-    }
 
 
-    private function _getProductExtraOption(string $optionName, string $productId): bool
-    {
-        if (isset($this->productImportSettings[$productId])) {
-            if (
-                isset($this->productImportSettings[$productId][$optionName])
-                && $this->productImportSettings[$productId][$optionName]
-            ) {
-                return true;
-            }
-
-            return false;
-        }
-
-        return false;
-    }
-
-    public function mapProductOption(string $optionName): string
-    {
-        $map = [
-            'name'              => 'productName',
-            'description'       => 'productDescription',
-            'brand'             => 'productBrand',
-            'EANs'              => 'productEan',
-            'MPNs'              => 'productOem',
-            'pictures'          => 'productImages',
-            'unlinkOldPictures' => 'productImagesDelete',
-            'properties'        => 'productSpecifications',
-            'PCDsProp'          => 'specReferencePCD',
-            'MPNsProp'          => 'specReferenceOEM',
-
-            'importSimilar'          => 'productSimilar',
-            'importAlternates'       => 'productAlternate',
-            'importAccessories'      => 'productRelated',
-            'importBoundles'         => 'productBundled',
-            'importVariants'         => 'productVariant',
-            'importColorVariants'    => 'productColorVariant',
-            'importCapacityVariants' => 'productCapacityVariant',
-
-            'crossSimilar'          => 'productSimilarCross',
-            'crossAlternates'       => 'productAlternateCross',
-            'crossAccessories'      => 'productRelatedCross',
-            'crossBoundles'         => 'productBundledCross',
-            'crossVariants'         => 'productVariantCross',
-            'crossColorVariants'    => 'productVariantColorCross',
-            'crossCapacityVariants' => 'productVariantCapacityCross',
-        ];
-
-        $ret = array_search($optionName, $map);
-        if ($ret === false) {
-            return '';
-        }
-
-        return $ret;
-    }
-
-    /**
-     * Retrieves the value of a product option based on the provided option name and product ID.
-     *
-     * This method first checks if the product has specific import settings. If so, it retrieves the option value
-     * from these settings. If not, it falls back to the global option settings.
-     *
-     * @param string $optionName The name of the option to retrieve.
-     * @param string $productId The ID of the product for which to retrieve the option.
-     * @return bool Returns true if the option is enabled, false otherwise.
-     */
-    private function getProductOption(string $optionName, string $productId): bool
-    {
-        if (isset($this->productImportSettings[$productId])) {
-            return $this->_getProductExtraOption($this->mapProductOption($optionName), $productId);
-        }
-
-        return $this->optionsHelperService->getOption($optionName) ? true : false;
-    }
 
     private function filterIdsByConfig(string $optionName, array $productIds): array
     {
         $returnIds = [];
         foreach ($productIds as $pid) {
-            if ($this->getProductOption($optionName, $pid)) {
+            if ($this->productImportSettingsService->getProductOption($optionName, $pid)) {
                 $returnIds[] = $pid;
             }
         }
@@ -2049,171 +1752,6 @@ class MappingHelperService
         }
     }
 
-    private function linkProducts(array $productId_versionId, $remoteProductData): void
-    {
-        $dateTime = date('Y-m-d H:i:s');
-        $productId = $productId_versionId['product_id'];
-
-        if ($this->getProductOption('productSimilar', $productId)) {
-            $dataInsert = [];
-            $temp = $this->findSimilarProducts($remoteProductData);
-            foreach ($temp as $tempProd) {
-                $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
-            }
-
-            if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, 30);
-                foreach ($insertDataChunks as $chunk) {
-                    $this->connection->executeStatement('
-                        INSERT INTO topdata_product_to_similar (product_id, product_version_id, similar_product_id, similar_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
-                    ');
-                    $this->progressLoggingService->activity();
-                }
-
-                if ($this->getProductOption('productSimilarCross', $productId)) {
-                    $this->addProductCrossSelling($productId_versionId, $temp, self::CROSS_SIMILAR);
-                }
-            }
-        }
-
-        if ($this->getProductOption('productAlternate', $productId)) {
-            $dataInsert = [];
-            $temp = $this->findAlternateProducts($remoteProductData);
-            foreach ($temp as $tempProd) {
-                $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
-            }
-
-            if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, 30);
-                foreach ($insertDataChunks as $chunk) {
-                    $this->connection->executeStatement('
-                        INSERT INTO topdata_product_to_alternate (product_id, product_version_id, alternate_product_id, alternate_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
-                    ');
-                    $this->progressLoggingService->activity();
-                }
-
-                if ($this->getProductOption('productAlternateCross', $productId)) {
-                    $this->addProductCrossSelling($productId_versionId, $temp, self::CROSS_ALTERNATE);
-                }
-            }
-        }
-
-        if ($this->getProductOption('productRelated', $productId)) {
-            $dataInsert = [];
-            $temp = $this->findRelatedProducts($remoteProductData);
-            foreach ($temp as $tempProd) {
-                $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
-            }
-
-            if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, 30);
-                foreach ($insertDataChunks as $chunk) {
-                    $this->connection->executeStatement('
-                        INSERT INTO topdata_product_to_related (product_id, product_version_id, related_product_id, related_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
-                    ');
-                    $this->progressLoggingService->activity();
-                }
-
-                if ($this->getProductOption('productRelatedCross', $productId)) {
-                    $this->addProductCrossSelling($productId_versionId, $temp, self::CROSS_RELATED);
-                }
-            }
-        }
-
-        if ($this->getProductOption('productBundled', $productId)) {
-            $dataInsert = [];
-            $temp = $this->findBundledProducts($remoteProductData);
-            foreach ($temp as $tempProd) {
-                $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
-            }
-
-            if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, 30);
-                foreach ($insertDataChunks as $chunk) {
-                    $this->connection->executeStatement('
-                        INSERT INTO topdata_product_to_bundled (product_id, product_version_id, bundled_product_id, bundled_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
-                    ');
-                    $this->progressLoggingService->activity();
-                }
-
-                if ($this->getProductOption('productBundledCross', $productId)) {
-                    $this->addProductCrossSelling($productId_versionId, $temp, self::CROSS_BUNDLED);
-                }
-            }
-        }
-
-        if ($this->getProductOption('productColorVariant', $productId)) {
-            $dataInsert = [];
-            $temp = $this->findColorVariantProducts($remoteProductData);
-            foreach ($temp as $tempProd) {
-                $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
-            }
-
-            if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, 30);
-                foreach ($insertDataChunks as $chunk) {
-                    $this->connection->executeStatement('
-                        INSERT INTO topdata_product_to_color_variant 
-                        (product_id, product_version_id, color_variant_product_id, color_variant_product_version_id, created_at) 
-                        VALUES ' . implode(',', $chunk) . '
-                    ');
-                    $this->progressLoggingService->activity();
-                }
-
-                if ($this->getProductOption('productVariantColorCross', $productId)) {
-                    $this->addProductCrossSelling($productId_versionId, $temp, self::CROSS_COLOR_VARIANT);
-                }
-            }
-        }
-
-        if ($this->getProductOption('productCapacityVariant', $productId)) {
-            $dataInsert = [];
-            $temp = $this->findCapacityVariantProducts($remoteProductData);
-            foreach ($temp as $tempProd) {
-                $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
-            }
-
-            if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, 30);
-                foreach ($insertDataChunks as $chunk) {
-                    $this->connection->executeStatement('
-                        INSERT INTO topdata_product_to_capacity_variant 
-                        (product_id, product_version_id, capacity_variant_product_id, capacity_variant_product_version_id, created_at) 
-                        VALUES ' . implode(',', $chunk) . '
-                    ');
-                    $this->progressLoggingService->activity();
-                }
-
-                if ($this->getProductOption('productVariantCapacityCross', $productId)) {
-                    $this->addProductCrossSelling($productId_versionId, $temp, self::CROSS_CAPACITY_VARIANT);
-                }
-            }
-        }
-
-        if ($this->getProductOption('productVariant', $productId)) {
-            $dataInsert = [];
-            $temp = $this->findVariantProducts($remoteProductData);
-            foreach ($temp as $tempProd) {
-                $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
-            }
-
-            if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, 30);
-                foreach ($insertDataChunks as $chunk) {
-                    $this->connection->executeStatement('
-                        INSERT INTO topdata_product_to_variant 
-                        (product_id, product_version_id, variant_product_id, variant_product_version_id, created_at) 
-                        VALUES ' . implode(',', $chunk) . '
-                    ');
-                    $this->progressLoggingService->activity();
-                }
-
-                if ($this->getProductOption('productVariantCross', $productId)) {
-                    $this->addProductCrossSelling($productId_versionId, $temp, self::CROSS_VARIANT);
-                }
-            }
-        }
-    }
 
     private function formSearchKeywords(array $keywords): string
     {
@@ -2229,121 +1767,7 @@ class MappingHelperService
     }
 
 
-    public static function getCrossTypes(): array
-    {
-        return [
-            1 => static::CROSS_CAPACITY_VARIANT,
-            2 => static::CROSS_COLOR_VARIANT,
-            3 => static::CROSS_ALTERNATE,
-            4 => static::CROSS_RELATED,
-            5 => static::CROSS_VARIANT,
-            6 => static::CROSS_BUNDLED,
-            7 => static::CROSS_SIMILAR,
-        ];
-    }
 
-    private function getCrossName(string $crossType)
-    {
-        $names = [
-            static::CROSS_CAPACITY_VARIANT => [
-                'de-DE' => 'Kapazitätsvarianten',
-                'en-GB' => 'Capacity Variants',
-                'nl-NL' => 'capaciteit varianten',
-            ],
-            static::CROSS_COLOR_VARIANT    => [
-                'de-DE' => 'Farbvarianten',
-                'en-GB' => 'Color Variants',
-                'nl-NL' => 'kleur varianten',
-            ],
-            static::CROSS_ALTERNATE        => [
-                'de-DE' => 'Alternative Produkte',
-                'en-GB' => 'Alternate Products',
-                'nl-NL' => 'alternatieve producten',
-            ],
-            static::CROSS_RELATED          => [
-                'de-DE' => 'Zubehör',
-                'en-GB' => 'Accessories',
-                'nl-NL' => 'Accessoires',
-            ],
-            static::CROSS_VARIANT          => [
-                'de-DE' => 'Varianten',
-                'en-GB' => 'Variants',
-                'nl-NL' => 'varianten',
-            ],
-            static::CROSS_BUNDLED          => [
-                'de-DE' => 'Im Bundle',
-                'en-GB' => 'In Bundle',
-                'nl-NL' => 'In een bundel',
-            ],
-            static::CROSS_SIMILAR          => [
-                'de-DE' => 'Ähnlich',
-                'en-GB' => 'Similar',
-                'nl-NL' => 'Vergelijkbaar',
-            ],
-        ];
-
-        return isset($names[$crossType]) ? $names[$crossType] : $crossType;
-    }
-
-    private function addProductCrossSelling(array $currentProductId, array $linkedProductIds, string $crossType): void
-    {
-        if ($currentProductId['parent_id']) {
-            //don't create cross if product is variation!
-            return;
-        }
-
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('productId', $currentProductId['product_id']));
-        $criteria->addFilter(new EqualsFilter('topdataExtension.type', $crossType));
-        $productCrossSellingEntity = $this
-            ->productCrossSellingRepository
-            ->search($criteria, $this->context)
-            ->first();
-
-        if ($productCrossSellingEntity) {
-            $crossId = $productCrossSellingEntity->getId();
-            //            $this
-            //                ->productCrossSellingAssignedProductsRepository
-            //                ->delete([['crossSellingId'=>$crossId]], $this->context);
-
-            $this
-                ->connection
-                ->executeStatement("DELETE 
-                    FROM product_cross_selling_assigned_products 
-                    WHERE cross_selling_id = 0x$crossId");
-        } else {
-            $crossId = Uuid::randomHex();
-            $data = [
-                'id'               => $crossId,
-                'productId'        => $currentProductId['product_id'],
-                'productVersionId' => $currentProductId['product_version_id'],
-                'name'             => $this->getCrossName($crossType),
-                'position'         => array_search($crossType, static::getCrossTypes()),
-                'type'             => ProductCrossSellingDefinition::TYPE_PRODUCT_LIST,
-                'sortBy'           => ProductCrossSellingDefinition::SORT_BY_NAME,
-                'sortDirection'    => FieldSorting::ASCENDING,
-                'active'           => true,
-                'limit'            => 24,
-                'topdataExtension' => ['type' => $crossType],
-            ];
-            $this->productCrossSellingRepository->create([$data], $this->context);
-            $this->progressLoggingService->activity();
-        }
-
-        $i = 1;
-        $data = [];
-        foreach ($linkedProductIds as $prodId) {
-            $data[] = [
-                'crossSellingId'   => $crossId,
-                'productId'        => $prodId['product_id'],
-                'productVersionId' => $prodId['product_version_id'],
-                'position'         => $i++,
-            ];
-        }
-
-        $this->productCrossSellingAssignedProductsRepository->create($data, $this->context);
-        $this->progressLoggingService->activity();
-    }
 
     private function capacityNames(): array
     {

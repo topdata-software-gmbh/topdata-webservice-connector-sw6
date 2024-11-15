@@ -13,16 +13,8 @@ use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
  */
 class OptionsHelperService
 {
-    /**
-     * @var array array to store options
-     */
     private array $options = [];
 
-    /**
-     * Constructor for OptionsHelperService.
-     *
-     * @param SystemConfigService $systemConfigService service to access system configuration
-     */
     public function __construct(
         private readonly SystemConfigService $systemConfigService,
     ) {

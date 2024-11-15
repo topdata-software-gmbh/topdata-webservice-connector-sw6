@@ -92,6 +92,8 @@
         <service id="Topdata\TopdataConnectorSW6\Service\MediaHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\TopdataDeviceService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\DeviceSynonymsService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\ProductLinkingService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\ProductImportSettingsService" autowire="true" />
 
         <!-- Controllers -->
         <service id="Topdata\TopdataConnectorSW6\Controller\Admin\TopdataWebserviceConnectorAdminApiController" public="true" autowire="true">
