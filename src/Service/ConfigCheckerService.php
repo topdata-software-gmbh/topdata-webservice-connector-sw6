@@ -23,9 +23,9 @@ class ConfigCheckerService
     {
         $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
 
-        return empty($config['apiUsername']) ||
-            empty($config['apiKey']) ||
-            empty($config['apiSalt']) ||
+        return empty($config['apiUid']) ||
+            empty($config['apiPassword']) ||
+            empty($config['apiSecurityKey']) ||
             empty($config['apiLanguage']);
     }
 }

@@ -49,15 +49,15 @@ Settings - System - Plugins - TopdataConnector menu (... on the right) - Config
 TopData provides you with:
 
 - API User-ID
-- API Key
-- API Salt
+- API Password
+- API Security Key
 
 ### Demo Credentials
 
 If you want to test the plugin with demo credentials, you can use the following:
 
 - API User-ID: 6
-- API Key: nTI9kbsniVWT13Ns
-- API Salt: oateouq974fpby5t6ldf8glzo85mr9t6aebozrox
+- API Password: nTI9kbsniVWT13Ns
+- API Security Key: oateouq974fpby5t6ldf8glzo85mr9t6aebozrox
 
 

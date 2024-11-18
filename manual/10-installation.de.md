@@ -52,13 +52,13 @@ Einstellungen - System - Plugins - TopdataConnector Menü (... auf der rechten S
 TopData stellt Ihnen folgende Daten zur Verfügung:
 
 - API Benutzer-ID
-- APISchlüssel
-- API Salt
+- API Passwort
+- API Security Key
 
 ### Demo Zugangsdaten
 
 Wenn Sie das Plugin mit Demo-Zugangsdaten testen möchten, können Sie folgende Daten verwenden:
 
 - API Benutzer-ID: 6
-- API Schlüssel: nTI9kbsniVWT13Ns
-- API Salt: oateouq974fpby5t6ldf8glzo85mr9t6aebozrox
+- API Passwort: nTI9kbsniVWT13Ns
+- API Security Key: oateouq974fpby5t6ldf8glzo85mr9t6aebozrox

@@ -14,25 +14,25 @@
             <helpText lang="de-DE">Geben Sie die Basis-URL für den Topdata-Webservice ein (Standard: https://ws.topdata.de)</helpText>
         </input-field>
         <input-field>
-            <name>apiUsername</name>
+            <name>apiUid</name>
             <label>API User-ID | DEMO User-ID: 6</label>
             <label lang="de-DE">API User-ID | DEMO User-ID: 6</label>
             <helpText>Enter the user ID you received from us for the web service her.</helpText>
             <helpText lang="de-DE">Tragen Sie die von uns erhaltene API-User-ID ein.</helpText>
         </input-field>
         <input-field>
-            <name>apiKey</name>
-            <label>API Key | DEMO API Key: nTI9kbsniVWT13Ns</label>
-            <label lang="de-DE">API Key | DEMO API Key: nTI9kbsniVWT13Ns</label>
-            <helpText>Enter the API Key you received from us for the web service here.</helpText>
-            <helpText lang="de-DE">Tragen Sie den von uns erhaltenen API-Key ein.</helpText>
+            <name>apiPassword</name>
+            <label>API Password | DEMO API Password: nTI9kbsniVWT13Ns</label>
+            <label lang="de-DE">API Password | DEMO API Password: nTI9kbsniVWT13Ns</label>
+            <helpText>Enter the API Password you received from us for the web service here.</helpText>
+            <helpText lang="de-DE">Tragen Sie das von uns erhaltene API-Passwort ein.</helpText>
         </input-field>
         <input-field>
-            <name>apiSalt</name>
-            <label>API Salt | DEMO API Salt: oateouq974fpby5t6ldf8glzo85mr9t6aebozrox</label>
-            <label lang="de-DE">API Salt | DEMO API Salt: oateouq974fpby5t6ldf8glzo85mr9t6aebozrox</label>
-            <helpText>Enter the API Salt you received from us for the web service here.</helpText>
-            <helpText lang="de-DE">Tragen Sie den von uns erhaltenen API-Salt ein.</helpText>
+            <name>apiSecurityKey</name>
+            <label>API Security Key | DEMO API Security Key: oateouq974fpby5t6ldf8glzo85mr9t6aebozrox</label>
+            <label lang="de-DE">API Security Key | DEMO API Security Key: oateouq974fpby5t6ldf8glzo85mr9t6aebozrox</label>
+            <helpText>Enter the API Security Key you received from us for the web service here.</helpText>
+            <helpText lang="de-DE">Tragen Sie den von uns erhaltenen API-Security Key ein.</helpText>
         </input-field>
         <input-field type="single-select">
             <name>apiLanguage</name>

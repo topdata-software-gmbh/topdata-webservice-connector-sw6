@@ -24,9 +24,9 @@ class TopdataWebserviceClient
 
     public function __construct(
         string                  $baseUrl,
-        private readonly string $apiUsername, // aka userId
-        private readonly string $apiKey,
-        private readonly string $apiSalt,
+        private readonly string $apiUid,
+        private readonly string $apiPassword,
+        private readonly string $apiSecurityKey,
         private readonly string $apiLanguage
     )
     {
@@ -47,9 +47,9 @@ class TopdataWebserviceClient
     {
         // Combine common parameters with any additional ones
         $params = array_merge($params, [
-            'uid'          => $this->apiUsername,
-            'security_key' => $this->apiSalt,
-            'password'     => $this->apiKey,
+            'uid'          => $this->apiUid,
+            'security_key' => $this->apiSecurityKey,
+            'password'     => $this->apiPassword,
             'version'      => $this->apiVersion,
             'language'     => $this->apiLanguage,
             'filter'       => 'all'

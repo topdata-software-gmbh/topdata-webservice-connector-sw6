@@ -12,11 +12,11 @@ Configure "TopCONNECTOR" according to your needs:
 2. **API User ID**  
    Enter the API User ID provided by us
 
-3. **API Key**  
-   Enter the API Key provided by us
+3. **API Password**  
+   Enter the API Password provided by us
 
-4. **API Salt**  
-   Enter the API Salt provided by us
+4. **API Security Key**  
+   Enter the API Security Key provided by us
 
 5. **API Language**  
    Select your preferred language

@@ -12,8 +12,8 @@ Install "TopCONNECTOR" and the desired plugins according to our installation gui
 
 Set up "TopCONNECTOR" with the following demo credentials:
    * API User ID: 6
-   * API Key: nTI9kbsniVWT13Ns
-   * API Salt: oateouq974fpby5t6ldf8glzo85mr9t6aebozrox
+   * API Password: nTI9kbsniVWT13Ns
+   * API Security Key: oateouq974fpby5t6ldf8glzo85mr9t6aebozrox
 
 Select the mapping option in "TopCONNECTOR": "Standard OEM EAN"
 

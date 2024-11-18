@@ -14,12 +14,12 @@ use Topdata\TopdataFoundationSW6\DependencyInjection\TopConfigRegistryCompilerPa
 class TopdataConnectorSW6 extends Plugin
 {
     const MAPPINGS = [
-        'apiBaseUrl'  => 'topdataWebservice.baseUrl',
-        'apiUsername' => 'topdataWebservice.credentials.username',
-        'apiKey'      => 'topdataWebservice.credentials.key',
-        'apiSalt'     => 'topdataWebservice.credentials.salt',
-        'apiLanguage' => 'topdataWebservice.language',
-        'mappingType' => 'import.mappingType',
+        'apiBaseUrl'     => 'topdataWebservice.baseUrl',
+        'apiUid'         => 'topdataWebservice.credentials.uid',
+        'apiPassword'    => 'topdataWebservice.credentials.password',
+        'apiSecurityKey' => 'topdataWebservice.credentials.securityKey',
+        'apiLanguage'    => 'topdataWebservice.language',
+        'mappingType'    => 'import.mappingType',
     ];
 
     public function build(ContainerBuilder $container): void
