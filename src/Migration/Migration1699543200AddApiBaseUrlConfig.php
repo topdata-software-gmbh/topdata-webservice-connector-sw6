@@ -15,8 +15,9 @@ class Migration1699543200AddApiBaseUrlConfig extends MigrationStep
     public function update(Connection $connection): void
     {
         $connection->executeStatement('
-            INSERT IGNORE INTO `system_config` (`configuration_key`, `configuration_value`, `created_at`)
+            INSERT IGNORE INTO `system_config` (`id`, `configuration_key`, `configuration_value`, `created_at`)
             VALUES (
+                   0xd5be1fba56a646659b8d6a2a1ccda7b2,
                 "TopdataConnectorSW6.config.apiBaseUrl",
                 \'{"_value": "https://ws.topdata.de"}\',
                 NOW()
