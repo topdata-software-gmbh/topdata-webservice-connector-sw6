@@ -26,6 +26,7 @@ class TopdataToProductHelperService
         private readonly EntityRepository $topdataToProductRepository
     )
     {
+        $this->beVerboseOnCli();
         $this->context = Context::createDefaultContext();
     }
 

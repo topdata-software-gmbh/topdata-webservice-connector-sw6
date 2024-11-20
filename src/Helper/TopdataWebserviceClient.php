@@ -43,7 +43,7 @@ class TopdataWebserviceClient
      * @param array $params Optional associative array of query parameters.
      * @return mixed Response from the API.
      */
-    private function getRequest(string $endpoint, array $params = []): mixed
+    private function httpGet(string $endpoint, array $params = []): mixed
     {
         // Combine common parameters with any additional ones
         $params = array_merge($params, [
@@ -63,20 +63,20 @@ class TopdataWebserviceClient
     public function getFinder(string $finder, string $step, array $params = []): mixed
     {
         $endpoint = "/finder/$finder/$step";
-        return $this->getRequest($endpoint, $params);
+        return $this->httpGet($endpoint, $params);
     }
 
 
     public function product($id, array $params = []): mixed
     {
         $endpoint = "/product/$id";
-        return $this->getRequest($endpoint, $params);
+        return $this->httpGet($endpoint, $params);
     }
 
 
     public function myProducts(array $params = []): mixed
     {
-        return $this->getRequest('/my_products', $params);
+        return $this->httpGet('/my_products', $params);
     }
 
 
@@ -86,85 +86,85 @@ class TopdataWebserviceClient
             return false;
         }
 
-        return $this->getRequest("/waregroup/$waregroupId");
+        return $this->httpGet("/waregroup/$waregroupId");
     }
 
     public function myDistributorProducts(array $params = []): mixed
     {
-        return $this->getRequest('/distributor_products', $params);
+        return $this->httpGet('/distributor_products', $params);
     }
 
     public function myWaregroups(array $params = []): mixed
     {
-        return $this->getRequest('/waregroups', $params);
+        return $this->httpGet('/waregroups', $params);
     }
 
     public function matchMyOems(array $params = []): mixed
     {
-        return $this->getRequest('/match/oem', $params);
+        return $this->httpGet('/match/oem', $params);
     }
 
     public function matchMyPcds(array $params = []): mixed
     {
-        return $this->getRequest('/match/pcd', $params);
+        return $this->httpGet('/match/pcd', $params);
     }
 
     public function matchMyEANs(array $params = []): mixed
     {
-        return $this->getRequest('/match/ean', $params);
+        return $this->httpGet('/match/ean', $params);
     }
 
     public function matchMyDistributer(array $params = []): mixed
     {
-        return $this->getRequest('/match/distributor', $params);
+        return $this->httpGet('/match/distributor', $params);
     }
 
     public function myProductList(array $params = []): mixed
     {
-        return $this->getRequest('/product_list', $params);
+        return $this->httpGet('/product_list', $params);
     }
 
     public function getBrands(): mixed
     {
-        return $this->getRequest('/finder/ink_toner/brands');
+        return $this->httpGet('/finder/ink_toner/brands');
     }
 
     public function getModelTypeByBrandId(int|string|false $brandId = false): mixed
     {
         $params = $brandId ? ['brand_id' => $brandId] : [];
-        return $this->getRequest('/finder/ink_toner/devicetypes', $params);
+        return $this->httpGet('/finder/ink_toner/devicetypes', $params);
     }
 
     public function getModelSeriesByBrandId(int|string|false $brandId = false): mixed
     {
         $params = $brandId ? ['brand_id' => $brandId] : [];
-        return $this->getRequest('/finder/ink_toner/modelseries', $params);
+        return $this->httpGet('/finder/ink_toner/modelseries', $params);
     }
 
     public function getModelsBySeriesId(int|string $brandId, int|string $seriesId): mixed
     {
         $params = ['brand_id' => $brandId, 'modelserie_id' => $seriesId];
-        return $this->getRequest('/finder/ink_toner/models', $params);
+        return $this->httpGet('/finder/ink_toner/models', $params);
     }
 
     public function getModels(int $limit = 500, int $start = 0): mixed
     {
         $params = ['limit' => $limit, 'start' => $start];
-        return $this->getRequest('/finder/ink_toner/models', $params);
+        return $this->httpGet('/finder/ink_toner/models', $params);
     }
 
     public function getModelsByBrandId(int|string $brandId): mixed
     {
-        return $this->getRequest('/finder/ink_toner/models', ['brand_id' => $brandId]);
+        return $this->httpGet('/finder/ink_toner/models', ['brand_id' => $brandId]);
     }
 
     public function getUserInfo(): mixed
     {
-        return $this->getRequest('/user/user_info');
+        return $this->httpGet('/user/user_info');
     }
 
     public function productAccessories(int|string $id, array $params = []): mixed
     {
-        return $this->getRequest("/product_accessories/$id", $params);
+        return $this->httpGet("/product_accessories/$id", $params);
     }
 }

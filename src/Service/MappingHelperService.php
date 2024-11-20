@@ -176,6 +176,7 @@ class MappingHelperService
         private readonly ProductImportSettingsService  $productImportSettingsService,
     )
     {
+        $this->beVerboseOnCli();
         $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();
         $this->context = Context::createDefaultContext();
     }

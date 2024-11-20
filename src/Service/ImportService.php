@@ -48,6 +48,7 @@ class ImportService
         private readonly DeviceSynonymsService $deviceSynonymsService,
     )
     {
+        $this->beVerboseOnCli();
     }
 
     public function execute(ImportCommandCliOptionsDTO $cliOptionsDto): int

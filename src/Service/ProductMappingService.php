@@ -33,6 +33,7 @@ class ProductMappingService
         private readonly TopdataToProductHelperService $topdataToProductHelperService,
     )
     {
+        $this->beVerboseOnCli();
         $this->context = Context::createDefaultContext();
     }
 
