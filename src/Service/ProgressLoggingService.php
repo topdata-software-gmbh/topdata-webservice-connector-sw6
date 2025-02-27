@@ -3,11 +3,10 @@
 namespace Topdata\TopdataConnectorSW6\Service;
 
 use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
-use TopdataSoftwareGmbH\Util\UtilTextOutput;
 
 /**
  * 10/2024 created (extracted from MappingHelperService)
- * TODO: merge this into CliStyle.
+ * TODO: merge this into CliStyle
  */
 class ProgressLoggingService
 {
@@ -19,13 +18,29 @@ class ProgressLoggingService
     {
         $this->beVerboseOnCli();
         $this->microtime = microtime(true);
+
+
     }
 
+    private static function isCLi(): bool
+    {
+        return php_sapi_name() == 'cli';
+    }
+
+    private static function getNewline(): string
+    {
+        if (self::isCli()) {
+            return "\n";
+        } else {
+            return '<br>';
+        }
+    }
 
     private static function _getCaller()
     {
         $ddSource = debug_backtrace()[1];
-        return basename($ddSource['file']) . ':' . $ddSource['line'] . UtilTextOutput::getNewline();
+
+        return basename($ddSource['file']) . ':' . $ddSource['line'] . self::getNewline();
     }
 
     /**
