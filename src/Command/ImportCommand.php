@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Command;
 
+use Shopware\Core\Framework\Context;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Topdata\TopdataFoundationSW6\Constants\TopdataReportStatusConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
 use Topdata\TopdataConnectorSW6\Service\ImportService;
+use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
+use Topdata\TopdataFoundationSW6\Service\TopdataReportService;
 
 /**
  * This command imports data from the TopData Webservice.
@@ -18,7 +22,8 @@ use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
 class ImportCommand extends AbstractTopdataCommand
 {
     public function __construct(
-        private readonly ImportService $importService,
+        private readonly ImportService        $importService,
+        private readonly TopdataReportService $topdataReportService,
     ) {
         parent::__construct();
     }
@@ -28,10 +33,31 @@ class ImportCommand extends AbstractTopdataCommand
      */
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->importService->setCliStyle($this->cliStyle);
-        $cliOptionsDto = new ImportCommandCliOptionsDTO($input);
+        // Get the command line
+        $commandLine = $_SERVER['argv'] ? implode(' ', $_SERVER['argv']) : 'topdata:connector:import';
         
-        return $this->importService->execute($cliOptionsDto);
+        // Start the import report
+        $this->topdataReportService->startImport($commandLine);
+        
+        try {
+            $this->importService->setCliStyle($this->cliStyle);
+            $cliOptionsDto = new ImportCommandCliOptionsDTO($input);
+            
+            $result = $this->importService->execute($cliOptionsDto);
+            
+            // Mark as succeeded if the import was successful
+            if ($result === 0) {
+                $this->topdataReportService->markAsSucceeded(ImportReport::getCountersSorted());
+            } else {
+                $this->topdataReportService->markAsFailed(ImportReport::getCountersSorted());
+            }
+            
+            return $result;
+        } catch (\Exception $e) {
+            // Mark as failed if an exception occurred
+            $this->topdataReportService->markAsFailed(ImportReport::getCountersSorted());
+            throw $e;
+        }
     }
 
     protected function configure(): void

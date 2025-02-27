@@ -2,6 +2,7 @@
 
 namespace Topdata\TopdataConnectorSW6\Service;
 
+use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 /**
@@ -11,7 +12,6 @@ class ProductImportSettingsService
 {
 
 
-
     /**
      * @var array|mixed
      */
@@ -19,6 +19,7 @@ class ProductImportSettingsService
 
     public function __construct(
         private readonly OptionsHelperService $optionsHelperService,
+        private readonly Connection           $connection,
     )
     {
     }
@@ -175,7 +176,6 @@ class ProductImportSettingsService
             }
         }
     }
-
 
 
 }

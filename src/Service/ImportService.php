@@ -14,6 +14,7 @@ use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
+use Topdata\TopdataFoundationSW6\Util\UtilMarkdown;
 
 /**
  * Service class responsible for handling the import operations.
@@ -64,6 +65,7 @@ class ImportService
         // Check if plugin is configured
         if ($this->configCheckerService->isConfigEmpty()) {
             $this->cliStyle->warning(GlobalPluginConstants::ERROR_MESSAGE_NO_WEBSERVICE_CREDENTIALS);
+            // TODO: print some nice message using UtilMarkdown
 
             return self::ERROR_CODE_MISSING_PLUGIN_CONFIGURATION;
         }
