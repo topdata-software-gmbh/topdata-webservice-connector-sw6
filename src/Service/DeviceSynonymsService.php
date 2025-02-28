@@ -4,25 +4,10 @@ namespace Topdata\TopdataConnectorSW6\Service;
 
 use Doctrine\DBAL\Connection;
 use Exception;
-use PDO;
-use Psr\Log\LoggerInterface;
-use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingDefinition;
-use Shopware\Core\Content\Product\ProductEntity;
-use Shopware\Core\Defaults;
-use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
-use Shopware\Core\Framework\Uuid\Uuid;
-use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Topdata\TopdataConnectorSW6\Constants\FilterTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
-use Topdata\TopdataConnectorSW6\Util\ImportReport;
-use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
-use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
-use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
 use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
 
 /**
@@ -38,12 +23,21 @@ class DeviceSynonymsService
         private readonly TopdataDeviceService   $topdataDeviceService,
         private readonly ProgressLoggingService $progressLoggingService,
         private readonly OptionsHelperService   $optionsHelperService,
+        private readonly SystemConfigService    $systemConfigService,
         private readonly Connection             $connection,
     )
     {
+        $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
+        $this->topdataWebserviceClient = new TopdataWebserviceClient(
+            $pluginConfig['apiBaseUrl'],
+            $pluginConfig['apiUid'],
+            $pluginConfig['apiPassword'],
+            $pluginConfig['apiSecurityKey'],
+            $pluginConfig['apiLanguage']
+        );
+
         $this->beVerboseOnCli();
     }
-
 
 
     public function setDeviceSynonyms(): bool
