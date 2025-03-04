@@ -69,7 +69,7 @@ class DeviceSynonymsService
             $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
 
             if (!isset($devices->page->available_pages)) {
-                throw new Exception($devices->error[0]->error_message . ' webservice no pages');
+                throw new Exception($devices->error[0]->error_message . ' device synonym webservice no pages');
             }
             //            $this->progressLoggingService->mem();
             $this->progressLoggingService->activity("\nProcessing data...");

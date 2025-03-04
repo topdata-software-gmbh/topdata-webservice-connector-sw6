@@ -8,9 +8,10 @@
 namespace Topdata\TopdataConnectorSW6\Helper;
 
 use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
+use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
- * A simple http client for the topdata webservice.
+ * A simple http client for the topdata webservice with a retry mechanism (exponential backoff).
  */
 class TopdataWebserviceClient
 {
@@ -19,7 +20,7 @@ class TopdataWebserviceClient
     const API_VERSION = '108';
 
     private $apiVersion = self::API_VERSION;
-    private string $baseUrl; // without trailing slash
+    private string $baseUrl;
     private CurlHttpClient $curlHttpClient;
 
     public function __construct(
@@ -27,7 +28,10 @@ class TopdataWebserviceClient
         private readonly string $apiUid,
         private readonly string $apiPassword,
         private readonly string $apiSecurityKey,
-        private readonly string $apiLanguage
+        private readonly string $apiLanguage,
+        private readonly int                     $initialDelayMs = 1000,
+        private readonly int                     $maxRetries = 3,
+        private readonly float                   $backoffMultiplier = 2.0
     )
     {
         $this->beVerboseOnCli();
@@ -45,7 +49,6 @@ class TopdataWebserviceClient
      */
     private function httpGet(string $endpoint, array $params = []): mixed
     {
-        // Combine common parameters with any additional ones
         $params = array_merge($params, [
             'uid'          => $this->apiUid,
             'security_key' => $this->apiSecurityKey,
@@ -56,7 +59,21 @@ class TopdataWebserviceClient
         ]);
         $url = $this->baseUrl . $endpoint . '?' . http_build_query($params);
 
-        return $this->curlHttpClient->get($url);
+        $attempt = 0;
+        while (true) {
+            try {
+                return $this->curlHttpClient->get($url);
+            } catch (\Exception $e) {
+                if ($attempt >= $this->maxRetries) {
+                    throw $e;
+                }
+
+                $delayMs = $this->initialDelayMs * pow($this->backoffMultiplier, $attempt);
+                CliLogger::warning("Request failed (attempt ".($attempt+1)."/{$this->maxRetries}), retrying in {$delayMs}ms");
+                usleep($delayMs * 1000);
+                $attempt++;
+            }
+        }
     }
 
 
