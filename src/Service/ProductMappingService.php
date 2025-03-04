@@ -575,10 +575,6 @@ class ProductMappingService
         return $query->execute()->fetchAllAssociative();
     }
 
-    public function setTopdataWebserviceClient(TopdataWebserviceClient $topdataWebserviceClient): void
-    {
-        $this->topdataWebserviceClient = $topdataWebserviceClient;
-    }
 
     /**
      * Builds mapping arrays for OEM and EAN numbers

@@ -11,17 +11,14 @@ use Doctrine\DBAL\Connection;
 use Exception;
 use PDO;
 use Psr\Log\LoggerInterface;
-use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingDefinition;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
-use Topdata\TopdataConnectorSW6\Constants\CrossSellingTypeConstant;
 use Topdata\TopdataConnectorSW6\Constants\FilterTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
@@ -108,17 +105,12 @@ class MappingHelperService
         private readonly EntityRepository              $topdataSeriesRepository,
         private readonly EntityRepository              $topdataDeviceTypeRepository,
         private readonly EntityRepository              $productRepository,
-        private readonly EntitiesHelperService         $entitiesHelperService,
-        private readonly EntityRepository              $productCrossSellingRepository,
-        private readonly EntityRepository              $productCrossSellingAssignedProductsRepository,
         private readonly ProductMappingService         $productMappingService,
         private readonly OptionsHelperService          $optionsHelperService,
         private readonly LocaleHelperService           $localeHelperService,
-        private readonly ManufacturerService           $manufacturerService,
         private readonly TopdataToProductHelperService $topdataToProductHelperService,
         private readonly MediaHelperService            $mediaHelperService,
         private readonly TopdataDeviceService          $topdataDeviceService,
-        private readonly ProductImportSettingsService  $productImportSettingsService,
         private readonly TopdataWebserviceClient       $topdataWebserviceClient,
     )
     {
@@ -126,17 +118,6 @@ class MappingHelperService
         $this->context = Context::createDefaultContext();
     }
 
-
-    /**
-     * Set the Topdata webservice client.
-     *
-     * @param TopdataWebserviceClient $topdataWebserviceClient The webservice client
-     */
-    public function setTopdataWebserviceClient(TopdataWebserviceClient $topdataWebserviceClient): void
-    {
-        $this->topdataWebserviceClient = $topdataWebserviceClient;
-        $this->productMappingService->setTopdataWebserviceClient($topdataWebserviceClient);
-    }
 
 
     //    /**

@@ -17,9 +17,11 @@ use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
- * TODO: rename as this is about specs (and images?)
+ * Service for updating product specifications and media.
  *
- * 03/2025 created (extracted from MappingHelperService)
+ * This service handles the retrieval and updating of product specifications and media
+ * from an external source, integrating them into the Shopware 6 system. It includes
+ * functionalities for fetching data, processing images, and linking related products.
  */
 class ProductInformationService
 {
@@ -93,15 +95,13 @@ class ProductInformationService
 
 
     /**
-     * TODO: rename
+     * Updates product information and media.
      *
-     * Updates product information or media by fetching data from a remote server and updating the local database.
-     *
-     * This method retrieves product data from the remote server, processes the data, and updates the local database
-     * by creating new entries or updating existing ones. It handles both product information and media updates.
+     * Fetches product data from a remote server, processes it, and updates the local database.
+     * It handles both product information and media updates based on the $onlyMedia flag.
      *
      * @param bool $onlyMedia If true, only media information is updated; otherwise, all product information is updated.
-     * @return bool Returns true if the operation is successful, false otherwise.
+     * @return bool True on success, false otherwise.
      * @throws Exception If there is an error fetching data from the remote server.
      */
     public function setProductInformation(bool $onlyMedia): bool
@@ -112,7 +112,7 @@ class ProductInformationService
             CliLogger::section("\n\nProduct information");
         }
 
-        // Fetch the topid products
+        // ---- Fetch the topid products
         $topid_products = $this->topdataToProductHelperService->getTopidProducts(true);
         $productDataUpdate = [];
         $productDataUpdateCovers = [];
@@ -120,11 +120,12 @@ class ProductInformationService
 
         $chunkSize = 50;
 
-        // Split the topid products into chunks
+        // ---- Split the topid products into chunks
         $topids = array_chunk(array_keys($topid_products), $chunkSize);
         CliLogger::lap(true);
 
         foreach ($topids as $k => $prs) {
+            // ---- Skip chunks based on start and end options
             if ($this->optionsHelperService->getOption(OptionConstants::START) && ($k + 1 < $this->optionsHelperService->getOption(OptionConstants::START))) {
                 continue;
             }
@@ -135,7 +136,7 @@ class ProductInformationService
 
             CliLogger::activity('xxx3 - Getting data from remote server part ' . ($k + 1) . '/' . count($topids) . ' (' . count($prs) . ' products)...');
 
-            // Fetch product data from the webservice
+            // ---- Fetch product data from the webservice
             $products = $this->topdataWebserviceClient->myProductList([
                 'products' => implode(',', $prs),
                 'filter'   => FilterTypeConstants::all,
@@ -153,10 +154,10 @@ class ProductInformationService
                 $currentChunkProductIds[] = $p[0]['product_id'];
             }
 
-            // Load product import settings for the current chunk of products
+            // ---- Load product import settings for the current chunk of products
             $this->productImportSettingsService->loadProductImportSettings($currentChunkProductIds);
 
-            // ---- unlink stuff before re-linking
+            // ---- Unlink products, properties, categories and images before re-linking
             if (!$onlyMedia) {
                 $this->_unlinkProducts($currentChunkProductIds);
                 $this->_unlinkProperties($currentChunkProductIds);
@@ -164,13 +165,13 @@ class ProductInformationService
             }
             $this->_unlinkImages($currentChunkProductIds);
 
-            // ---- process products
+            // ---- Process products
             foreach ($products->products as $product) {
                 if (!isset($topid_products[$product->products_id])) {
                     continue;
                 }
 
-                // Prepare product data for update
+                // ---- Prepare product data for update
                 $productData = $this->_prepareProduct($topid_products[$product->products_id][0], $product, $onlyMedia);
                 if ($productData) {
                     $productDataUpdate[] = $productData;
@@ -190,6 +191,7 @@ class ProductInformationService
                     }
                 }
 
+                // ---- Update product data in chunks
                 if (count($productDataUpdate) > 10) {
                     $this->productRepository->update($productDataUpdate, $this->context);
                     $productDataUpdate = [];
@@ -202,6 +204,7 @@ class ProductInformationService
                     }
                 }
 
+                // ---- Link products
                 if (!$onlyMedia) {
                     $this->productLinkingService->linkProducts($topid_products[$product->products_id][0], $product);
                 }
@@ -210,6 +213,7 @@ class ProductInformationService
             CliLogger::activity(' ' . CliLogger::lap() . "sec\n");
         }
 
+        // ---- Update remaining product data
         if (count($productDataUpdate)) {
             CliLogger::activity('Updating last ' . count($productDataUpdate) . ' products...');
             $this->productRepository->update($productDataUpdate, $this->context);
@@ -217,12 +221,14 @@ class ProductInformationService
             CliLogger::activity(' ' . CliLogger::lap() . "sec\n");
         }
 
+        // ---- Update remaining product covers
         if (count($productDataUpdateCovers)) {
             CliLogger::activity("\nUpdating last product covers...");
             $this->productRepository->update($productDataUpdateCovers, $this->context);
             CliLogger::activity(' ' . CliLogger::lap() . "sec\n");
         }
 
+        // ---- Delete duplicate media
         if (count($productDataDeleteDuplicateMedia)) {
             CliLogger::activity("\nDeleting product media duplicates...");
             $chunks = array_chunk($productDataDeleteDuplicateMedia, 100);
@@ -256,7 +262,11 @@ class ProductInformationService
         return true;
     }
 
-
+    /**
+     * Unlinks products from similar, alternate, related, bundled, color variant, capacity variant and variant products.
+     *
+     * @param array $productIds Array of product IDs to unlink.
+     */
     private function _unlinkProducts(array $productIds): void
     {
         if (!count($productIds)) {
@@ -306,6 +316,11 @@ class ProductInformationService
         }
     }
 
+    /**
+     * Unlinks properties from products.
+     *
+     * @param array $productIds Array of product IDs to unlink properties from.
+     */
     private function _unlinkProperties(array $productIds): void
     {
         if (!count($productIds)) {
@@ -320,6 +335,11 @@ class ProductInformationService
         }
     }
 
+    /**
+     * Unlinks images from products.
+     *
+     * @param array $productIds Array of product IDs to unlink images from.
+     */
     private function _unlinkImages(array $productIds): void
     {
         if (!count($productIds)) {
@@ -338,6 +358,11 @@ class ProductInformationService
         }
     }
 
+    /**
+     * Unlinks categories from products.
+     *
+     * @param array $productIds Array of product IDs to unlink categories from.
+     */
     private function _unlinkCategories(array $productIds): void
     {
         if (!count($productIds)
@@ -352,15 +377,25 @@ class ProductInformationService
         $this->connection->executeStatement("UPDATE product SET category_tree = NULL WHERE id IN ($idsString)");
     }
 
+    /**
+     * Prepares product data for update.
+     *
+     * @param array $productId_versionId Array containing the product ID and version ID.
+     * @param object $remoteProductData Remote product data object.
+     * @param bool $onlyMedia If true, only media information is prepared; otherwise, all product information is prepared.
+     * @return array Prepared product data array.
+     */
     private function _prepareProduct(array $productId_versionId, $remoteProductData, $onlyMedia = false): array
     {
         $productData = [];
         $productId = $productId_versionId['product_id'];
 
+        // ---- Prepare product name
         if (!$onlyMedia && $this->productImportSettingsService->getProductOption('productName', $productId) && $remoteProductData->short_description != '') {
             $productData['name'] = trim(substr($remoteProductData->short_description, 0, 255));
         }
 
+        // ---- Prepare product description
         if (!$onlyMedia && $this->productImportSettingsService->getProductOption('productDescription', $productId) && $remoteProductData->short_description != '') {
             $productData['description'] = $remoteProductData->short_description;
         }
@@ -368,16 +403,20 @@ class ProductInformationService
         //        $this->getOption('productLongDescription') ???
         //         $productData['description'] = $remoteProductData->short_description;
 
+        // ---- Prepare product manufacturer
         if (!$onlyMedia && $this->productImportSettingsService->getProductOption('productBrand', $productId) && $remoteProductData->manufacturer != '') {
             $productData['manufacturerId'] = $this->manufacturerService->getManufacturerIdByName($remoteProductData->manufacturer); // fixme
         }
+        // ---- Prepare product EAN
         if (!$onlyMedia && $this->productImportSettingsService->getProductOption('productEan', $productId) && count($remoteProductData->eans)) {
             $productData['ean'] = $remoteProductData->eans[0];
         }
+        // ---- Prepare product OEM
         if (!$onlyMedia && $this->productImportSettingsService->getProductOption('productOem', $productId) && count($remoteProductData->oems)) {
             $productData['manufacturerNumber'] = $remoteProductData->oems[0];
         }
 
+        // ---- Prepare product images
         if ($this->productImportSettingsService->getProductOption('productImages', $productId)) {
             if (isset($remoteProductData->images) && count($remoteProductData->images)) {
                 $media = [];
@@ -426,6 +465,7 @@ class ProductInformationService
             }
         }
 
+        // ---- Prepare product reference PCD
         if (!$onlyMedia
             && $this->productImportSettingsService->getProductOption('specReferencePCD', $productId)
             && isset($remoteProductData->reference_pcds)
@@ -447,6 +487,7 @@ class ProductInformationService
             CliLogger::activity();
         }
 
+        // ---- Prepare product reference OEM
         if (!$onlyMedia
             && $this->productImportSettingsService->getProductOption('specReferenceOEM', $productId)
             && isset($remoteProductData->reference_oems)
@@ -467,6 +508,7 @@ class ProductInformationService
             CliLogger::activity();
         }
 
+        // ---- Prepare product specifications
         if (!$onlyMedia
             && $this->productImportSettingsService->getProductOption('productSpecifications', $productId)
             && isset($remoteProductData->specifications)
@@ -495,6 +537,7 @@ class ProductInformationService
             CliLogger::activity();
         }
 
+        // ---- Prepare product waregroups (categories)
         if (
             !$onlyMedia
             && $this->optionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS)
@@ -523,7 +566,13 @@ class ProductInformationService
         return $productData;
     }
 
-
+    /**
+     * Filters product IDs based on a given configuration option.
+     *
+     * @param string $optionName The name of the configuration option to check.
+     * @param array $productIds An array of product IDs to filter.
+     * @return array An array of product IDs that match the configuration option.
+     */
     private function filterIdsByConfig(string $optionName, array $productIds): array
     {
         $returnIds = [];
@@ -535,6 +584,4 @@ class ProductInformationService
 
         return $returnIds;
     }
-
-
 }

@@ -6,7 +6,11 @@ use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 /**
- * 11/2024 created (extracted from MappingHelperService)
+ * Service class responsible for managing product import settings.
+ *
+ * This service allows retrieving and loading product-specific import settings,
+ * overriding the global settings defined in OptionsHelperService.
+ * It fetches settings based on the product's category and stores them for later use.
  */
 class ProductImportSettingsService
 {
@@ -20,6 +24,12 @@ class ProductImportSettingsService
     }
 
 
+    /**
+     * Maps a given option name to its corresponding key in the product import settings array.
+     *
+     * @param string $optionName The option name to map.
+     * @return string The mapped option name, or an empty string if no mapping is found.
+     */
     private function _mapProductOption(string $optionName): string
     {
         $map = [
@@ -82,22 +92,22 @@ class ProductImportSettingsService
     }
 
 
-    private function _getProductExtraOption(string $optionName, string $productId): bool
-    {
-//        if (isset($this->productImportSettings[$productId])) {
-//            if (
-//                isset($this->productImportSettings[$productId][$optionName])
-//                && $this->productImportSettings[$productId][$optionName]
-//            ) {
-//                return true;
-//            }
+//    private function _getProductExtraOption(string $optionName, string $productId): bool
+//    {
+////        if (isset($this->productImportSettings[$productId])) {
+////            if (
+////                isset($this->productImportSettings[$productId][$optionName])
+////                && $this->productImportSettings[$productId][$optionName]
+////            ) {
+////                return true;
+////            }
+////
+////            return false;
+////        }
+////
+////        return false;
 //
-//            return false;
-//        }
-//
-//        return false;
-
-    }
+//    }
 
 
     /**
@@ -107,19 +117,18 @@ class ProductImportSettingsService
      * for each category. The settings are then mapped to the corresponding products.
      *
      * @param array $productIds An array of product IDs for which to load import settings.
-     * @return void
      */
     public function loadProductImportSettings(array $productIds): void
     {
-        // Initialize the product import settings array
+        // ---- Initialize the product import settings array
         $this->productImportSettings = [];
 
-        // Return early if no product IDs are provided
+        // ---- Return early if no product IDs are provided
         if (!count($productIds)) {
             return;
         }
 
-        // Load each product category path
+        // ---- Load each product category path
         $productCategories = [];
         $allCategories = [];
         $ids = '0x' . implode(',0x', $productIds);
@@ -129,7 +138,7 @@ class ProductImportSettingsService
           WHERE (category_tree is NOT NULL)AND(id IN (' . $ids . '))
     ');
 
-        // Parse the category tree for each product
+        // ---- Parse the category tree for each product
         foreach ($temp as $item) {
             $parsedIds = json_decode($item['category_tree'], true);
             foreach ($parsedIds as $id) {
@@ -140,12 +149,12 @@ class ProductImportSettingsService
             }
         }
 
-        // Return early if no categories are found
+        // ---- Return early if no categories are found
         if (!count($allCategories)) {
             return;
         }
 
-        // Load each category's settings
+        // ---- Load each category's settings
         $ids = '0x' . implode(',0x', array_keys($allCategories));
         $temp = $this->connection->fetchAllAssociative('
         SELECT LOWER(HEX(category_id)) as id, import_settings
@@ -153,12 +162,12 @@ class ProductImportSettingsService
           WHERE (plugin_settings=0) AND (category_id IN (' . $ids . '))
     ');
 
-        // Map the settings to the corresponding categories
+        // ---- Map the settings to the corresponding categories
         foreach ($temp as $item) {
             $allCategories[$item['id']] = json_decode($item['import_settings'], true);
         }
 
-        // Set product settings based on category
+        // ---- Set product settings based on category
         foreach ($productCategories as $productId => $categoryTree) {
             for ($i = (count($categoryTree) - 1); $i >= 0; $i--) {
                 if (isset($allCategories[$categoryTree[$i]])

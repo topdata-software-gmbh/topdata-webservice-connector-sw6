@@ -17,8 +17,9 @@ use Topdata\TopdataFoundationSW6\Util\UtilMarkdown;
 
 /**
  * Service class responsible for handling the import operations.
- *
- * @package Topdata\TopdataConnectorSW6\Service
+ * This class orchestrates the import process, coordinating various helper services
+ * to map products, import device information, and link products to devices.
+ * It also handles loading device media, setting device synonyms, and updating product information.
  */
 class ImportService
 {
@@ -49,17 +50,27 @@ class ImportService
     {
     }
 
+    /**
+     * Executes the import process based on the provided CLI options.
+     *
+     * This method serves as the main entry point for the import operation.
+     * It checks plugin status, configuration, and then dispatches to specific
+     * import operations based on the provided CLI options.
+     *
+     * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
+     * @return int The error code indicating the success or failure of the import process.
+     */
     public function execute(ImportCommandCliOptionsDTO $cliOptionsDto): int
     {
         CliLogger::writeln('Starting work...');
 
-        // Check if plugin is active
+        // ---- Check if plugin is active
         if (!$this->pluginHelperService->isWebserviceConnectorPluginAvailable()) {
             CliLogger::getCliStyle()->error('The TopdataConnectorSW6 plugin is inactive!');
             return self::ERROR_CODE_PLUGIN_INACTIVE;
         }
 
-        // Check if plugin is configured
+        // ---- Check if plugin is configured
         if ($this->configCheckerService->isConfigEmpty()) {
             CliLogger::warning(GlobalPluginConstants::ERROR_MESSAGE_NO_WEBSERVICE_CREDENTIALS);
             // TODO: print some nice message using UtilMarkdown
@@ -69,57 +80,46 @@ class ImportService
 
         CliLogger::getCliStyle()->dumpDict($cliOptionsDto->toDict(), 'CLI Options DTO');
 
-        // Init webservice client
-        $this->initializeTopdataWebserviceClient();
+        // ---- Init webservice client
+        $this->_initOptions();
 
-        // Execute import operations based on options
+        // ---- Execute import operations based on options
         if ($errorCode = $this->executeImportOperations($cliOptionsDto)) {
             return $errorCode;
         }
 
-        // Dump report
+        // ---- Dump report
         CliLogger::getCliStyle()->dumpCounters(ImportReport::getCountersSorted(), 'Report');
 
         return self::ERROR_CODE_SUCCESS;
     }
 
-    /**
-     * Initializes the webservice client with the plugin configuration.
-     */
-    private function initializeTopdataWebserviceClient(): void
-    {
-//        $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
-//        $topdataWebserviceClient = new TopdataWebserviceClient(
-//            $pluginConfig['apiBaseUrl'],
-//            $pluginConfig['apiUid'],
-//            $pluginConfig['apiPassword'],
-//            $pluginConfig['apiSecurityKey'],
-//            $pluginConfig['apiLanguage']
-//        );
-//        $this->mappingHelperService->setTopdataWebserviceClient($topdataWebserviceClient);
-//
-        $this->_initOptions();
-    }
 
     /**
      * Executes the import operations based on the provided CLI options.
+     *
+     * This method determines which import operations to execute based on the
+     * options provided in the ImportCommandCliOptionsDTO. It calls the relevant
+     * helper methods to perform the import operations.
+     *
+     * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
      * @return int|null the error code or null if no error occurred
      */
     private function executeImportOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
-        // Mapping
+        // ---- Mapping
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionMapping()) {
             CliLogger::getCliStyle()->blue('--all || --mapping');
             CliLogger::section('Mapping Products');
             $this->productMappingService->mapProducts();
         }
 
-        // Device operations
+        // ---- Device operations
         if ($result = $this->_handleDeviceOperations($cliOptionsDto)) {
             return $result;
         }
 
-        // Product operations
+        // ---- Product operations
         if ($result = $this->_handleProductOperations($cliOptionsDto)) {
             return $result;
         }
@@ -130,11 +130,14 @@ class ImportService
     /**
      * Handles device-related import operations.
      *
-     * @param ImportCommandCliOptionsDTO $cliOptionsDto
-     * @return int|null
+     * This method imports brands, series, device types and devices.
+     *
+     * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
+     * @return int|null An error code if the device import fails, or null if successful.
      */
     private function _handleDeviceOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
+        // ---- Import all device related data
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDevice()) {
             CliLogger::getCliStyle()->blue('--all || --device');
             if (
@@ -148,6 +151,7 @@ class ImportService
                 return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
             }
         } elseif ($cliOptionsDto->getOptionDeviceOnly()) {
+            // ---- Import only devices
             CliLogger::getCliStyle()->blue('--device-only');
             if (!$this->mappingHelperService->setDevices()) {
                 CliLogger::getCliStyle()->error('Device import failed!');
@@ -161,10 +165,16 @@ class ImportService
 
     /**
      * Handles product-related import operations.
+     *
+     * This method manages the import of product-related data, including linking products to devices,
+     * loading device media, handling product information, and setting device synonyms.
+     *
+     * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
+     * @return int|null An error code if any of the product import operations fail, or null if all are successful.
      */
     private function _handleProductOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
-        // Product to device linking
+        // ---- Product to device linking
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionProduct()) {
             CliLogger::getCliStyle()->blue('--all || --product');
             if (!$this->mappingHelperService->setProducts()) {
@@ -174,7 +184,7 @@ class ImportService
             }
         }
 
-        // Device media
+        // ---- Device media
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceMedia()) {
             CliLogger::getCliStyle()->blue('--all || --device-media');
             if (!$this->mappingHelperService->setDeviceMedia()) {
@@ -183,12 +193,12 @@ class ImportService
             }
         }
 
-        // Product information
+        // ---- Product information
         if ($result = $this->_handleProductInformation($cliOptionsDto)) {
             return $result;
         }
 
-        // Device synonyms
+        // ---- Device synonyms
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceSynonyms()) {
             CliLogger::getCliStyle()->blue('--all || --device-synonyms');
             if (!$this->deviceSynonymsService->setDeviceSynonyms()) {
@@ -198,7 +208,7 @@ class ImportService
             }
         }
 
-        // Product variations
+        // ---- Product variations
         if ($result = $this->_handleProductVariations($cliOptionsDto)) {
             return $result;
         }
@@ -208,9 +218,13 @@ class ImportService
 
     /**
      * Handles product information import operations.
-     */
-    /**
-     * Handles product information import operations.
+     *
+     * This method imports or updates product information based on the provided CLI options.
+     * It checks if the TopFeed plugin is available and then uses the ProductInformationService
+     * to set the product information.
+     *
+     * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
+     * @return int|null An error code if loading product information fails, or null if successful.
      */
     private function _handleProductInformation(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
@@ -246,11 +260,19 @@ class ImportService
 
     /**
      * Handles product variations import operations.
+     *
+     * This method creates product variations based on color and capacity, if the TopFeed plugin is available.
+     *
+     * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
+     * @return int|null An error code if setting device synonyms fails during product variation creation, or null if successful.
      */
     private function _handleProductVariations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
+        // ---- Check if product variations should be created
         if ($cliOptionsDto->getOptionProductVariations()) {
+            // ---- Check if TopFeed plugin is available
             if ($this->pluginHelperService->isTopFeedPluginAvailable()) {
+                // ---- Create product variations
                 if (!$this->mappingHelperService->setProductColorCapacityVariants()) {
                     CliLogger::getCliStyle()->error('Set device synonyms failed!');
 
@@ -264,6 +286,12 @@ class ImportService
         return null;
     }
 
+    /**
+     * Initializes the options for the import process.
+     *
+     * This method retrieves configuration settings from the system configuration
+     * and sets the corresponding options in the OptionsHelperService.
+     */
     public function _initOptions(): void
     {
         $configDefaults = [
