@@ -6,24 +6,26 @@ namespace Topdata\TopdataConnectorSW6\Service;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
-use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
-use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 
 /**
  * 11/2024 created (extracted from TestConnectionCommand)
  */
 class ConnectionTestService
 {
+
+
     public function __construct(
-        private readonly SystemConfigService   $systemConfigService,
-        private readonly ConfigCheckerService  $configCheckerService,
-    ) {
+        private readonly SystemConfigService     $systemConfigService,
+        private readonly ConfigCheckerService    $configCheckerService,
+        private readonly TopdataWebserviceClient $topdataWebserviceClient,
+    )
+    {
     }
 
     public function testConnection(): array
     {
         $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
-        
+
         if ($this->configCheckerService->isConfigEmpty()) {
             return [
                 'success' => false,
@@ -32,15 +34,7 @@ class ConnectionTestService
         }
 
         try {
-            $webservice = new TopdataWebserviceClient(
-                $config['apiBaseUrl'],
-                $config['apiUid'],
-                $config['apiPassword'],
-                $config['apiSecurityKey'],
-                $config['apiLanguage']
-            );
-            
-            $info = $webservice->getUserInfo();
+            $info = $this->topdataWebserviceClient->getUserInfo();
 
             if (isset($info->error)) {
                 return [

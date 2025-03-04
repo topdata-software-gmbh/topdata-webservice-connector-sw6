@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
-use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
 use Topdata\TopdataConnectorSW6\Service\TopdataBrandService;
 
@@ -24,12 +24,15 @@ use Topdata\TopdataConnectorSW6\Service\TopdataBrandService;
 class TopdataWebserviceConnectorAdminApiController extends AbstractController
 {
 
+
+
     public function __construct(
-        private readonly SystemConfigService   $systemConfigService,
-        private readonly LoggerInterface       $logger,
-        private readonly ContainerBagInterface $containerBag,
-        private readonly ConfigCheckerService  $configCheckerService,
-        private readonly TopdataBrandService   $topdataBrandService,
+        private readonly SystemConfigService     $systemConfigService,
+        private readonly LoggerInterface         $logger,
+        private readonly ContainerBagInterface   $containerBag,
+        private readonly ConfigCheckerService    $configCheckerService,
+        private readonly TopdataBrandService     $topdataBrandService,
+        private readonly TopdataWebserviceClient $topdataWebserviceClient,
     )
     {
     }
@@ -45,21 +48,13 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
     public function connectorTestAction(): JsonResponse
     {
         $additionalData = '';
-        $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
         if ($this->configCheckerService->isConfigEmpty()) {
             $credentialsValid = 'no';
             $additionalData .= GlobalPluginConstants::ERROR_MESSAGE_NO_WEBSERVICE_CREDENTIALS;
         }
 
         try {
-            $webservice = new TopdataWebserviceClient(
-                $config['apiBaseUrl'],
-                $config['apiUid'],
-                $config['apiPassword'],
-                $config['apiSecurityKey'],
-                $config['apiLanguage']
-            );
-            $info = $webservice->getUserInfo();
+            $info = $this->topdataWebserviceClient->getUserInfo();
 
             if (isset($info->error)) {
                 $credentialsValid = 'no';

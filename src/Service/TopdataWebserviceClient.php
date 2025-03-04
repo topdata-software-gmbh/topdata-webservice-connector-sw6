@@ -5,8 +5,10 @@
  * @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-namespace Topdata\TopdataConnectorSW6\Helper;
+namespace Topdata\TopdataConnectorSW6\Service;
 
+use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Topdata\TopdataConnectorSW6\Helper\CurlHttpClient;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
@@ -18,18 +20,26 @@ class TopdataWebserviceClient
     const API_VERSION = '108';
 
     private $apiVersion = self::API_VERSION;
-    private string $baseUrl;
     private CurlHttpClient $curlHttpClient;
 
+
+    private readonly string $apiBaseUrl;
+    private readonly string $apiUid;
+    private readonly string $apiPassword;
+    private readonly string $apiSecurityKey;
+    private readonly string $apiLanguage;
+
+
     public function __construct(
-        string                  $baseUrl,
-        private readonly string $apiUid,
-        private readonly string $apiPassword,
-        private readonly string $apiSecurityKey,
-        private readonly string $apiLanguage,
+        private readonly SystemConfigService $systemConfigService,
     )
     {
-        $this->baseUrl = rtrim($baseUrl, '/');
+        $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
+        $this->apiBaseUrl = rtrim($pluginConfig['apiBaseUrl'], '/');
+        $this->apiUid = $pluginConfig['apiUid'];
+        $this->apiPassword = $pluginConfig['apiPassword'];
+        $this->apiSecurityKey = $pluginConfig['apiSecurityKey'];
+        $this->apiLanguage = $pluginConfig['apiLanguage'];
         $this->curlHttpClient = new CurlHttpClient();
     }
 
@@ -53,7 +63,7 @@ class TopdataWebserviceClient
             'language'     => $this->apiLanguage,
             'filter'       => 'all'
         ]);
-        $url = $this->baseUrl . $endpoint . '?' . http_build_query($params);
+        $url = $this->apiBaseUrl . $endpoint . '?' . http_build_query($params);
 
         return $this->curlHttpClient->get($url);
     }

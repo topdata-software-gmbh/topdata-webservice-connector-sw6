@@ -10,12 +10,7 @@ use Shopware\Core\Framework\Uuid\Uuid;
  */
 class ProductImportSettingsService
 {
-
-
-    /**
-     * @var array|mixed
-     */
-    private array $productImportSettings;
+    private array $productImportSettings = [];
 
     public function __construct(
         private readonly OptionsHelperService $optionsHelperService,
@@ -114,7 +109,7 @@ class ProductImportSettingsService
      * @param array $productIds An array of product IDs for which to load import settings.
      * @return void
      */
-    public function _loadProductImportSettings(array $productIds): void
+    public function loadProductImportSettings(array $productIds): void
     {
         // Initialize the product import settings array
         $this->productImportSettings = [];

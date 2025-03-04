@@ -3,6 +3,8 @@
 namespace Topdata\TopdataConnectorSW6\Helper;
 
 use Exception;
+use Topdata\TopdataConnectorSW6\Exception\WebserviceRequestException;
+use Topdata\TopdataConnectorSW6\Exception\WebserviceResponseException;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
@@ -56,13 +58,13 @@ class CurlHttpClient
 
             // ---- Handle cURL errors
             if (curl_errno($ch)) {
-                throw new Exception('cURL-ERROR: ' . curl_error($ch));
+                throw new WebserviceRequestException('cURL-ERROR: ' . curl_error($ch));
             }
 
             // ---- Handle HTTP status codes
             $header = curl_getinfo($ch);
             if ($header['http_code'] != 200) {
-                throw new Exception('HTTP Error: ' . $header['http_code']);
+                throw new WebserviceRequestException('HTTP Error: ' . $header['http_code']);
             }
 
             // ---- Handle Bad Request responses by removing headers from output
@@ -77,12 +79,12 @@ class CurlHttpClient
 
             // check if the response is valid JSON
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new Exception('Invalid JSON response: ' . json_last_error_msg());
+                throw new WebserviceResponseException('Invalid JSON response: ' . json_last_error_msg());
             }
 
             // check if the webservice returned an error
             if (isset($ret->error)) {
-                throw new Exception($ret->error[0]->error_message . ' @topdataconnector webservice error');
+                throw new WebserviceResponseException($ret->error[0]->error_message . ' @topdataconnector webservice error');
             }
 
             CliLogger::writeln('<gray>' . substr($output, 0, 180) . '...</gray>');

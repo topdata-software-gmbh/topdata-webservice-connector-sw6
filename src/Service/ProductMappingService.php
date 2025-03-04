@@ -9,7 +9,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
-use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
@@ -19,25 +19,19 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
 class ProductMappingService
 {
 
-    private Context $context;
-    private TopdataWebserviceClient $topdataWebserviceClient;
-
-
     public function __construct(
-        private readonly LoggerInterface               $logger,
         private readonly Connection                    $connection,
         private readonly OptionsHelperService          $optionsHelperService,
-        private readonly ProgressLoggingService        $progressLoggingService,
         private readonly TopdataToProductHelperService $topdataToProductHelperService,
+        private readonly TopdataWebserviceClient       $topdataWebserviceClient,
     )
     {
-        $this->context = Context::createDefaultContext();
     }
 
     /**
      * This is executed if --mapping option is set.
      *
-     * FIXME: `TRUNCATE topdata_to_product` shoukd be solved in a better way
+     * FIXME: `TRUNCATE topdata_to_product` should be solved in a better way
      *
      * Maps products based on the mapping type specified in the options.
      *
@@ -104,7 +98,7 @@ class ProductMappingService
                     VALUES ' . implode(',', $dataInsert) . '
                 ');
                     $dataInsert = [];
-                    $this->progressLoggingService->activity();
+                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
                 }
             }
         }
@@ -115,7 +109,7 @@ class ProductMappingService
                 VALUES ' . implode(',', $dataInsert) . '
             ');
             $dataInsert = [];
-            $this->progressLoggingService->activity();
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
         }
     }
 
@@ -162,7 +156,7 @@ class ProductMappingService
                             foreach ($artnos[$key] as $artnosValue) {
                                 $stored++;
                                 if (($stored % 50) == 0) {
-                                    $this->progressLoggingService->activity();
+                                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
                                 }
                                 $dataInsert[] = [
                                     'topDataId'        => $prod->products_id,
@@ -179,8 +173,8 @@ class ProductMappingService
                 }
             }
 
-            $this->progressLoggingService->activity("\ndistributor $i/$available_pages");
-            $this->progressLoggingService->mem();
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity("\ndistributor $i/$available_pages");
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::mem();
             CliLogger::writeln('');
 
             if ($i >= $available_pages) {

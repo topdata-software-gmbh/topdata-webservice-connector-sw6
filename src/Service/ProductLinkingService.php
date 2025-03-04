@@ -28,7 +28,6 @@ class ProductLinkingService
         private readonly TopdataToProductHelperService $topdataToProductHelperService,
         private readonly EntityRepository              $productCrossSellingRepository,
         private readonly EntityRepository              $productCrossSellingAssignedProductsRepository,
-        private readonly ProgressLoggingService        $progressLoggingService,
     )
     {
         $this->context = Context::createDefaultContext();
@@ -223,7 +222,7 @@ class ProductLinkingService
                 'topdataExtension' => ['type' => $crossType],
             ];
             $this->productCrossSellingRepository->create([$data], $this->context);
-            $this->progressLoggingService->activity();
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
         }
 
         $i = 1;
@@ -238,7 +237,7 @@ class ProductLinkingService
         }
 
         $this->productCrossSellingAssignedProductsRepository->create($data, $this->context);
-        $this->progressLoggingService->activity();
+        \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
     }
 
 
@@ -313,7 +312,7 @@ class ProductLinkingService
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_similar (product_id, product_version_id, similar_product_id, similar_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
                     ');
-                    $this->progressLoggingService->activity();
+                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
                 }
 
                 if ($this->productOptionService->getProductOption('productSimilarCross', $productId)) {
@@ -335,7 +334,7 @@ class ProductLinkingService
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_alternate (product_id, product_version_id, alternate_product_id, alternate_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
                     ');
-                    $this->progressLoggingService->activity();
+                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
                 }
 
                 if ($this->productOptionService->getProductOption('productAlternateCross', $productId)) {
@@ -357,7 +356,7 @@ class ProductLinkingService
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_related (product_id, product_version_id, related_product_id, related_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
                     ');
-                    $this->progressLoggingService->activity();
+                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
                 }
 
                 if ($this->productOptionService->getProductOption('productRelatedCross', $productId)) {
@@ -379,7 +378,7 @@ class ProductLinkingService
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_bundled (product_id, product_version_id, bundled_product_id, bundled_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
                     ');
-                    $this->progressLoggingService->activity();
+                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
                 }
 
                 if ($this->productOptionService->getProductOption('productBundledCross', $productId)) {
@@ -403,7 +402,7 @@ class ProductLinkingService
                         (product_id, product_version_id, color_variant_product_id, color_variant_product_version_id, created_at) 
                         VALUES ' . implode(',', $chunk) . '
                     ');
-                    $this->progressLoggingService->activity();
+                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
                 }
 
                 if ($this->productOptionService->getProductOption('productVariantColorCross', $productId)) {
@@ -427,7 +426,7 @@ class ProductLinkingService
                         (product_id, product_version_id, capacity_variant_product_id, capacity_variant_product_version_id, created_at) 
                         VALUES ' . implode(',', $chunk) . '
                     ');
-                    $this->progressLoggingService->activity();
+                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
                 }
 
                 if ($this->productOptionService->getProductOption('productVariantCapacityCross', $productId)) {
@@ -451,7 +450,7 @@ class ProductLinkingService
                         (product_id, product_version_id, variant_product_id, variant_product_version_id, created_at) 
                         VALUES ' . implode(',', $chunk) . '
                     ');
-                    $this->progressLoggingService->activity();
+                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
                 }
 
                 if ($this->productOptionService->getProductOption('productVariantCross', $productId)) {

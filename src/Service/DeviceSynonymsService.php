@@ -7,7 +7,7 @@ use Exception;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Topdata\TopdataConnectorSW6\Constants\FilterTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
-use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
 
 /**
  * 11/2024 created (extracted from MappingHelperService)
@@ -15,25 +15,14 @@ use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 class DeviceSynonymsService
 {
 
-    private TopdataWebserviceClient $topdataWebserviceClient;
 
     public function __construct(
+        private readonly TopdataWebserviceClient $topdataWebserviceClient,
         private readonly TopdataDeviceService   $topdataDeviceService,
-        private readonly ProgressLoggingService $progressLoggingService,
         private readonly OptionsHelperService   $optionsHelperService,
-        private readonly SystemConfigService    $systemConfigService,
         private readonly Connection             $connection,
     )
     {
-        $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
-        $this->topdataWebserviceClient = new TopdataWebserviceClient(
-            $pluginConfig['apiBaseUrl'],
-            $pluginConfig['apiUid'],
-            $pluginConfig['apiPassword'],
-            $pluginConfig['apiSecurityKey'],
-            $pluginConfig['apiLanguage']
-        );
-
     }
 
 
@@ -47,7 +36,7 @@ class DeviceSynonymsService
         $chunkSize = 50;
 
         $chunks = array_chunk($availableDevices, $chunkSize, true);
-        $this->progressLoggingService->lap(true);
+        \Topdata\TopdataFoundationSW6\Util\CliLogger::lap(true);
 
         foreach ($chunks as $k => $prs) {
             if ($this->optionsHelperService->getOption(OptionConstants::START) && ($k + 1 < $this->optionsHelperService->getOption(OptionConstants::START))) {
@@ -58,18 +47,18 @@ class DeviceSynonymsService
                 break;
             }
 
-            $this->progressLoggingService->activity('xxx1 - Getting data from remote server part ' . ($k + 1) . '/' . count($chunks) . '...');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity('xxx1 - Getting data from remote server part ' . ($k + 1) . '/' . count($chunks) . '...');
             $devices = $this->topdataWebserviceClient->myProductList([
                 'products' => implode(',', array_keys($prs)),
                 'filter'   => FilterTypeConstants::all,
             ]);
-            $this->progressLoggingService->activity($this->progressLoggingService->lap() . "sec\n");
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity(\Topdata\TopdataFoundationSW6\Util\CliLogger::lap() . "sec\n");
 
             if (!isset($devices->page->available_pages)) {
                 throw new Exception($devices->error[0]->error_message . ' device synonym webservice no pages');
             }
-            //            $this->progressLoggingService->mem();
-            $this->progressLoggingService->activity("\nProcessing data...");
+            //            \Topdata\TopdataFoundationSW6\Util\CliLogger::mem();
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity("\nProcessing data...");
 
             $this->connection->executeStatement('DELETE FROM topdata_device_to_synonym WHERE device_id IN (0x' . implode(', 0x', $prs) . ')');
 
@@ -105,11 +94,11 @@ class DeviceSynonymsService
                     $this->connection->executeStatement(
                         'INSERT INTO topdata_device_to_synonym (device_id, synonym_id, created_at) VALUES ' . implode(',', $dataChunk)
                     );
-                    $this->progressLoggingService->activity();
+                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
                 }
             }
-            $this->progressLoggingService->activity($this->progressLoggingService->lap() . 'sec ');
-            $this->progressLoggingService->mem();
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity(\Topdata\TopdataFoundationSW6\Util\CliLogger::lap() . 'sec ');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::mem();
             \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln('');
         }
 

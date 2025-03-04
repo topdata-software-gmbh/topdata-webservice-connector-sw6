@@ -10,9 +10,9 @@ use Symfony\Component\Console\Command\Command;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
-use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
+use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use Topdata\TopdataFoundationSW6\Util\UtilMarkdown;
 
 /**
@@ -37,37 +37,37 @@ class ImportService
 
 
     public function __construct(
-        private readonly SystemConfigService   $systemConfigService,
-        private readonly LoggerInterface       $logger,
-        private readonly MappingHelperService  $mappingHelperService,
-        private readonly ConfigCheckerService  $configCheckerService,
-        private readonly OptionsHelperService  $optionsHelperService,
-        private readonly PluginHelperService   $pluginHelperService,
-        private readonly ProductMappingService $productMappingService,
-        private readonly DeviceSynonymsService $deviceSynonymsService,
+        private readonly SystemConfigService       $systemConfigService,
+        private readonly MappingHelperService      $mappingHelperService,
+        private readonly ConfigCheckerService      $configCheckerService,
+        private readonly OptionsHelperService      $optionsHelperService,
+        private readonly PluginHelperService       $pluginHelperService,
+        private readonly ProductMappingService     $productMappingService,
+        private readonly DeviceSynonymsService     $deviceSynonymsService,
+        private readonly ProductInformationService $productInformationService,
     )
     {
     }
 
     public function execute(ImportCommandCliOptionsDTO $cliOptionsDto): int
     {
-        \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln('Starting work...');
+        CliLogger::writeln('Starting work...');
 
         // Check if plugin is active
         if (!$this->pluginHelperService->isWebserviceConnectorPluginAvailable()) {
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('The TopdataConnectorSW6 plugin is inactive!');
+            CliLogger::getCliStyle()->error('The TopdataConnectorSW6 plugin is inactive!');
             return self::ERROR_CODE_PLUGIN_INACTIVE;
         }
 
         // Check if plugin is configured
         if ($this->configCheckerService->isConfigEmpty()) {
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::warning(GlobalPluginConstants::ERROR_MESSAGE_NO_WEBSERVICE_CREDENTIALS);
+            CliLogger::warning(GlobalPluginConstants::ERROR_MESSAGE_NO_WEBSERVICE_CREDENTIALS);
             // TODO: print some nice message using UtilMarkdown
 
             return self::ERROR_CODE_MISSING_PLUGIN_CONFIGURATION;
         }
 
-        \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->dumpDict($cliOptionsDto->toDict(), 'CLI Options DTO');
+        CliLogger::getCliStyle()->dumpDict($cliOptionsDto->toDict(), 'CLI Options DTO');
 
         // Init webservice client
         $this->initializeTopdataWebserviceClient();
@@ -78,7 +78,7 @@ class ImportService
         }
 
         // Dump report
-        \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->dumpCounters(ImportReport::getCountersSorted(), 'Report');
+        CliLogger::getCliStyle()->dumpCounters(ImportReport::getCountersSorted(), 'Report');
 
         return self::ERROR_CODE_SUCCESS;
     }
@@ -88,16 +88,16 @@ class ImportService
      */
     private function initializeTopdataWebserviceClient(): void
     {
-        $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
-        $topdataWebserviceClient = new TopdataWebserviceClient(
-            $pluginConfig['apiBaseUrl'],
-            $pluginConfig['apiUid'],
-            $pluginConfig['apiPassword'],
-            $pluginConfig['apiSecurityKey'],
-            $pluginConfig['apiLanguage']
-        );
-        $this->mappingHelperService->setTopdataWebserviceClient($topdataWebserviceClient);
-
+//        $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
+//        $topdataWebserviceClient = new TopdataWebserviceClient(
+//            $pluginConfig['apiBaseUrl'],
+//            $pluginConfig['apiUid'],
+//            $pluginConfig['apiPassword'],
+//            $pluginConfig['apiSecurityKey'],
+//            $pluginConfig['apiLanguage']
+//        );
+//        $this->mappingHelperService->setTopdataWebserviceClient($topdataWebserviceClient);
+//
         $this->_initOptions();
     }
 
@@ -109,8 +109,8 @@ class ImportService
     {
         // Mapping
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionMapping()) {
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->blue('--all || --mapping');
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::section('Mapping Products');
+            CliLogger::getCliStyle()->blue('--all || --mapping');
+            CliLogger::section('Mapping Products');
             $this->productMappingService->mapProducts();
         }
 
@@ -136,21 +136,21 @@ class ImportService
     private function _handleDeviceOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDevice()) {
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->blue('--all || --device');
+            CliLogger::getCliStyle()->blue('--all || --device');
             if (
                 !$this->mappingHelperService->setBrands()
                 || !$this->mappingHelperService->setSeries()
                 || !$this->mappingHelperService->setDeviceTypes()
                 || !$this->mappingHelperService->setDevices()
             ) {
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('Device import failed!');
+                CliLogger::getCliStyle()->error('Device import failed!');
 
                 return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
             }
         } elseif ($cliOptionsDto->getOptionDeviceOnly()) {
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->blue('--device-only');
+            CliLogger::getCliStyle()->blue('--device-only');
             if (!$this->mappingHelperService->setDevices()) {
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('Device import failed!');
+                CliLogger::getCliStyle()->error('Device import failed!');
 
                 return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
             }
@@ -166,9 +166,9 @@ class ImportService
     {
         // Product to device linking
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionProduct()) {
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->blue('--all || --product');
+            CliLogger::getCliStyle()->blue('--all || --product');
             if (!$this->mappingHelperService->setProducts()) {
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('Set products to devices failed!');
+                CliLogger::getCliStyle()->error('Set products to devices failed!');
 
                 return self::ERROR_CODE_PRODUCT_TO_DEVICE_LINKING_FAILED;
             }
@@ -176,9 +176,9 @@ class ImportService
 
         // Device media
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceMedia()) {
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->blue('--all || --device-media');
+            CliLogger::getCliStyle()->blue('--all || --device-media');
             if (!$this->mappingHelperService->setDeviceMedia()) {
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('Load device media failed!');
+                CliLogger::getCliStyle()->error('Load device media failed!');
                 return self::ERROR_CODE_LOAD_DEVICE_MEDIA_FAILED;
             }
         }
@@ -190,9 +190,9 @@ class ImportService
 
         // Device synonyms
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceSynonyms()) {
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->blue('--all || --device-synonyms');
+            CliLogger::getCliStyle()->blue('--all || --device-synonyms');
             if (!$this->deviceSynonymsService->setDeviceSynonyms()) {
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('Set device synonyms failed!');
+                CliLogger::getCliStyle()->error('Set device synonyms failed!');
 
                 return self::ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED;
             }
@@ -225,7 +225,7 @@ class ImportService
 
         // ---- Check if TopFeed plugin is available
         if (!$this->pluginHelperService->isTopFeedPluginAvailable()) {
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln('You need TopFeed plugin to update product information!');
+            CliLogger::writeln('You need TopFeed plugin to update product information!');
 
             return null;
         }
@@ -234,8 +234,8 @@ class ImportService
         $this->optionsHelperService->loadTopdataTopFeedPluginConfig();
 
         // ---- Load product information or update media
-        if (!$this->mappingHelperService->setProductInformation($cliOptionsDto->getOptionProductMediaOnly())) {
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('Load product information failed!');
+        if (!$this->productInformationService->setProductInformation($cliOptionsDto->getOptionProductMediaOnly())) {
+            CliLogger::getCliStyle()->error('Load product information failed!');
 
             return self::ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED;
         }
@@ -252,12 +252,12 @@ class ImportService
         if ($cliOptionsDto->getOptionProductVariations()) {
             if ($this->pluginHelperService->isTopFeedPluginAvailable()) {
                 if (!$this->mappingHelperService->setProductColorCapacityVariants()) {
-                    \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('Set device synonyms failed!');
+                    CliLogger::getCliStyle()->error('Set device synonyms failed!');
 
                     return self::ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED_2;
                 }
             } else {
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::warning('You need TopFeed plugin to create variated products!');
+                CliLogger::warning('You need TopFeed plugin to create variated products!');
             }
         }
 
