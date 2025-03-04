@@ -77,6 +77,9 @@
         <service id="Topdata\TopdataConnectorSW6\Command\ImportCommand" autowire="true">
             <tag name="console.command"/>
         </service>
+        <service id="Topdata\TopdataConnectorSW6\Command\LastReportCommand" autowire="true">
+            <tag name="console.command"/>
+        </service>
 
         <!-- SERVICES -->
         <service id="Topdata\TopdataConnectorSW6\Service\TopdataToProductHelperService" autowire="true"/>
