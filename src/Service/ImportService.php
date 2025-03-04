@@ -110,7 +110,7 @@ class ImportService
         // Mapping
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionMapping()) {
             \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->blue('--all || --mapping');
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->section('Mapping Products');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::section('Mapping Products');
             $this->productMappingService->mapProducts();
         }
 

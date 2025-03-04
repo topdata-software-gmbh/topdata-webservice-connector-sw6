@@ -39,7 +39,7 @@ class DeviceSynonymsService
 
     public function setDeviceSynonyms(): bool
     {
-        \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->section("\n\nDevice synonyms");
+        \Topdata\TopdataFoundationSW6\Util\CliLogger::section("\n\nDevice synonyms");
         $availableDevices = [];
         foreach ($this->topdataDeviceService->_getEnabledDevices() as $pr) {
             $availableDevices[$pr['ws_id']] = bin2hex($pr['id']);

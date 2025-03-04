@@ -67,7 +67,7 @@ class TestConnectionCommand extends AbstractTopdataCommand
         }
 
         // ---- check connection to webservice
-        \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->section('Test connection to the TopData webservice');
+        \Topdata\TopdataFoundationSW6\Util\CliLogger::section('Test connection to the TopData webservice');
 
         \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln('Check plugin is active...');
         if (!$this->pluginHelperService->isWebserviceConnectorPluginAvailable()) {

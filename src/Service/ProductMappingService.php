@@ -207,7 +207,7 @@ class ProductMappingService
      */
     private function mapDefault(): void
     {
-        CliLogger::getCliStyle()->section('ProductMappingService::mapDefault()');
+        CliLogger::section('ProductMappingService::mapDefault()');
 
         [$oemMap, $eanMap] = $this->_buildMaps();
 

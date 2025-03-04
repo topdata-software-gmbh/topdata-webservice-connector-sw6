@@ -279,7 +279,7 @@ class MappingHelperService
     {
         try {
             // Start the section for brands in the CLI output
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->section("\n\nBrands");
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::section("\n\nBrands");
 
             // Log the start of the data fetching process
             \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln('Getting data from remote server...');
@@ -386,7 +386,7 @@ class MappingHelperService
     public function setSeries()
     {
         try {
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->section("\n\nSeries");
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::section("\n\nSeries");
             \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln('Getting data from remote server...');
             $this->progressLoggingService->lap(true);
             $series = $this->topdataWebserviceClient->getModelSeriesByBrandId();
@@ -488,7 +488,7 @@ class MappingHelperService
     {
         try {
             // Start a new section in the CLI output for device types
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->section("\n\nDevice type");
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::section("\n\nDevice type");
 
             // Log the activity of getting data from the remote server
             \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln('Getting data from remote server...');
@@ -616,7 +616,7 @@ class MappingHelperService
             $limit = 5000;
             $SQLlogger = $this->connection->getConfiguration()->getSQLLogger();
             $this->connection->getConfiguration()->setSQLLogger(null);
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->section('Devices');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::section('Devices');
             \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln("Devices begin (Chunk size is $limit devices)");
             $this->progressLoggingService->mem();
             \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln('');
@@ -1488,9 +1488,9 @@ class MappingHelperService
     public function setProductInformation(bool $onlyMedia): bool
     {
         if ($onlyMedia) {
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->section("\n\nProduct media (--product-media-only)");
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::section("\n\nProduct media (--product-media-only)");
         } else {
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->section("\n\nProduct information");
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::section("\n\nProduct information");
         }
 
         // Fetch the topid products
