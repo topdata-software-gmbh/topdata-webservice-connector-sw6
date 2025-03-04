@@ -8,14 +8,12 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Topdata\TopdataConnectorSW6\Constants\FilterTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
-use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
 
 /**
  * 11/2024 created (extracted from MappingHelperService)
  */
 class DeviceSynonymsService
 {
-    use CliStyleTrait;
 
     private TopdataWebserviceClient $topdataWebserviceClient;
 
@@ -36,13 +34,12 @@ class DeviceSynonymsService
             $pluginConfig['apiLanguage']
         );
 
-        $this->beVerboseOnCli();
     }
 
 
     public function setDeviceSynonyms(): bool
     {
-        $this->cliStyle->section("\n\nDevice synonyms");
+        \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->section("\n\nDevice synonyms");
         $availableDevices = [];
         foreach ($this->topdataDeviceService->_getEnabledDevices() as $pr) {
             $availableDevices[$pr['ws_id']] = bin2hex($pr['id']);
@@ -113,7 +110,7 @@ class DeviceSynonymsService
             }
             $this->progressLoggingService->activity($this->progressLoggingService->lap() . 'sec ');
             $this->progressLoggingService->mem();
-            $this->cliStyle->writeln('');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln('');
         }
 
         return true;

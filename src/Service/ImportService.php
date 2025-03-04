@@ -13,7 +13,6 @@ use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
-use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
 use Topdata\TopdataFoundationSW6\Util\UtilMarkdown;
 
 /**
@@ -23,7 +22,6 @@ use Topdata\TopdataFoundationSW6\Util\UtilMarkdown;
  */
 class ImportService
 {
-    use CliStyleTrait;
 
     // Error codes for various failure scenarios
     const ERROR_CODE_SUCCESS                          = 0;
@@ -49,28 +47,27 @@ class ImportService
         private readonly DeviceSynonymsService $deviceSynonymsService,
     )
     {
-        $this->beVerboseOnCli();
     }
 
     public function execute(ImportCommandCliOptionsDTO $cliOptionsDto): int
     {
-        $this->cliStyle->writeln('Starting work...');
+        \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln('Starting work...');
 
         // Check if plugin is active
         if (!$this->pluginHelperService->isWebserviceConnectorPluginAvailable()) {
-            $this->cliStyle->error('The TopdataConnectorSW6 plugin is inactive!');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('The TopdataConnectorSW6 plugin is inactive!');
             return self::ERROR_CODE_PLUGIN_INACTIVE;
         }
 
         // Check if plugin is configured
         if ($this->configCheckerService->isConfigEmpty()) {
-            $this->cliStyle->warning(GlobalPluginConstants::ERROR_MESSAGE_NO_WEBSERVICE_CREDENTIALS);
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::warning(GlobalPluginConstants::ERROR_MESSAGE_NO_WEBSERVICE_CREDENTIALS);
             // TODO: print some nice message using UtilMarkdown
 
             return self::ERROR_CODE_MISSING_PLUGIN_CONFIGURATION;
         }
 
-        $this->cliStyle->dumpDict($cliOptionsDto->toDict(), 'CLI Options DTO');
+        \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->dumpDict($cliOptionsDto->toDict(), 'CLI Options DTO');
 
         // Init webservice client
         $this->initializeTopdataWebserviceClient();
@@ -81,7 +78,7 @@ class ImportService
         }
 
         // Dump report
-        $this->cliStyle->dumpCounters(ImportReport::getCountersSorted(), 'Report');
+        \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->dumpCounters(ImportReport::getCountersSorted(), 'Report');
 
         return self::ERROR_CODE_SUCCESS;
     }
@@ -112,8 +109,8 @@ class ImportService
     {
         // Mapping
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionMapping()) {
-            $this->cliStyle->blue('--all || --mapping');
-            $this->cliStyle->section('Mapping Products');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->blue('--all || --mapping');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->section('Mapping Products');
             $this->productMappingService->mapProducts();
         }
 
@@ -139,21 +136,21 @@ class ImportService
     private function _handleDeviceOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDevice()) {
-            $this->cliStyle->blue('--all || --device');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->blue('--all || --device');
             if (
                 !$this->mappingHelperService->setBrands()
                 || !$this->mappingHelperService->setSeries()
                 || !$this->mappingHelperService->setDeviceTypes()
                 || !$this->mappingHelperService->setDevices()
             ) {
-                $this->cliStyle->error('Device import failed!');
+                \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('Device import failed!');
 
                 return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
             }
         } elseif ($cliOptionsDto->getOptionDeviceOnly()) {
-            $this->cliStyle->blue('--device-only');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->blue('--device-only');
             if (!$this->mappingHelperService->setDevices()) {
-                $this->cliStyle->error('Device import failed!');
+                \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('Device import failed!');
 
                 return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
             }
@@ -169,9 +166,9 @@ class ImportService
     {
         // Product to device linking
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionProduct()) {
-            $this->cliStyle->blue('--all || --product');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->blue('--all || --product');
             if (!$this->mappingHelperService->setProducts()) {
-                $this->cliStyle->error('Set products to devices failed!');
+                \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('Set products to devices failed!');
 
                 return self::ERROR_CODE_PRODUCT_TO_DEVICE_LINKING_FAILED;
             }
@@ -179,9 +176,9 @@ class ImportService
 
         // Device media
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceMedia()) {
-            $this->cliStyle->blue('--all || --device-media');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->blue('--all || --device-media');
             if (!$this->mappingHelperService->setDeviceMedia()) {
-                $this->cliStyle->error('Load device media failed!');
+                \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('Load device media failed!');
                 return self::ERROR_CODE_LOAD_DEVICE_MEDIA_FAILED;
             }
         }
@@ -193,9 +190,9 @@ class ImportService
 
         // Device synonyms
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceSynonyms()) {
-            $this->cliStyle->blue('--all || --device-synonyms');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->blue('--all || --device-synonyms');
             if (!$this->deviceSynonymsService->setDeviceSynonyms()) {
-                $this->cliStyle->error('Set device synonyms failed!');
+                \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('Set device synonyms failed!');
 
                 return self::ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED;
             }
@@ -228,7 +225,7 @@ class ImportService
 
         // ---- Check if TopFeed plugin is available
         if (!$this->pluginHelperService->isTopFeedPluginAvailable()) {
-            $this->cliStyle->writeln('You need TopFeed plugin to update product information!');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln('You need TopFeed plugin to update product information!');
 
             return null;
         }
@@ -238,7 +235,7 @@ class ImportService
 
         // ---- Load product information or update media
         if (!$this->mappingHelperService->setProductInformation($cliOptionsDto->getOptionProductMediaOnly())) {
-            $this->cliStyle->error('Load product information failed!');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('Load product information failed!');
 
             return self::ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED;
         }
@@ -255,12 +252,12 @@ class ImportService
         if ($cliOptionsDto->getOptionProductVariations()) {
             if ($this->pluginHelperService->isTopFeedPluginAvailable()) {
                 if (!$this->mappingHelperService->setProductColorCapacityVariants()) {
-                    $this->cliStyle->error('Set device synonyms failed!');
+                    \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('Set device synonyms failed!');
 
                     return self::ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED_2;
                 }
             } else {
-                $this->cliStyle->warning('You need TopFeed plugin to create variated products!');
+                \Topdata\TopdataFoundationSW6\Util\CliLogger::warning('You need TopFeed plugin to create variated products!');
             }
         }
 

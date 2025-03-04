@@ -2,7 +2,6 @@
 
 namespace Topdata\TopdataConnectorSW6\Service;
 
-use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
 
 /**
  * 10/2024 created (extracted from MappingHelperService)
@@ -10,13 +9,11 @@ use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
  */
 class ProgressLoggingService
 {
-    use CliStyleTrait;
 
     private float $microtime;
 
     public function __construct()
     {
-        $this->beVerboseOnCli();
         $this->microtime = microtime(true);
 
 
@@ -59,9 +56,9 @@ class ProgressLoggingService
         $padding = max(0, $terminalWidth - $messageLength - $callerLength);
 
         // Write the message, padding, and caller
-        $this->cliStyle->write($str);
-        $this->cliStyle->write(str_repeat(' ', $padding));
-        $this->cliStyle->write($caller, $newLine);
+        \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->write($str);
+        \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->write(str_repeat(' ', $padding));
+        \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->write($caller, $newLine);
     }
 
     /**

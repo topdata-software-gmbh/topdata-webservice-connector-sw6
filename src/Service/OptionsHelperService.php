@@ -47,7 +47,7 @@ class OptionsHelperService
      */
     public function setOption($name, $value): void
     {
-        // $this->cliStyle->blue("option: $name = $value");
+        // \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->blue("option: $name = $value");
         $this->options[$name] = $value;
     }
 

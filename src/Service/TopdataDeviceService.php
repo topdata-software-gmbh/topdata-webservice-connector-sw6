@@ -22,20 +22,17 @@ use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
 use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
 use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
-use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
 
 /**
  * 11/2024 created (extracted from MappingHelperService)
  */
 class TopdataDeviceService
 {
-    use CliStyleTrait;
 
     public function __construct(
         private readonly Connection $connection,
     )
     {
-        $this->beVerboseOnCli();
     }
 
     public function _getEnabledDevices(): array

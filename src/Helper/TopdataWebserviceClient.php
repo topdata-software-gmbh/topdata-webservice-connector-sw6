@@ -7,7 +7,6 @@
 
 namespace Topdata\TopdataConnectorSW6\Helper;
 
-use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
@@ -15,7 +14,6 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
  */
 class TopdataWebserviceClient
 {
-    use CliStyleTrait;
 
     const API_VERSION = '108';
 
@@ -29,14 +27,10 @@ class TopdataWebserviceClient
         private readonly string $apiPassword,
         private readonly string $apiSecurityKey,
         private readonly string $apiLanguage,
-        private readonly int    $initialDelayMs = 1000, // for exponential backoff
-        private readonly int    $maxRetries = 5, // for exponential backoff
-        private readonly float  $backoffMultiplier = 2.0 // for exponential backoff
     )
     {
-        $this->beVerboseOnCli();
         $this->baseUrl = rtrim($baseUrl, '/');
-        $this->curlHttpClient = new CurlHttpClient($initialDelayMs, $maxRetries, $backoffMultiplier);
+        $this->curlHttpClient = new CurlHttpClient();
     }
 
 

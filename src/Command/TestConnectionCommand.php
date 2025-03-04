@@ -59,33 +59,33 @@ class TestConnectionCommand extends AbstractTopdataCommand
             $pluginSystemConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
             $topConfigToml = UtilToml::flatConfigToToml($this->topConfigRegistry->getTopConfig('TopdataConnectorSW6')->getFlatConfig());
             $topConfigFlat = $this->topConfigRegistry->getTopConfig('TopdataConnectorSW6')->getFlatConfig();
-            $this->cliStyle->writeln($topConfigToml);
-//            $this->cliStyle->dumpDict($pluginSystemConfig, 'TopdataConnectorSW6.config');
-//            $this->cliStyle->dumpDict($topConfigFlat, 'topConfigFlat(TopdataConnectorSW6)');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln($topConfigToml);
+//            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->dumpDict($pluginSystemConfig, 'TopdataConnectorSW6.config');
+//            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->dumpDict($topConfigFlat, 'topConfigFlat(TopdataConnectorSW6)');
             $this->done();
             return Command::SUCCESS;
         }
 
         // ---- check connection to webservice
-        $this->cliStyle->section('Test connection to the TopData webservice');
+        \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->section('Test connection to the TopData webservice');
 
-        $this->cliStyle->writeln('Check plugin is active...');
+        \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln('Check plugin is active...');
         if (!$this->pluginHelperService->isWebserviceConnectorPluginAvailable()) {
-            $this->cliStyle->error('The TopdataConnectorSW6 plugin is inactive!');
-            $this->cliStyle->writeln('Activate the TopdataConnectorSW6 plugin first. Abort.');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error('The TopdataConnectorSW6 plugin is inactive!');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln('Activate the TopdataConnectorSW6 plugin first. Abort.');
             return self::ERROR_CODE_TOPDATA_WEBSERVICE_CONNECTOR_PLUGIN_INACTIVE;
         }
 
-        $this->cliStyle->writeln('Testing connection...');
+        \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln('Testing connection...');
         $result = $this->connectionTestService->testConnection();
 
         if (!$result['success']) {
-            $this->cliStyle->error($result['message']);
-            $this->cliStyle->writeln('Abort.');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle()->error($result['message']);
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::writeln('Abort.');
             return self::ERROR_CODE_CONNECTION_ERROR;
         }
 
-        $this->cliStyle->success($result['message']);
+        \Topdata\TopdataFoundationSW6\Util\CliLogger::success($result['message']);
         $this->done();
 
         return Command::SUCCESS;

@@ -36,7 +36,7 @@ class LastReportCommand extends AbstractTopdataCommand
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->cliStyle->title('Last Import Report');
+        \Topdata\TopdataFoundationSW6\Util\CliLogger::title('Last Import Report');
         
         $criteria = new Criteria();
         // TODO: $criteria->addFilter( new EqualsFilter('reportType', TopdataReportTypeEnum::IMPORT));
@@ -50,11 +50,11 @@ class LastReportCommand extends AbstractTopdataCommand
         //$counters = $result->first()?->get('counters') ?? [];
 
         if (empty($counters)) {
-            $this->cliStyle->warning('No import report available. Run an import first.');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::warning('No import report available. Run an import first.');
             return Command::SUCCESS;
         }
 
-        $table = new Table($this->cliStyle);
+        $table = new Table(\Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle());
         $table->setHeaders(['Metric', 'Count']);
         $table->setColumnStyle(1, (new \Symfony\Component\Console\Helper\TableCellStyle())->setAlignment('right'));
 

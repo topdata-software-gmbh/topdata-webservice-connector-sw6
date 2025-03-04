@@ -5,14 +5,12 @@ namespace Topdata\TopdataConnectorSW6\Service;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
 
 /**
  * 11/2024 created (extracted from MappingHelperService)
  */
 class TopdataToProductHelperService
 {
-    use CliStyleTrait;
 
     /**
      * it is a map with format: [top_data_id => [product_id, product_version_id, parent_id]]
@@ -26,7 +24,6 @@ class TopdataToProductHelperService
         private readonly EntityRepository $topdataToProductRepository
     )
     {
-        $this->beVerboseOnCli();
         $this->context = Context::createDefaultContext();
     }
 
@@ -51,9 +48,9 @@ class TopdataToProductHelperService
             ');
 
             // ---- log to console
-            $this->cliStyle->info('_fetchTopidProducts :: fetched ' . count($rows) . ' products');
+            \Topdata\TopdataFoundationSW6\Util\CliLogger::info('_fetchTopidProducts :: fetched ' . count($rows) . ' products');
             if (empty($rows)) {
-                $this->cliStyle->warning('No mapped products found in database. Did you set the correct mapping in plugin config?');
+                \Topdata\TopdataFoundationSW6\Util\CliLogger::warning('No mapped products found in database. Did you set the correct mapping in plugin config?');
             }
 
             // ---- build the map

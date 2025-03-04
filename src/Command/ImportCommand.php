@@ -37,7 +37,6 @@ class ImportCommand extends AbstractTopdataCommand
         $this->topdataReportService->startImport($commandLine);
         
         try {
-            $this->importService->setCliStyle($this->cliStyle);
             $cliOptionsDto = new ImportCommandCliOptionsDTO($input);
             
             $result = $this->importService->execute($cliOptionsDto);

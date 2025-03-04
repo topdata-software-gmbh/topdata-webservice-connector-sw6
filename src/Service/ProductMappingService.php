@@ -3,23 +3,21 @@
 namespace Topdata\TopdataConnectorSW6\Service;
 
 use Doctrine\DBAL\Connection;
+use Exception;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
-use Topdata\TopdataFoundationSW6\Helper\CliStyle;
 use Topdata\TopdataConnectorSW6\Helper\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
-use Topdata\TopdataFoundationSW6\Trait\CliStyleTrait;
+use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
  * 10/2024 created (extracted from MappingHelperService).
  */
 class ProductMappingService
 {
-    use CliStyleTrait;
 
     private Context $context;
     private TopdataWebserviceClient $topdataWebserviceClient;
@@ -33,7 +31,6 @@ class ProductMappingService
         private readonly TopdataToProductHelperService $topdataToProductHelperService,
     )
     {
-        $this->beVerboseOnCli();
         $this->context = Context::createDefaultContext();
     }
 
@@ -53,7 +50,7 @@ class ProductMappingService
      */
     public function mapProducts(): void
     {
-        $this->cliStyle->info('ProductMappingService::mapProducts() - using mapping type: ' . $this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE));
+        CliLogger::info('ProductMappingService::mapProducts() - using mapping type: ' . $this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE));
 
         // FIXME: TRUNCATE topdata_to_product shoukd be solved in a better way (temp table? transaction?)
         $this->connection->executeStatement('TRUNCATE TABLE topdata_to_product');
@@ -129,7 +126,7 @@ class ProductMappingService
      * processes it, and inserts the mapped data into the `topdata_to_product` repository. The mapping strategy is determined
      * by the options set in `OptionConstants`.
      *
-     * @throws \Exception if no products are found or if the web service does not return the expected number of pages
+     * @throws Exception if no products are found or if the web service does not return the expected number of pages
      */
     private function mapDistributor(): void
     {
@@ -144,15 +141,15 @@ class ProductMappingService
         }
 
         if (count($artnos) == 0) {
-            throw new \Exception('distributor mapping 0 products found');
+            throw new Exception('distributor mapping 0 products found');
         }
 
         $stored = 0;
-        $this->cliStyle->info(count($artnos) . ' products to check ...');
+        CliLogger::info(count($artnos) . ' products to check ...');
         for ($i = 1; ; $i++) {
             $all_artnr = $this->topdataWebserviceClient->matchMyDistributer(['page' => $i]);
             if (!isset($all_artnr->page->available_pages)) {
-                throw new \Exception('distributor webservice no pages');
+                throw new Exception('distributor webservice no pages');
             }
             $available_pages = $all_artnr->page->available_pages;
             foreach ($all_artnr->match as $prod) {
@@ -184,7 +181,7 @@ class ProductMappingService
 
             $this->progressLoggingService->activity("\ndistributor $i/$available_pages");
             $this->progressLoggingService->mem();
-            $this->cliStyle->writeln('');
+            CliLogger::writeln('');
 
             if ($i >= $available_pages) {
                 break;
@@ -193,7 +190,7 @@ class ProductMappingService
         if (count($dataInsert) > 0) {
             $this->topdataToProductHelperService->insertMany($dataInsert);
         }
-        $this->cliStyle->writeln("\n" . $stored . ' - stored topdata products');
+        CliLogger::writeln("\n" . $stored . ' - stored topdata products');
         unset($artnos);
     }
 
@@ -206,11 +203,11 @@ class ProductMappingService
      *
      * The method fetches product data from the database, processes it, and inserts the mapped data into the `topdata_to_product` repository.
      *
-     * @throws \Exception if any error occurs during the mapping process
+     * @throws Exception if any error occurs during the mapping process
      */
     private function mapDefault(): void
     {
-        $this->cliStyle->section('ProductMappingService::mapDefault()');
+        CliLogger::getCliStyle()->section('ProductMappingService::mapDefault()');
 
         [$oemMap, $eanMap] = $this->_buildMaps();
 
@@ -238,18 +235,18 @@ class ProductMappingService
      * @param array &$setted A reference to an array that keeps track of already processed products
      * @param array &$dataInsert A reference to an array that accumulates data to be inserted into the repository
      *
-     * @throws \Exception if the web service does not return the expected number of pages
+     * @throws Exception if the web service does not return the expected number of pages
      */
     private function _processEANs(array $eanMap, array &$setted): void
     {
         $dataInsert = [];
-        $this->cliStyle->writeln('fetching EANs from Webservice...');
+        CliLogger::writeln('fetching EANs from Webservice...');
         $total = 0;
         for ($i = 1; ; $i++) {
             $response = $this->topdataWebserviceClient->matchMyEANs(['page' => $i]);
             $total += count($response->match);
             if (!isset($response->page->available_pages)) {
-                throw new \Exception('ean webservice no pages');
+                throw new Exception('ean webservice no pages');
             }
             $available_pages = $response->page->available_pages;
             foreach ($response->match as $prod) {
@@ -276,13 +273,13 @@ class ProductMappingService
                     }
                 }
             }
-            $this->cliStyle->writeln('fetched EANs page ' . $i . '/' . $available_pages);
+            CliLogger::writeln('fetched EANs page ' . $i . '/' . $available_pages);
             if ($i >= $available_pages) {
                 break;
             }
         }
         $this->topdataToProductHelperService->insertMany($dataInsert);
-        $this->cliStyle->writeln("DONE. fetched {$total} EANs from Webservice");
+        CliLogger::writeln("DONE. fetched {$total} EANs from Webservice");
         ImportReport::setCounter('Fetched EANs', $total);
     }
 
@@ -292,18 +289,18 @@ class ProductMappingService
      * @param array $oemMap an associative array mapping OEMs to product data
      * @param array &$setted A reference to an array that keeps track of already processed products
      *
-     * @throws \Exception if the web service does not return the expected number of pages
+     * @throws Exception if the web service does not return the expected number of pages
      */
     private function _processOEMs(array $oemMap, array &$setted): void
     {
         $dataInsert = [];
-        $this->cliStyle->writeln('fetching OEMs from Webservice...');
+        CliLogger::writeln('fetching OEMs from Webservice...');
         $total = 0;
         for ($i = 1; ; $i++) {
             $all_artnr = $this->topdataWebserviceClient->matchMyOems(['page' => $i]);
             $total += count($all_artnr->match);
             if (!isset($all_artnr->page->available_pages)) {
-                throw new \Exception('oem webservice no pages');
+                throw new Exception('oem webservice no pages');
             }
             $available_pages = $all_artnr->page->available_pages;
             foreach ($all_artnr->match as $prod) {
@@ -330,13 +327,13 @@ class ProductMappingService
                     }
                 }
             }
-            $this->cliStyle->writeln('fetched OEMs page ' . $i . '/' . $available_pages);
+            CliLogger::writeln('fetched OEMs page ' . $i . '/' . $available_pages);
             if ($i >= $available_pages) {
                 break;
             }
         }
         $this->topdataToProductHelperService->insertMany($dataInsert);
-        $this->cliStyle->writeln("DONE. fetched {$total} OEMs from Webservice");
+        CliLogger::writeln("DONE. fetched {$total} OEMs from Webservice");
         ImportReport::setCounter('Fetched OEMs', $total);
     }
 
@@ -346,7 +343,7 @@ class ProductMappingService
      * @param array $oemMap an associative array mapping OEMs to product data
      * @param array &$setted A reference to an array that keeps track of already processed products
      *
-     * @throws \Exception if the web service does not return the expected number of pages
+     * @throws Exception if the web service does not return the expected number of pages
      */
     private function _processPCDs(array $oemMap, array &$setted): void
     {
@@ -356,7 +353,7 @@ class ProductMappingService
             $all_artnr = $this->topdataWebserviceClient->matchMyPcds(['page' => $i]);
             $total += count($all_artnr->match);
             if (!isset($all_artnr->page->available_pages)) {
-                throw new \Exception('pcd webservice no pages');
+                throw new Exception('pcd webservice no pages');
             }
             $available_pages = $all_artnr->page->available_pages;
             foreach ($all_artnr->match as $prod) {
@@ -383,13 +380,13 @@ class ProductMappingService
                     }
                 }
             }
-            $this->cliStyle->writeln('fetched PCDs page ' . $i . '/' . $available_pages);
+            CliLogger::writeln('fetched PCDs page ' . $i . '/' . $available_pages);
             if ($i >= $available_pages) {
                 break;
             }
         }
         $this->topdataToProductHelperService->insertMany($dataInsert);
-        $this->cliStyle->writeln("DONE. fetched {$total} PCDs from Webservice");
+        CliLogger::writeln("DONE. fetched {$total} PCDs from Webservice");
         ImportReport::setCounter('Fetched PCDs', $total);
     }
 
