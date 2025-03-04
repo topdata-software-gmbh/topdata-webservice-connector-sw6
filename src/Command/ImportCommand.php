@@ -11,6 +11,7 @@ use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
 use Topdata\TopdataConnectorSW6\Service\ImportService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
+use Topdata\TopdataFoundationSW6\Constants\TopdataJobTypeConstants;
 use Topdata\TopdataFoundationSW6\Service\TopdataReportService;
 
 /**
@@ -34,7 +35,7 @@ class ImportCommand extends AbstractTopdataCommand
         $commandLine = $_SERVER['argv'] ? implode(' ', $_SERVER['argv']) : 'topdata:connector:import';
         
         // Start the import report
-        $this->topdataReportService->startImport($commandLine);
+        $this->topdataReportService->newJobReport(TopdataJobTypeConstants::WEBSERVICE_IMPORT, $commandLine);
         
         try {
             $cliOptionsDto = new ImportCommandCliOptionsDTO($input);
