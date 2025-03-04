@@ -29,14 +29,14 @@ class TopdataWebserviceClient
         private readonly string $apiPassword,
         private readonly string $apiSecurityKey,
         private readonly string $apiLanguage,
-        private readonly int                     $initialDelayMs = 1000,
-        private readonly int                     $maxRetries = 3,
-        private readonly float                   $backoffMultiplier = 2.0
+        private readonly int    $initialDelayMs = 1000, // for exponential backoff
+        private readonly int    $maxRetries = 5, // for exponential backoff
+        private readonly float  $backoffMultiplier = 2.0 // for exponential backoff
     )
     {
         $this->beVerboseOnCli();
         $this->baseUrl = rtrim($baseUrl, '/');
-        $this->curlHttpClient = new CurlHttpClient();
+        $this->curlHttpClient = new CurlHttpClient($initialDelayMs, $maxRetries, $backoffMultiplier);
     }
 
 
@@ -46,9 +46,11 @@ class TopdataWebserviceClient
      * @param string $endpoint API endpoint to call (e.g., '/my_products').
      * @param array $params Optional associative array of query parameters.
      * @return mixed Response from the API.
+     * @throws \Exception
      */
     private function httpGet(string $endpoint, array $params = []): mixed
     {
+        // Combine common parameters with any additional ones
         $params = array_merge($params, [
             'uid'          => $this->apiUid,
             'security_key' => $this->apiSecurityKey,
@@ -59,21 +61,7 @@ class TopdataWebserviceClient
         ]);
         $url = $this->baseUrl . $endpoint . '?' . http_build_query($params);
 
-        $attempt = 0;
-        while (true) {
-            try {
-                return $this->curlHttpClient->get($url);
-            } catch (\Exception $e) {
-                if ($attempt >= $this->maxRetries) {
-                    throw $e;
-                }
-
-                $delayMs = $this->initialDelayMs * pow($this->backoffMultiplier, $attempt);
-                CliLogger::warning("Request failed (attempt ".($attempt+1)."/{$this->maxRetries}), retrying in {$delayMs}ms");
-                usleep($delayMs * 1000);
-                $attempt++;
-            }
-        }
+        return $this->curlHttpClient->get($url);
     }
 
 
