@@ -17,6 +17,8 @@ use Topdata\TopdataFoundationSW6\Util\UtilThrowable;
 
 /**
  * This command imports data from the TopData Webservice.
+ * It provides various options to control the import process, such as importing all data,
+ * mapping products, importing devices, and updating media and product information.
  */
 class ImportCommand extends AbstractTopdataCommand
 {
@@ -28,6 +30,11 @@ class ImportCommand extends AbstractTopdataCommand
         parent::__construct();
     }
 
+    /**
+     * Retrieves basic report data for the import process.
+     *
+     * @return array An array containing counters and a user ID.
+     */
     private function _getBasicReportData(): array
     {
         return [
@@ -36,6 +43,9 @@ class ImportCommand extends AbstractTopdataCommand
         ];
     }
 
+    /**
+     * Configures the command with its name, description, and available options.
+     */
     protected function configure(): void
     {
         $this->setName('topdata:connector:import');
@@ -55,24 +65,34 @@ class ImportCommand extends AbstractTopdataCommand
     }
 
     /**
-     * ==== MAIN ====
+     * Executes the import command.
+     *
+     * @param InputInterface $input The input interface.
+     * @param OutputInterface $output The output interface.
+     *
+     * @return int 0 if everything went fine, or an error code.
+     *
+     * @throws \Throwable
      */
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        // Get the command line
+        // ---- Get the command line
         $commandLine = $_SERVER['argv'] ? implode(' ', $_SERVER['argv']) : 'topdata:connector:import';
 
-        // Start the import report
+        // ---- Start the import report
         $this->topdataReportService->newJobReport(TopdataJobTypeConstants::WEBSERVICE_IMPORT, $commandLine);
 
         try {
+            // ---- Create DTO from input
             $cliOptionsDto = new ImportCommandCliOptionsDTO($input);
 
+            // ---- Execute the import service
             $result = $this->importService->execute($cliOptionsDto);
 
+            // ---- Get basic report data
             $reportData = $this->_getBasicReportData();
 
-            // Mark as succeeded if the import was successful
+            // ---- Mark as succeeded or failed based on the result
             if ($result === 0) {
                 $this->topdataReportService->markAsSucceeded($reportData);
             } else {
@@ -81,10 +101,11 @@ class ImportCommand extends AbstractTopdataCommand
 
             return $result;
         } catch (\Throwable $e) {
-            // Mark as failed if an exception occurred
+            // ---- Handle exceptions and mark as failed
             $reportData = $this->_getBasicReportData();
             $reportData['error'] = UtilThrowable::toArray($e);
             $this->topdataReportService->markAsFailed($reportData);
+
             throw $e;
         }
     }
