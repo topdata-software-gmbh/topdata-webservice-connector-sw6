@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Command;
 
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -22,9 +23,12 @@ use Topdata\TopdataFoundationSW6\Util\UtilThrowable;
  */
 class ImportCommand extends AbstractTopdataCommand
 {
+
+
     public function __construct(
         private readonly ImportService        $importService,
         private readonly TopdataReportService $topdataReportService,
+        private readonly SystemConfigService  $systemConfigService,
     )
     {
         parent::__construct();
@@ -37,9 +41,15 @@ class ImportCommand extends AbstractTopdataCommand
      */
     private function _getBasicReportData(): array
     {
+        $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
+
         return [
-            'counters' => ImportReport::getCountersSorted(),
-            'uid'      => 999, // TODO
+            'counters'  => ImportReport::getCountersSorted(),
+            'apiConfig' => [
+                'uid'      => $pluginConfig['apiUid'],
+                'baseUrl'  => $pluginConfig['apiBaseUrl'],
+                'language' => $pluginConfig['apiLanguage'],
+            ],
         ];
     }
 
