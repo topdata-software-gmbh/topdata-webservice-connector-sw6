@@ -13,6 +13,7 @@ use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
 use Topdata\TopdataFoundationSW6\Constants\TopdataJobTypeConstants;
 use Topdata\TopdataFoundationSW6\Service\TopdataReportService;
+use Topdata\TopdataFoundationSW6\Util\UtilThrowable;
 
 /**
  * This command imports data from the TopData Webservice.
@@ -22,39 +23,17 @@ class ImportCommand extends AbstractTopdataCommand
     public function __construct(
         private readonly ImportService        $importService,
         private readonly TopdataReportService $topdataReportService,
-    ) {
+    )
+    {
         parent::__construct();
     }
 
-    /**
-     * ==== MAIN ====
-     */
-    public function execute(InputInterface $input, OutputInterface $output): int
+    private function _getBasicReportData(): array
     {
-        // Get the command line
-        $commandLine = $_SERVER['argv'] ? implode(' ', $_SERVER['argv']) : 'topdata:connector:import';
-        
-        // Start the import report
-        $this->topdataReportService->newJobReport(TopdataJobTypeConstants::WEBSERVICE_IMPORT, $commandLine);
-        
-        try {
-            $cliOptionsDto = new ImportCommandCliOptionsDTO($input);
-            
-            $result = $this->importService->execute($cliOptionsDto);
-            
-            // Mark as succeeded if the import was successful
-            if ($result === 0) {
-                $this->topdataReportService->markAsSucceeded(ImportReport::getCountersSorted());
-            } else {
-                $this->topdataReportService->markAsFailed(ImportReport::getCountersSorted());
-            }
-            
-            return $result;
-        } catch (\Exception $e) {
-            // Mark as failed if an exception occurred
-            $this->topdataReportService->markAsFailed(ImportReport::getCountersSorted());
-            throw $e;
-        }
+        return [
+            'counters' => ImportReport::getCountersSorted(),
+            'uid'      => 999, // TODO
+        ];
     }
 
     protected function configure(): void
@@ -74,4 +53,40 @@ class ImportCommand extends AbstractTopdataCommand
         $this->addOption('start', null, InputOption::VALUE_OPTIONAL, 'First piece of data to handle');
         $this->addOption('end', null, InputOption::VALUE_OPTIONAL, 'Last piece of data to handle');
     }
+
+    /**
+     * ==== MAIN ====
+     */
+    public function execute(InputInterface $input, OutputInterface $output): int
+    {
+        // Get the command line
+        $commandLine = $_SERVER['argv'] ? implode(' ', $_SERVER['argv']) : 'topdata:connector:import';
+
+        // Start the import report
+        $this->topdataReportService->newJobReport(TopdataJobTypeConstants::WEBSERVICE_IMPORT, $commandLine);
+
+        try {
+            $cliOptionsDto = new ImportCommandCliOptionsDTO($input);
+
+            $result = $this->importService->execute($cliOptionsDto);
+
+            $reportData = $this->_getBasicReportData();
+
+            // Mark as succeeded if the import was successful
+            if ($result === 0) {
+                $this->topdataReportService->markAsSucceeded($reportData);
+            } else {
+                $this->topdataReportService->markAsFailed($reportData);
+            }
+
+            return $result;
+        } catch (\Throwable $e) {
+            // Mark as failed if an exception occurred
+            $reportData = $this->_getBasicReportData();
+            $reportData['error'] = UtilThrowable::toArray($e);
+            $this->topdataReportService->markAsFailed($reportData);
+            throw $e;
+        }
+    }
+
 }

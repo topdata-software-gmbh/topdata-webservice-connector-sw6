@@ -48,7 +48,7 @@ class ConnectionTestService
                 'message' => 'Connection success!'
             ];
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return [
                 'success' => false,
                 'message' => "Connection error: {$e->getMessage()}"

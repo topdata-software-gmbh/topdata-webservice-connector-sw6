@@ -63,7 +63,7 @@ class TopdataWebserviceConnectorAdminApiController extends AbstractController
                 $credentialsValid = 'yes';
                 $additionalData = $info;
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $errorMessage = $e->getMessage();
             $this->logger->error($errorMessage);
             $credentialsValid = 'no';
