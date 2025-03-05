@@ -774,7 +774,7 @@ class MappingHelperService
             return true;
         } catch (Exception $e) {
             $this->logger->error($e->getMessage());
-            CliLogger::getCliStyle()->error('Exception abgefangen: ' . $e->getMessage());
+            CliLogger::error('Exception abgefangen: ' . $e->getMessage());
         }
 
         return false;
@@ -1137,7 +1137,7 @@ class MappingHelperService
         } catch (Exception $e) {
             $this->logger->error($e->getMessage());
             //            $this->connection->rollBack();
-            CliLogger::getCliStyle()->error('Exception: ' . $e->getMessage());
+            CliLogger::error('Exception: ' . $e->getMessage());
         }
 
         return false;

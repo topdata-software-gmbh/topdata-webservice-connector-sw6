@@ -66,7 +66,7 @@ class ImportService
 
         // ---- Check if plugin is active
         if (!$this->pluginHelperService->isWebserviceConnectorPluginAvailable()) {
-            CliLogger::getCliStyle()->error('The TopdataConnectorSW6 plugin is inactive!');
+            CliLogger::error('The TopdataConnectorSW6 plugin is inactive!');
             return self::ERROR_CODE_PLUGIN_INACTIVE;
         }
 
@@ -146,7 +146,7 @@ class ImportService
                 || !$this->mappingHelperService->setDeviceTypes()
                 || !$this->mappingHelperService->setDevices()
             ) {
-                CliLogger::getCliStyle()->error('Device import failed!');
+                CliLogger::error('Device import failed!');
 
                 return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
             }
@@ -154,7 +154,7 @@ class ImportService
             // ---- Import only devices
             CliLogger::getCliStyle()->blue('--device-only');
             if (!$this->mappingHelperService->setDevices()) {
-                CliLogger::getCliStyle()->error('Device import failed!');
+                CliLogger::error('Device import failed!');
 
                 return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
             }
@@ -178,7 +178,7 @@ class ImportService
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionProduct()) {
             CliLogger::getCliStyle()->blue('--all || --product');
             if (!$this->mappingHelperService->setProducts()) {
-                CliLogger::getCliStyle()->error('Set products to devices failed!');
+                CliLogger::error('Set products to devices failed!');
 
                 return self::ERROR_CODE_PRODUCT_TO_DEVICE_LINKING_FAILED;
             }
@@ -188,7 +188,7 @@ class ImportService
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceMedia()) {
             CliLogger::getCliStyle()->blue('--all || --device-media');
             if (!$this->mappingHelperService->setDeviceMedia()) {
-                CliLogger::getCliStyle()->error('Load device media failed!');
+                CliLogger::error('Load device media failed!');
                 return self::ERROR_CODE_LOAD_DEVICE_MEDIA_FAILED;
             }
         }
@@ -202,7 +202,7 @@ class ImportService
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceSynonyms()) {
             CliLogger::getCliStyle()->blue('--all || --device-synonyms');
             if (!$this->deviceSynonymsService->setDeviceSynonyms()) {
-                CliLogger::getCliStyle()->error('Set device synonyms failed!');
+                CliLogger::error('Set device synonyms failed!');
 
                 return self::ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED;
             }
@@ -249,7 +249,7 @@ class ImportService
 
         // ---- Load product information or update media
         if (!$this->productInformationService->setProductInformation($cliOptionsDto->getOptionProductMediaOnly())) {
-            CliLogger::getCliStyle()->error('Load product information failed!');
+            CliLogger::error('Load product information failed!');
 
             return self::ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED;
         }
@@ -274,7 +274,7 @@ class ImportService
             if ($this->pluginHelperService->isTopFeedPluginAvailable()) {
                 // ---- Create product variations
                 if (!$this->mappingHelperService->setProductColorCapacityVariants()) {
-                    CliLogger::getCliStyle()->error('Set device synonyms failed!');
+                    CliLogger::error('Set device synonyms failed!');
 
                     return self::ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED_2;
                 }
