@@ -14,6 +14,7 @@ use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
 use Topdata\TopdataFoundationSW6\Constants\TopdataJobTypeConstants;
 use Topdata\TopdataFoundationSW6\Service\TopdataReportService;
+use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use Topdata\TopdataFoundationSW6\Util\UtilThrowable;
 
 /**
@@ -86,11 +87,16 @@ class ImportCommand extends AbstractTopdataCommand
      */
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        // ---- Get the command line
+        // ---- Get the command line (for the report)
         $commandLine = $_SERVER['argv'] ? implode(' ', $_SERVER['argv']) : 'topdata:connector:import';
 
         // ---- Start the import report
         $this->topdataReportService->newJobReport(TopdataJobTypeConstants::WEBSERVICE_IMPORT, $commandLine);
+
+        // ---- print used credentials (TODO: a nice horizontal table and redact credentials)
+        $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
+        CliLogger::dump($config);
+
 
         try {
             // ---- Create DTO from input

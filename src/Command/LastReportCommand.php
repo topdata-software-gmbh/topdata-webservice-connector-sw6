@@ -17,9 +17,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
 use Topdata\TopdataFoundationSW6\Core\Content\TopdataReport\TopdataReportEntity;
+use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use TopdataSoftwareGmbH\Util\UtilDebug;
 
 /**
+ * TODO: move to Foundation plugin
+ * 
  * Command to display statistics from the last import operation
  */
 #[AsCommand(
@@ -36,7 +39,7 @@ class LastReportCommand extends AbstractTopdataCommand
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        \Topdata\TopdataFoundationSW6\Util\CliLogger::title('Last Import Report');
+        CliLogger::title('Last Import Report');
         
         $criteria = new Criteria();
         // TODO: $criteria->addFilter( new EqualsFilter('reportType', TopdataReportTypeEnum::IMPORT));
@@ -50,11 +53,11 @@ class LastReportCommand extends AbstractTopdataCommand
         //$counters = $result->first()?->get('counters') ?? [];
 
         if (empty($counters)) {
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::warning('No import report available. Run an import first.');
+            CliLogger::warning('No import report available. Run an import first.');
             return Command::SUCCESS;
         }
 
-        $table = new Table(\Topdata\TopdataFoundationSW6\Util\CliLogger::getCliStyle());
+        $table = new Table(CliLogger::getCliStyle());
         $table->setHeaders(['Metric', 'Count']);
         $table->setColumnStyle(1, (new \Symfony\Component\Console\Helper\TableCellStyle())->setAlignment('right'));
 

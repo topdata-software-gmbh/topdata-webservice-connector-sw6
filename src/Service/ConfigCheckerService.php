@@ -3,6 +3,7 @@
 namespace Topdata\TopdataConnectorSW6\Service;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
  * a service which checks if the plugin configuration is valid.
@@ -28,4 +29,6 @@ class ConfigCheckerService
             empty($config['apiSecurityKey']) ||
             empty($config['apiLanguage']);
     }
+
+
 }
