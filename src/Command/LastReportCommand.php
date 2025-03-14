@@ -39,39 +39,54 @@ class LastReportCommand extends AbstractTopdataCommand
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        CliLogger::title('Last Import Report');
-        
+        CliLogger::title('Last Report');
+
         $criteria = new Criteria();
-        // TODO: $criteria->addFilter( new EqualsFilter('reportType', TopdataReportTypeEnum::IMPORT));
         $criteria->setLimit(1);
         $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
 
         $result = $this->topdataReportRepository->search($criteria, Context::createDefaultContext());
+
+        if ($result->count() === 0) {
+            CliLogger::error('No report found');
+            return Command::FAILURE;
+        }
+
         /** @var TopdataReportEntity $report */
         $report = $result->first();
-        UtilDebug::dd($report->getReportData());
-        //$counters = $result->first()?->get('counters') ?? [];
 
-        if (empty($counters)) {
-            CliLogger::warning('No import report available. Run an import first.');
-            return Command::SUCCESS;
-        }
+        // Display general report information
+        $table = CliLogger::getCliStyle()->createTable();
+        $table->setHeaderTitle('Report Information');
+        $table->setHeaders(['Property', 'Value']);
 
-        $table = new Table(CliLogger::getCliStyle());
-        $table->setHeaders(['Metric', 'Count']);
-        $table->setColumnStyle(1, (new \Symfony\Component\Console\Helper\TableCellStyle())->setAlignment('right'));
+        $rows = [
+            ['Report ID', $report->getId()],
+            ['Job Type', $report->getJobType()],
+            ['Job Status', $report->getJobStatus()],
+            ['Command Line', $report->getCommandLine()],
+            ['PID', $report->getPid() ?? 'N/A'],
+            ['Started At', $report->getStartedAt()->format('Y-m-d H:i:s')],
+            ['Finished At', $report->getFinishedAt() ? $report->getFinishedAt()->format('Y-m-d H:i:s') : 'Not finished'],
+        ];
 
-        foreach (ImportReport::getCountersSorted($counters) as $key => $value) {
-            $table->addRow([
-                str_replace('_', ' ', ucwords($key)),
-                number_format($value, 0, ',', '.')
-            ]);
-        }
-
-        $table->addRow(new TableSeparator());
-        $table->addRow(['<comment>Total Records</comment>', number_format(array_sum($counters), 0, ',', '.')]);
-
+        $table->setRows($rows);
         $table->render();
+
+        CliLogger::getCliStyle()->newLine();
+
+        // Display report data as JSON
+        CliLogger::title('Report Data');
+
+        $reportData = $report->getReportData();
+        if (empty($reportData)) {
+            CliLogger::writeln('<yellow>No report data available</yellow>');
+        } else {
+            $jsonData = json_encode($reportData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            CliLogger::writeln($jsonData);
+        }
+
+        $this->done();
 
         return Command::SUCCESS;
     }
