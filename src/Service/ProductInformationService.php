@@ -9,7 +9,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
-use Topdata\TopdataConnectorSW6\Constants\FilterTypeConstants;
+use Topdata\TopdataConnectorSW6\Constants\WebserviceFilterTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Exception\WebserviceResponseException;
 use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
@@ -74,6 +74,7 @@ class ProductInformationService
         8   => 'Leergut',
         30  => 'Marketingtext',
     ];
+    const CHUNK_SIZE   = 50;
 
     private Context $context;
 
@@ -118,40 +119,38 @@ class ProductInformationService
         $productDataUpdateCovers = [];
         $productDataDeleteDuplicateMedia = [];
 
-        $chunkSize = 50;
-
         // ---- Split the topid products into chunks
-        $topids = array_chunk(array_keys($topid_products), $chunkSize);
+        $batches = array_chunk(array_keys($topid_products), self::CHUNK_SIZE);
         CliLogger::lap(true);
 
-        foreach ($topids as $k => $prs) {
+        foreach ($batches as $idxBatch => $batch) {
             // ---- Skip chunks based on start and end options
-            if ($this->optionsHelperService->getOption(OptionConstants::START) && ($k + 1 < $this->optionsHelperService->getOption(OptionConstants::START))) {
+            if ($this->optionsHelperService->getOption(OptionConstants::START) && ($idxBatch + 1 < $this->optionsHelperService->getOption(OptionConstants::START))) {
                 continue;
             }
 
-            if ($this->optionsHelperService->getOption(OptionConstants::END) && ($k + 1 > $this->optionsHelperService->getOption(OptionConstants::END))) {
+            if ($this->optionsHelperService->getOption(OptionConstants::END) && ($idxBatch + 1 > $this->optionsHelperService->getOption(OptionConstants::END))) {
                 break;
             }
 
-            CliLogger::activity('xxx3 - Getting data from remote server part ' . ($k + 1) . '/' . count($topids) . ' (' . count($prs) . ' products)...');
+            CliLogger::activity('xxx3 - Getting data from remote server part ' . ($idxBatch + 1) . '/' . count($batches) . ' (' . count($batch) . ' products)...');
 
             // ---- Fetch product data from the webservice
-            $products = $this->topdataWebserviceClient->myProductList([
-                'products' => implode(',', $prs),
-                'filter'   => FilterTypeConstants::all,
+            $response = $this->topdataWebserviceClient->myProductList([
+                'products' => implode(',', $batch),
+                'filter'   => WebserviceFilterTypeConstants::all,
             ]);
             CliLogger::activity(CliLogger::lap() . "sec\n");
 
-            if (!isset($products->page->available_pages)) {
-                throw new WebserviceResponseException($products->error[0]->error_message . 'webservice response has no pages');
+            if (!isset($response->page->available_pages)) {
+                throw new WebserviceResponseException($response->error[0]->error_message . 'webservice response has no pages');
             }
             CliLogger::activity('Processing data...');
 
-            $temp = array_slice($topid_products, $k * $chunkSize, $chunkSize);
+            $temp = array_slice($topid_products, $idxBatch * $chunkSize, $chunkSize);
             $currentChunkProductIds = [];
             foreach ($temp as $p) {
-                $currentChunkProductIds[] = $p[0]['product_id'];
+                $currentChunkProductIds[] = $p[0]['product_id']; // FIXME? isnt this the same as $batch?
             }
 
             // ---- Load product import settings for the current chunk of products
@@ -166,7 +165,7 @@ class ProductInformationService
             $this->_unlinkImages($currentChunkProductIds);
 
             // ---- Process products
-            foreach ($products->products as $product) {
+            foreach ($response->products as $product) {
                 if (!isset($topid_products[$product->products_id])) {
                     continue;
                 }
@@ -391,12 +390,12 @@ class ProductInformationService
         $productId = $productId_versionId['product_id'];
 
         // ---- Prepare product name
-        if (!$onlyMedia && $this->productImportSettingsService->getProductOption('productName', $productId) && $remoteProductData->short_description != '') {
+        if (!$onlyMedia && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productName, $productId) && $remoteProductData->short_description != '') {
             $productData['name'] = trim(substr($remoteProductData->short_description, 0, 255));
         }
 
         // ---- Prepare product description
-        if (!$onlyMedia && $this->productImportSettingsService->getProductOption('productDescription', $productId) && $remoteProductData->short_description != '') {
+        if (!$onlyMedia && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productDescription, $productId) && $remoteProductData->short_description != '') {
             $productData['description'] = $remoteProductData->short_description;
         }
 
@@ -404,20 +403,20 @@ class ProductInformationService
         //         $productData['description'] = $remoteProductData->short_description;
 
         // ---- Prepare product manufacturer
-        if (!$onlyMedia && $this->productImportSettingsService->getProductOption('productBrand', $productId) && $remoteProductData->manufacturer != '') {
+        if (!$onlyMedia && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productBrand, $productId) && $remoteProductData->manufacturer != '') {
             $productData['manufacturerId'] = $this->manufacturerService->getManufacturerIdByName($remoteProductData->manufacturer); // fixme
         }
         // ---- Prepare product EAN
-        if (!$onlyMedia && $this->productImportSettingsService->getProductOption('productEan', $productId) && count($remoteProductData->eans)) {
+        if (!$onlyMedia && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productEan, $productId) && count($remoteProductData->eans)) {
             $productData['ean'] = $remoteProductData->eans[0];
         }
         // ---- Prepare product OEM
-        if (!$onlyMedia && $this->productImportSettingsService->getProductOption('productOem', $productId) && count($remoteProductData->oems)) {
+        if (!$onlyMedia && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productOem, $productId) && count($remoteProductData->oems)) {
             $productData['manufacturerNumber'] = $remoteProductData->oems[0];
         }
 
         // ---- Prepare product images
-        if ($this->productImportSettingsService->getProductOption('productImages', $productId)) {
+        if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productImages, $productId)) {
             if (isset($remoteProductData->images) && count($remoteProductData->images)) {
                 $media = [];
                 foreach ($remoteProductData->images as $k => $img) {
@@ -467,7 +466,7 @@ class ProductInformationService
 
         // ---- Prepare product reference PCD
         if (!$onlyMedia
-            && $this->productImportSettingsService->getProductOption('specReferencePCD', $productId)
+            && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_specReferencePCD, $productId)
             && isset($remoteProductData->reference_pcds)
             && count((array)$remoteProductData->reference_pcds)
         ) {
@@ -489,7 +488,7 @@ class ProductInformationService
 
         // ---- Prepare product reference OEM
         if (!$onlyMedia
-            && $this->productImportSettingsService->getProductOption('specReferenceOEM', $productId)
+            && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_specReferenceOEM, $productId)
             && isset($remoteProductData->reference_oems)
             && count((array)$remoteProductData->reference_oems)
         ) {
@@ -510,7 +509,7 @@ class ProductInformationService
 
         // ---- Prepare product specifications
         if (!$onlyMedia
-            && $this->productImportSettingsService->getProductOption('productSpecifications', $productId)
+            && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productSpecifications, $productId)
             && isset($remoteProductData->specifications)
             && count($remoteProductData->specifications)
         ) {

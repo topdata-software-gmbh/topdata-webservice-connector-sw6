@@ -11,6 +11,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\CrossSellingTypeConstant;
+use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
  * aka ProductCrossSellingService
@@ -23,7 +24,7 @@ class ProductLinkingService
 
 
     public function __construct(
-        private readonly ProductImportSettingsService  $productOptionService,
+        private readonly ProductImportSettingsService  $productImportSettingsService,
         private readonly Connection                    $connection,
         private readonly TopdataToProductHelperService $topdataToProductHelperService,
         private readonly EntityRepository              $productCrossSellingRepository,
@@ -222,7 +223,7 @@ class ProductLinkingService
                 'topdataExtension' => ['type' => $crossType],
             ];
             $this->productCrossSellingRepository->create([$data], $this->context);
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+            CliLogger::activity();
         }
 
         $i = 1;
@@ -237,7 +238,7 @@ class ProductLinkingService
         }
 
         $this->productCrossSellingAssignedProductsRepository->create($data, $this->context);
-        \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+        CliLogger::activity();
     }
 
 
@@ -299,7 +300,7 @@ class ProductLinkingService
         $dateTime = date('Y-m-d H:i:s');
         $productId = $productId_versionId['product_id'];
 
-        if ($this->productOptionService->getProductOption('productSimilar', $productId)) {
+        if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productSimilar, $productId)) {
             $dataInsert = [];
             $temp = $this->_findSimilarProducts($remoteProductData);
             foreach ($temp as $tempProd) {
@@ -312,16 +313,16 @@ class ProductLinkingService
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_similar (product_id, product_version_id, similar_product_id, similar_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
                     ');
-                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                    CliLogger::activity();
                 }
 
-                if ($this->productOptionService->getProductOption('productSimilarCross', $productId)) {
+                if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productSimilarCross, $productId)) {
                     $this->addProductCrossSelling($productId_versionId, $temp, CrossSellingTypeConstant::CROSS_SIMILAR);
                 }
             }
         }
 
-        if ($this->productOptionService->getProductOption('productAlternate', $productId)) {
+        if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productAlternate, $productId)) {
             $dataInsert = [];
             $temp = $this->findAlternateProducts($remoteProductData);
             foreach ($temp as $tempProd) {
@@ -334,16 +335,16 @@ class ProductLinkingService
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_alternate (product_id, product_version_id, alternate_product_id, alternate_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
                     ');
-                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                    CliLogger::activity();
                 }
 
-                if ($this->productOptionService->getProductOption('productAlternateCross', $productId)) {
+                if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productAlternateCross, $productId)) {
                     $this->addProductCrossSelling($productId_versionId, $temp, CrossSellingTypeConstant::CROSS_ALTERNATE);
                 }
             }
         }
 
-        if ($this->productOptionService->getProductOption('productRelated', $productId)) {
+        if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productRelated, $productId)) {
             $dataInsert = [];
             $temp = $this->findRelatedProducts($remoteProductData);
             foreach ($temp as $tempProd) {
@@ -356,16 +357,16 @@ class ProductLinkingService
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_related (product_id, product_version_id, related_product_id, related_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
                     ');
-                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                    CliLogger::activity();
                 }
 
-                if ($this->productOptionService->getProductOption('productRelatedCross', $productId)) {
+                if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productRelatedCross, $productId)) {
                     $this->addProductCrossSelling($productId_versionId, $temp, CrossSellingTypeConstant::CROSS_RELATED);
                 }
             }
         }
 
-        if ($this->productOptionService->getProductOption('productBundled', $productId)) {
+        if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productBundled, $productId)) {
             $dataInsert = [];
             $temp = $this->findBundledProducts($remoteProductData);
             foreach ($temp as $tempProd) {
@@ -378,16 +379,16 @@ class ProductLinkingService
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_bundled (product_id, product_version_id, bundled_product_id, bundled_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
                     ');
-                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                    CliLogger::activity();
                 }
 
-                if ($this->productOptionService->getProductOption('productBundledCross', $productId)) {
+                if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productBundledCross, $productId)) {
                     $this->addProductCrossSelling($productId_versionId, $temp, CrossSellingTypeConstant::CROSS_BUNDLED);
                 }
             }
         }
 
-        if ($this->productOptionService->getProductOption('productColorVariant', $productId)) {
+        if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productColorVariant, $productId)) {
             $dataInsert = [];
             $temp = $this->findColorVariantProducts($remoteProductData);
             foreach ($temp as $tempProd) {
@@ -402,16 +403,16 @@ class ProductLinkingService
                         (product_id, product_version_id, color_variant_product_id, color_variant_product_version_id, created_at) 
                         VALUES ' . implode(',', $chunk) . '
                     ');
-                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                    CliLogger::activity();
                 }
 
-                if ($this->productOptionService->getProductOption('productVariantColorCross', $productId)) {
+                if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productVariantColorCross, $productId)) {
                     $this->addProductCrossSelling($productId_versionId, $temp, CrossSellingTypeConstant::CROSS_COLOR_VARIANT);
                 }
             }
         }
 
-        if ($this->productOptionService->getProductOption('productCapacityVariant', $productId)) {
+        if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productCapacityVariant, $productId)) {
             $dataInsert = [];
             $temp = $this->findCapacityVariantProducts($remoteProductData);
             foreach ($temp as $tempProd) {
@@ -426,16 +427,16 @@ class ProductLinkingService
                         (product_id, product_version_id, capacity_variant_product_id, capacity_variant_product_version_id, created_at) 
                         VALUES ' . implode(',', $chunk) . '
                     ');
-                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                    CliLogger::activity();
                 }
 
-                if ($this->productOptionService->getProductOption('productVariantCapacityCross', $productId)) {
+                if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productVariantCapacityCross, $productId)) {
                     $this->addProductCrossSelling($productId_versionId, $temp, CrossSellingTypeConstant::CROSS_CAPACITY_VARIANT);
                 }
             }
         }
 
-        if ($this->productOptionService->getProductOption('productVariant', $productId)) {
+        if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productVariant, $productId)) {
             $dataInsert = [];
             $temp = $this->findVariantProducts($remoteProductData);
             foreach ($temp as $tempProd) {
@@ -450,10 +451,10 @@ class ProductLinkingService
                         (product_id, product_version_id, variant_product_id, variant_product_version_id, created_at) 
                         VALUES ' . implode(',', $chunk) . '
                     ');
-                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                    CliLogger::activity();
                 }
 
-                if ($this->productOptionService->getProductOption('productVariantCross', $productId)) {
+                if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productVariantCross, $productId)) {
                     $this->addProductCrossSelling($productId_versionId, $temp, CrossSellingTypeConstant::CROSS_VARIANT);
                 }
             }

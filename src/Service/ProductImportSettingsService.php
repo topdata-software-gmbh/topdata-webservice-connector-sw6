@@ -6,7 +6,7 @@ use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 /**
- * Service class responsible for managing product import settings.
+ * Service class responsible for managing product import settings in a HIERARCHICAL way.
  *
  * This service allows retrieving and loading product-specific import settings,
  * overriding the global settings defined in OptionsHelperService.
@@ -14,6 +14,33 @@ use Shopware\Core\Framework\Uuid\Uuid;
  */
 class ProductImportSettingsService
 {
+    const OPTION_NAME_productName                 = 'productName';
+    const OPTION_NAME_productDescription          = 'productDescription';
+    const OPTION_NAME_productBrand                = 'productBrand';
+    const OPTION_NAME_productEan                  = 'productEan';
+    const OPTION_NAME_productOem                  = 'productOem';
+    const OPTION_NAME_productImages               = 'productImages';
+    const OPTION_NAME_specReferencePCD            = 'specReferencePCD';
+    const OPTION_NAME_specReferenceOEM            = 'specReferenceOEM';
+    const OPTION_NAME_productSpecifications       = 'productSpecifications';
+    const OPTION_NAME_productImagesDelete         = 'productImagesDelete'; // not used?
+    const OPTION_NAME_productSimilar              = 'productSimilar';
+    const OPTION_NAME_productSimilarCross         = 'productSimilarCross';
+    const OPTION_NAME_productAlternate            = 'productAlternate';
+    const OPTION_NAME_productAlternateCross       = 'productAlternateCross';
+    const OPTION_NAME_productRelated              = 'productRelated';
+    const OPTION_NAME_productRelatedCross         = 'productRelatedCross';
+    const OPTION_NAME_productBundled              = 'productBundled';
+    const OPTION_NAME_productBundledCross         = 'productBundledCross';
+    const OPTION_NAME_productColorVariant         = 'productColorVariant';
+    const OPTION_NAME_productVariantColorCross    = 'productVariantColorCross';
+    const OPTION_NAME_productCapacityVariant      = 'productCapacityVariant';
+    const OPTION_NAME_productVariantCapacityCross = 'productVariantCapacityCross';
+    const OPTION_NAME_productVariant              = 'productVariant';
+    const OPTION_NAME_productVariantCross         = 'productVariantCross';
+
+
+
     private array $productImportSettings = [];
 
     public function __construct(
@@ -22,53 +49,6 @@ class ProductImportSettingsService
     )
     {
     }
-
-
-    /**
-     * Maps a given option name to its corresponding key in the product import settings array.
-     *
-     * @param string $optionName The option name to map.
-     * @return string The mapped option name, or an empty string if no mapping is found.
-     */
-    private function _mapProductOption(string $optionName): string
-    {
-        $map = [
-            'name'              => 'productName',
-            'description'       => 'productDescription',
-            'brand'             => 'productBrand',
-            'EANs'              => 'productEan',
-            'MPNs'              => 'productOem',
-            'pictures'          => 'productImages',
-            'unlinkOldPictures' => 'productImagesDelete',
-            'properties'        => 'productSpecifications',
-            'PCDsProp'          => 'specReferencePCD',
-            'MPNsProp'          => 'specReferenceOEM',
-
-            'importSimilar'          => 'productSimilar',
-            'importAlternates'       => 'productAlternate',
-            'importAccessories'      => 'productRelated',
-            'importBoundles'         => 'productBundled',
-            'importVariants'         => 'productVariant',
-            'importColorVariants'    => 'productColorVariant',
-            'importCapacityVariants' => 'productCapacityVariant',
-
-            'crossSimilar'          => 'productSimilarCross',
-            'crossAlternates'       => 'productAlternateCross',
-            'crossAccessories'      => 'productRelatedCross',
-            'crossBoundles'         => 'productBundledCross',
-            'crossVariants'         => 'productVariantCross',
-            'crossColorVariants'    => 'productVariantColorCross',
-            'crossCapacityVariants' => 'productVariantCapacityCross',
-        ];
-
-        $ret = array_search($optionName, $map);
-        if ($ret === false) {
-            return '';
-        }
-
-        return $ret;
-    }
-
 
     /**
      * Retrieves the value of a product option based on the provided option name and product ID.
@@ -83,31 +63,44 @@ class ProductImportSettingsService
     public function getProductOption(string $optionName, string $productId): bool
     {
         if (isset($this->productImportSettings[$productId])) {
-            $mappedOptionName = $this->_mapProductOption($optionName);
+            // ---- get mapped option name
+            $mappedOptionName = [
+                self::OPTION_NAME_productName           => 'name',
+                self::OPTION_NAME_productDescription    => 'description',
+                self::OPTION_NAME_productBrand          => 'brand',
+                self::OPTION_NAME_productEan            => 'EANs',
+                self::OPTION_NAME_productOem            => 'MPNs',
+                self::OPTION_NAME_productImages         => 'pictures',
+                self::OPTION_NAME_productImagesDelete   => 'unlinkOldPictures',
+                self::OPTION_NAME_productSpecifications => 'properties',
+                self::OPTION_NAME_specReferencePCD      => 'PCDsProp',
+                self::OPTION_NAME_specReferenceOEM      => 'MPNsProp',
+
+                self::OPTION_NAME_productSimilar         => 'importSimilar',
+                self::OPTION_NAME_productAlternate       => 'importAlternates',
+                self::OPTION_NAME_productRelated         => 'importAccessories',
+                self::OPTION_NAME_productBundled         => 'importBoundles',
+                self::OPTION_NAME_productVariant         => 'importVariants',
+                self::OPTION_NAME_productColorVariant    => 'importColorVariants',
+                self::OPTION_NAME_productCapacityVariant => 'importCapacityVariants',
+
+                self::OPTION_NAME_productSimilarCross         => 'crossSimilar',
+                self::OPTION_NAME_productAlternateCross       => 'crossAlternates',
+                self::OPTION_NAME_productRelatedCross         => 'crossAccessories',
+                self::OPTION_NAME_productBundledCross         => 'crossBoundles',
+                self::OPTION_NAME_productVariantCross         => 'crossVariants',
+                self::OPTION_NAME_productVariantColorCross    => 'crossColorVariants',
+                self::OPTION_NAME_productVariantCapacityCross => 'crossCapacityVariants',
+            ][$optionName] ?? '';
 
             return $this->productImportSettings[$productId][$mappedOptionName] ?? false;
         }
 
+        // return option from topFEED config
         return $this->optionsHelperService->getOption($optionName) ? true : false;
     }
 
 
-//    private function _getProductExtraOption(string $optionName, string $productId): bool
-//    {
-////        if (isset($this->productImportSettings[$productId])) {
-////            if (
-////                isset($this->productImportSettings[$productId][$optionName])
-////                && $this->productImportSettings[$productId][$optionName]
-////            ) {
-////                return true;
-////            }
-////
-////            return false;
-////        }
-////
-////        return false;
-//
-//    }
 
 
     /**
@@ -135,7 +128,8 @@ class ProductImportSettingsService
         $temp = $this->connection->fetchAllAssociative('
         SELECT LOWER(HEX(id)) as id, category_tree
           FROM product 
-          WHERE (category_tree is NOT NULL)AND(id IN (' . $ids . '))
+          WHERE (category_tree is NOT NULL) 
+            AND (id IN (' . $ids . '))
     ');
 
         // ---- Parse the category tree for each product

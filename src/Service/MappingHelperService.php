@@ -19,7 +19,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
-use Topdata\TopdataConnectorSW6\Constants\FilterTypeConstants;
+use Topdata\TopdataConnectorSW6\Constants\WebserviceFilterTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
@@ -212,18 +212,18 @@ class MappingHelperService
 
             // Log the start of the data fetching process
             CliLogger::writeln('Getting data from remote server...');
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::lap(true);
+            CliLogger::lap(true);
 
             // Fetch the brands from the remote server
             $brands = $this->topdataWebserviceClient->getBrands();
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity('Got ' . count($brands->data) . " brands from remote server\n");
+            CliLogger::activity('Got ' . count($brands->data) . " brands from remote server\n");
             ImportReport::setCounter('Fetched Brands', count($brands->data));
             $topdataBrandRepository = $this->topdataBrandRepository;
 
             $duplicates = [];
             $dataCreate = [];
             $dataUpdate = [];
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity('Processing data');
+            CliLogger::activity('Processing data');
 
             // Process each brand fetched from the remote server
             foreach ($brands->data as $b) {
@@ -273,31 +273,31 @@ class MappingHelperService
                 if (count($dataCreate) > 100) {
                     $topdataBrandRepository->create($dataCreate, $this->context);
                     $dataCreate = [];
-                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                    CliLogger::activity();
                 }
 
                 // Update existing brands in batches of 100
                 if (count($dataUpdate) > 100) {
                     $topdataBrandRepository->update($dataUpdate, $this->context);
                     $dataUpdate = [];
-                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                    CliLogger::activity();
                 }
             }
 
             // Create any remaining new brands
             if (count($dataCreate)) {
                 $topdataBrandRepository->create($dataCreate, $this->context);
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                CliLogger::activity();
             }
 
             // Update any remaining existing brands
             if (count($dataUpdate)) {
                 $topdataBrandRepository->update($dataUpdate, $this->context);
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                CliLogger::activity();
             }
 
             // Log the completion of the brands process
-            CliLogger::writeln("\nBrands done " . \Topdata\TopdataFoundationSW6\Util\CliLogger::lap() . 'sec');
+            CliLogger::writeln("\nBrands done " . CliLogger::lap() . 'sec');
             $topdataBrandRepository = null;
             $duplicates = null;
             $brands = null;
@@ -317,14 +317,14 @@ class MappingHelperService
         try {
             CliLogger::section("\n\nSeries");
             CliLogger::writeln('Getting data from remote server...');
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::lap(true);
+            CliLogger::lap(true);
             $series = $this->topdataWebserviceClient->getModelSeriesByBrandId();
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity('Got ' . count($series->data) . " records from remote server\n");
+            CliLogger::activity('Got ' . count($series->data) . " records from remote server\n");
             ImportReport::setCounter('Fetched Series', count($series->data));
             $topdataSeriesRepository = $this->topdataSeriesRepository;
             $dataCreate = [];
             $dataUpdate = [];
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity('Processing data');
+            CliLogger::activity('Processing data');
             $allSeries = $this->getSeriesArray(true);
             foreach ($series->data as $s) {
                 foreach ($s->brandIds as $brandWsId) {
@@ -371,27 +371,27 @@ class MappingHelperService
                     if (count($dataCreate) > 100) {
                         $topdataSeriesRepository->create($dataCreate, $this->context);
                         $dataCreate = [];
-                        \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                        CliLogger::activity();
                     }
 
                     if (count($dataUpdate) > 100) {
                         $topdataSeriesRepository->update($dataUpdate, $this->context);
                         $dataUpdate = [];
-                        \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                        CliLogger::activity();
                     }
                 }
             }
 
             if (count($dataCreate)) {
                 $topdataSeriesRepository->create($dataCreate, $this->context);
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                CliLogger::activity();
             }
 
             if (count($dataUpdate)) {
                 $topdataSeriesRepository->update($dataUpdate, $this->context);
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                CliLogger::activity();
             }
-            CliLogger::writeln("\nSeries done " . \Topdata\TopdataFoundationSW6\Util\CliLogger::lap() . 'sec');
+            CliLogger::writeln("\nSeries done " . CliLogger::lap() . 'sec');
             $series = null;
             $topdataSeriesRepository = null;
 
@@ -421,7 +421,7 @@ class MappingHelperService
 
             // Log the activity of getting data from the remote server
             CliLogger::writeln('Getting data from remote server...');
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::lap(true);
+            CliLogger::lap(true);
 
             // Fetch device types from the remote server
             $types = $this->topdataWebserviceClient->getModelTypeByBrandId();
@@ -435,7 +435,7 @@ class MappingHelperService
             $dataUpdate = [];
 
             // Log the activity of processing data
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity('Processing data...');
+            CliLogger::activity('Processing data...');
 
             // Get all existing types from the local database
             $allTypes = $this->getTypesArray(true);
@@ -490,14 +490,14 @@ class MappingHelperService
                     if (count($dataCreate) > 100) {
                         $topdataDeviceTypeRepository->create($dataCreate, $this->context);
                         $dataCreate = [];
-                        \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                        CliLogger::activity();
                     }
 
                     // Update existing types in batches of 100
                     if (count($dataUpdate) > 100) {
                         $topdataDeviceTypeRepository->update($dataUpdate, $this->context);
                         $dataUpdate = [];
-                        \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                        CliLogger::activity();
                     }
                 }
             }
@@ -505,20 +505,20 @@ class MappingHelperService
             // Create any remaining new types
             if (count($dataCreate)) {
                 $topdataDeviceTypeRepository->create($dataCreate, $this->context);
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                CliLogger::activity();
             }
 
             // Update any remaining existing types
             if (count($dataUpdate)) {
                 $topdataDeviceTypeRepository->update($dataUpdate, $this->context);
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                CliLogger::activity();
             }
 
             // Clear the fetched types data
             $types = null;
 
             // Log the completion of the device type processing
-            CliLogger::writeln("\nDeviceType done " . \Topdata\TopdataFoundationSW6\Util\CliLogger::lap() . 'sec');
+            CliLogger::writeln("\nDeviceType done " . CliLogger::lap() . 'sec');
 
             return true;
         } catch (Exception $e) {
@@ -547,7 +547,7 @@ class MappingHelperService
             $this->connection->getConfiguration()->setSQLLogger(null);
             CliLogger::section('Devices');
             CliLogger::writeln("Devices begin (Chunk size is $limit devices)");
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::mem();
+            CliLogger::mem();
             CliLogger::writeln('');
             $functionTimeStart = microtime(true);
             $chunkNumber = 0;
@@ -556,33 +556,33 @@ class MappingHelperService
                 $start = $chunkNumber * $limit;
             }
             $repeat = true;
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::lap(true);
+            CliLogger::lap(true);
             $seriesArray = $this->getSeriesArray(true);
             $typesArray = $this->getTypesArray(true);
             while ($repeat) {
                 if ($start) {
-                    \Topdata\TopdataFoundationSW6\Util\CliLogger::mem();
-                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity(\Topdata\TopdataFoundationSW6\Util\CliLogger::lap() . 'sec');
+                    CliLogger::mem();
+                    CliLogger::activity(CliLogger::lap() . 'sec');
                 }
                 $chunkNumber++;
                 if ((int)$this->optionsHelperService->getOption(OptionConstants::END) && ($chunkNumber > (int)$this->optionsHelperService->getOption(OptionConstants::END))) {
                     break;
                 }
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity("\nGetting device chunk $chunkNumber from remote server...");
+                CliLogger::activity("\nGetting device chunk $chunkNumber from remote server...");
                 ImportReport::incCounter('Device Chunks');
                 $models = $this->topdataWebserviceClient->getModels($limit, $start);
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity(\Topdata\TopdataFoundationSW6\Util\CliLogger::lap() . "sec\n");
+                CliLogger::activity(CliLogger::lap() . "sec\n");
                 if (!isset($models->data) || count($models->data) == 0) {
                     $repeat = false;
                     break;
                 }
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity("Processing data chunk $chunkNumber");
+                CliLogger::activity("Processing data chunk $chunkNumber");
                 $i = 1;
                 foreach ($models->data as $s) {
                     $i++;
                     if ($i > 500) {
                         $i = 1;
-                        \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                        CliLogger::activity();
                     }
 
                     $brandArr = $this->getBrandByWsIdArray((int)$s->bId);
@@ -728,27 +728,27 @@ class MappingHelperService
                         $created += count($dataCreate);
                         $this->topdataDeviceRepository->create($dataCreate, $this->context);
                         $dataCreate = [];
-                        \Topdata\TopdataFoundationSW6\Util\CliLogger::activity('+');
+                        CliLogger::activity('+');
                     }
 
                     if (count($dataUpdate) > 50) {
                         $updated += count($dataUpdate);
                         $this->topdataDeviceRepository->update($dataUpdate, $this->context);
                         $dataUpdate = [];
-                        \Topdata\TopdataFoundationSW6\Util\CliLogger::activity('*');
+                        CliLogger::activity('*');
                     }
                 }
                 if (count($dataCreate)) {
                     $created += count($dataCreate);
                     $this->topdataDeviceRepository->create($dataCreate, $this->context);
                     $dataCreate = [];
-                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity('+');
+                    CliLogger::activity('+');
                 }
                 if (count($dataUpdate)) {
                     $updated += count($dataUpdate);
                     $this->topdataDeviceRepository->update($dataUpdate, $this->context);
                     $dataUpdate = [];
-                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity('*');
+                    CliLogger::activity('*');
                 }
 
                 $start += $limit;
@@ -817,22 +817,22 @@ class MappingHelperService
                 $chunkNumber = (int)$this->optionsHelperService->getOption(OptionConstants::START) - 1;
                 $start = $chunkNumber * $limit;
             }
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::lap(true);
+            CliLogger::lap(true);
             while (true) {
                 $chunkNumber++;
                 if ((int)$this->optionsHelperService->getOption(OptionConstants::END) && ($chunkNumber > (int)$this->optionsHelperService->getOption(OptionConstants::END))) {
                     break;
                 }
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity("\nGetting media chunk $chunkNumber from remote server...");
+                CliLogger::activity("\nGetting media chunk $chunkNumber from remote server...");
                 ImportReport::incCounter('Device Media Chunks');
                 $models = $this->topdataWebserviceClient->getModels($limit, $start);
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity(\Topdata\TopdataFoundationSW6\Util\CliLogger::lap() . 'sec. ');
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::mem();
+                CliLogger::activity(CliLogger::lap() . 'sec. ');
+                CliLogger::mem();
                 CliLogger::writeln('');
                 if (!isset($models->data) || count($models->data) == 0) {
                     break;
                 }
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity("Processing data chunk $chunkNumber");
+                CliLogger::activity("Processing data chunk $chunkNumber");
 
                 $processCounter = 1;
                 foreach ($models->data as $s) {
@@ -845,7 +845,7 @@ class MappingHelperService
                     $processCounter++;
                     if ($processCounter >= 4) {
                         $processCounter = 1;
-                        \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                        CliLogger::activity();
                     }
 
                     $brand = $this->getBrandByWsIdArray($s->bId);
@@ -913,7 +913,7 @@ class MappingHelperService
                         CliLogger::writeln('Exception: ' . $e->getMessage());
                     }
                 }
-                CliLogger::writeln("processed $processedPrintarsCount of $availablePrintersCount devices " . \Topdata\TopdataFoundationSW6\Util\CliLogger::lap() . 'sec. ');
+                CliLogger::writeln("processed $processedPrintarsCount of $availablePrintersCount devices " . CliLogger::lap() . 'sec. ');
                 $start += $limit;
                 if (count($models->data) < $limit) {
                     $repeat = false;
@@ -955,27 +955,34 @@ class MappingHelperService
         try {
             CliLogger::getCliStyle()->yellow('Devices to products linking begin');
             CliLogger::getCliStyle()->yellow('Disabling all devices, brands, series and types, unlinking products, caching products...');
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::lap(true);
+            CliLogger::lap(true);
+
+            // ---- disable all brands
             $cntA = $this->connection->createQueryBuilder()
                 ->update('topdata_brand')
                 ->set('is_enabled', '0')
                 ->executeStatement();
 
+            // ---- disable all devices
             $cntB = $this->connection->createQueryBuilder()
                 ->update('topdata_device')
                 ->set('is_enabled', '0')
                 ->executeStatement();
 
+            // ---- disable all series
             $cntC = $this->connection->createQueryBuilder()
                 ->update('topdata_series')
                 ->set('is_enabled', '0')
                 ->executeStatement();
 
+            // ---- disable all device types
             $cntD = $this->connection->createQueryBuilder()
                 ->update('topdata_device_type')
                 ->set('is_enabled', '0')
                 ->executeStatement();
 
+
+            // ---- delete all device-to-product relations
             $cntE = $this->connection->createQueryBuilder()
                 ->delete('topdata_device_to_product')
                 ->executeStatement();
@@ -991,27 +998,29 @@ class MappingHelperService
 
             $topidProducts = $this->topdataToProductHelperService->getTopidProducts();
 
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity(\Topdata\TopdataFoundationSW6\Util\CliLogger::lap() . "sec\n");
+            CliLogger::activity(CliLogger::lap() . "sec\n");
             $enabledBrands = [];
             $enabledSeries = [];
             $enabledTypes = [];
 
             $topidsChunked = array_chunk(array_keys($topidProducts), 100);
             foreach ($topidsChunked as $idxChunk => $productIds) {
-                CliLogger::writeln("Getting data from remote server part " . ($idxChunk + 1) . '/' . count($topidsChunked) . '...');
-                $products = $this->topdataWebserviceClient->myProductList([
-                    'products' => implode(',', $productIds),
-                    'filter'   => FilterTypeConstants::product_application_in,
-                ]);
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity(\Topdata\TopdataFoundationSW6\Util\CliLogger::lap() . "sec\n");
 
-                if (!isset($products->page->available_pages)) {
-                    throw new Exception($products->error[0]->error_message . 'webservice no pages');
+                // ---- fetch products from webservice
+                CliLogger::writeln("Getting data from remote server part " . ($idxChunk + 1) . '/' . count($topidsChunked) . '...');
+                $response = $this->topdataWebserviceClient->myProductList([
+                    'products' => implode(',', $productIds),
+                    'filter'   => WebserviceFilterTypeConstants::product_application_in,
+                ]);
+                CliLogger::activity(CliLogger::lap() . "sec\n");
+
+                if (!isset($response->page->available_pages)) {
+                    throw new Exception($response->error[0]->error_message . 'webservice no pages');
                 }
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::mem();
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity("\nProcessing data of " . count($products->products) . " products ...");
+                CliLogger::mem();
+                CliLogger::activity("\nProcessing data of " . count($response->products) . " products ...");
                 $deviceWS = [];
-                foreach ($products->products as $product) {
+                foreach ($response->products as $product) {
                     if (!isset($topidProducts[$product->products_id])) {
                         continue;
                     }
@@ -1042,7 +1051,7 @@ class MappingHelperService
 
                 $deviceIdsToEnable = array_keys($deviceWS);
                 $devices = $this->getDeviceArrayByWsIdArray($deviceIdsToEnable);
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                CliLogger::activity();
                 if (!count($devices)) {
                     continue;
                 }
@@ -1085,11 +1094,11 @@ class MappingHelperService
                     $this->connection->executeStatement('
                         INSERT INTO topdata_device_to_product (device_id, product_id, product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
                     ');
-                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                    CliLogger::activity();
                 }
 
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity(\Topdata\TopdataFoundationSW6\Util\CliLogger::lap() . "sec\n");
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::mem();
+                CliLogger::activity(CliLogger::lap() . "sec\n");
+                CliLogger::mem();
             }
 
             CliLogger::getCliStyle()->yellow('Activating brands, series and device types...');
@@ -1107,7 +1116,7 @@ class MappingHelperService
                     UPDATE topdata_brand SET is_enabled = 1 WHERE id IN (' . implode(',', $brandIds) . ')
                 ');
                 CliLogger::getCliStyle()->blue("Enabled $cnt brands");
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                CliLogger::activity();
             }
 
             // ---- enable series
@@ -1117,7 +1126,7 @@ class MappingHelperService
                     UPDATE topdata_series SET is_enabled = 1 WHERE id IN (' . implode(',', $seriesIds) . ')
                 ');
                 CliLogger::getCliStyle()->blue("Enabled $cnt series");
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                CliLogger::activity();
             }
 
             // ---- enable device types
@@ -1127,9 +1136,9 @@ class MappingHelperService
                     UPDATE topdata_device_type SET is_enabled = 1 WHERE id IN (' . implode(',', $typeIds) . ')
                 ');
                 CliLogger::getCliStyle()->blue("Enabled $cnt types");
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                CliLogger::activity();
             }
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity(\Topdata\TopdataFoundationSW6\Util\CliLogger::lap() . "sec\n");
+            CliLogger::activity(CliLogger::lap() . "sec\n");
             //            $this->connection->commit();
             CliLogger::writeln('Devices to products linking done.');
 
@@ -1396,7 +1405,7 @@ SQL;
     {
         CliLogger::writeln("\nBegin generating variated products based on color and capacity information (Import variants with other colors, Import variants with other capacities should be enabled in TopFeed plugin, product information should be already imported)");
         $groups = [];
-        \Topdata\TopdataFoundationSW6\Util\CliLogger::lap(true);
+        CliLogger::lap(true);
         $groups = $this->collectColorVariants($groups);
         //        echo "\nColor groups:".count($groups)."\n";
         $groups = $this->collectCapacityVariants($groups);
@@ -1414,7 +1423,7 @@ SQL;
                 break;
             }
 
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity('Group ' . ($i + 1) . '...');
+            CliLogger::activity('Group ' . ($i + 1) . '...');
 
             //            print_r($groups[$i]);
             //            echo "\n";
@@ -1502,7 +1511,7 @@ SQL;
             }
 
             if ($invalidProd) {
-                \Topdata\TopdataFoundationSW6\Util\CliLogger::activity('Variated product for group will be skip, product ids: ');
+                CliLogger::activity('Variated product for group will be skip, product ids: ');
                 CliLogger::writeln(implode(', ', $groups[$i]['ids']));
             }
 
@@ -1512,8 +1521,8 @@ SQL;
             CliLogger::writeln('done');
         }
 
-        \Topdata\TopdataFoundationSW6\Util\CliLogger::activity(\Topdata\TopdataFoundationSW6\Util\CliLogger::lap() . 'sec ');
-        \Topdata\TopdataFoundationSW6\Util\CliLogger::mem();
+        CliLogger::activity(CliLogger::lap() . 'sec ');
+        CliLogger::mem();
         CliLogger::writeln('Generating variated products done');
 
         return true;
