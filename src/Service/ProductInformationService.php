@@ -9,6 +9,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Topdata\TopdataConnectorSW6\Constants\DescriptionImportTypeConstant;
 use Topdata\TopdataConnectorSW6\Constants\WebserviceFilterTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Exception\WebserviceResponseException;
@@ -395,8 +396,9 @@ class ProductInformationService
         }
 
         // ---- Prepare product description
-        if (!$onlyMedia && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productDescription, $productId) && $remoteProductData->short_description != '') {
-            $productData['description'] = $this->_renderDescription($productData['description'], $remoteProductData->short_description);
+        $descriptionImportType = $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productDescriptionImportType, $productId);
+        if (!$onlyMedia && $descriptionImportType && $remoteProductData->short_description != '') {
+            $productData['description'] = $this->_renderDescription($descriptionImportType, $productData['description'], $remoteProductData->short_description);
         }
 
         //        $this->getOption('productLongDescription') ???
@@ -587,9 +589,34 @@ class ProductInformationService
     /**
      * 03/2025 created
      */
-    private function _renderDescription(string $originalDescription, $descriptionFromWebservice)
+    private function _renderDescription(string $descriptionImportType, string $originalDescription, $descriptionFromWebservice)
     {
-        // TODO: depending on a setting we want to replace just a a part of the description
+        if (trim($descriptionFromWebservice) == '') {
+            return $originalDescription;
+        }
+
+        if($descriptionImportType === DescriptionImportTypeConstant::REPLACE) {
+            return $descriptionFromWebservice;
+        }
+
+        if($descriptionImportType === DescriptionImportTypeConstant::NO_IMPORT) {
+            return $originalDescription;
+        }
+
+        if($descriptionImportType === DescriptionImportTypeConstant::APPEND) {
+            return $originalDescription . ' ' . $descriptionFromWebservice;
+        }
+
+        if($descriptionImportType === DescriptionImportTypeConstant::PREPEND) {
+            return $descriptionFromWebservice . ' ' . $originalDescription;
+        }
+
+        if($descriptionImportType === DescriptionImportTypeConstant::INJECT) {
+            $regex = '@<!--\s*TOPDATA_DESCRIPTION_BEGIN\s*-->(.*)<!--\s*TOPDATA_DESCRIPTION_END\s*-->@si'; // si stands for case insensitive and multiline
+            $replacement = '<!-- TOPDATA_DESCRIPTION_BEGIN -->' . $descriptionFromWebservice . '<!-- TOPDATA_DESCRIPTION_END -->';
+            return preg_replace($regex, $replacement, $originalDescription);
+        }
+
         return $descriptionFromWebservice;
     }
 }
