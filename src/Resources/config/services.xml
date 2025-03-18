@@ -88,7 +88,7 @@
         <service id="Topdata\TopdataConnectorSW6\Service\ImportService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ConfigCheckerService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\EntitiesHelperService" autowire="true" />
-        <service id="Topdata\TopdataConnectorSW6\Service\OptionsHelperService" autowire="true"/>
+        <service id="Topdata\TopdataConnectorSW6\Service\TopfeedOptionsHelperService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ProductMappingService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ProgressLoggingService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\MappingHelperService" autowire="true" />

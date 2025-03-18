@@ -6,7 +6,7 @@ It gives possibility to import devices from TopData Webservice.
 
 ## Minimal Requirements
 - Shopware 6.6.0 or higher
-- PHP 8.0 or higher
+- PHP 8.1 or higher
 
 ## Installation
 ```bash
@@ -18,7 +18,6 @@ git clone -b main https://github.com/topdata-software-gmbh/topdata-webservice-co
 bin/console plugin:refresh
 bin/console plugin:install --activate --clearCache TopdataConnectorSW6 
 ```
-
 ## Configuration
 After installing the plugin, you need to fill in API credentials to connect to TopData Webservice.
 
@@ -94,44 +93,18 @@ Command order is important, for example --device-media (4) downloads images only
 
 `--no-debug` keys for faster work and less memmory usage
 
-`--start` and `--end` keys, depending on command it use chunk numbers or element counts (you can see this numbers if verbose output is enabled)
-
 
 ## Advices and examples
 
-### use --start and --end options
-
-There are more than 100.000 devices on Webservice, when you fetch devices or device media, you can use `--start` `--end` options to chunk entire process, also it is highly recommended to use `-v` key to see number of chunk where something went wrong.
-
-When you use TopFeed plugin for additional product information it is also recommended to use `--start` / `--end` options when you have thousands of products in the store.
-
-### Normal workflow
-
-Step 1 
-```bash
-bin/console topdata:connector:import -v --mapping --no-debug
-```
-
- Step 2
-```bash
-bin/console topdata:connector:import --no-debug -v --device --start=1 --end=10
-bin/console topdata:connector:import --no-debug -v --device-only --start=11 --end=20
-bin/console topdata:connector:import --no-debug -v --device-only --start=21
-```
-
-Step 3
-```bash
-# ...
-```
-
-If you download product or device images from Top Data Webservice to yours shop locale storage, don't forget to change permisions for files if command and server user are not the same user, e.g.
+If you download product or device images from TopData Webservice to yours shop locale storage, don't forget to change permissions for files if command and server user are not the same user, e.g.
 <!-- TODO: fix the path "." in the command -->
 ```bash
 chown -R www-data:www-data .
 ```
 
-### One command to import all
+## One command to import all
 
 ```bash
 php -d memory_limit=2048M bin/console topdata:connector:import -v --all
 ```
+

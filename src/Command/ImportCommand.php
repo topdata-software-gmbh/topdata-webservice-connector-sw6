@@ -71,8 +71,8 @@ class ImportCommand extends AbstractTopdataCommand
         $this->addOption('product-info', null, InputOption::VALUE_NONE, 'update product information from webservice (TopFeed plugin needed);');
         $this->addOption('product-media-only', null, InputOption::VALUE_NONE, 'update only product media from webservice (TopFeed plugin needed);');
         $this->addOption('product-variated', null, InputOption::VALUE_NONE, 'Generate variated products based on color and capacity information (Import variants with other colors, Import variants with other capacities should be enabled in TopFeed plugin, product information should be already imported);');
-        $this->addOption('start', null, InputOption::VALUE_OPTIONAL, 'First piece of data to handle');
-        $this->addOption('end', null, InputOption::VALUE_OPTIONAL, 'Last piece of data to handle');
+//        $this->addOption('start', null, InputOption::VALUE_OPTIONAL, 'First piece of data to handle');
+//        $this->addOption('end', null, InputOption::VALUE_OPTIONAL, 'Last piece of data to handle');
     }
 
     /**

@@ -124,14 +124,14 @@ class ProductInformationService
         CliLogger::lap(true);
 
         foreach ($batches as $idxBatch => $batch) {
-            // ---- Skip chunks based on start and end options
-            if ($this->topfeedOptionsHelperService->getOption(OptionConstants::START) && ($idxBatch + 1 < $this->topfeedOptionsHelperService->getOption(OptionConstants::START))) {
-                continue;
-            }
-
-            if ($this->topfeedOptionsHelperService->getOption(OptionConstants::END) && ($idxBatch + 1 > $this->topfeedOptionsHelperService->getOption(OptionConstants::END))) {
-                break;
-            }
+//            // ---- Skip chunks based on start and end options
+//            if ($this->topfeedOptionsHelperService->getOption(OptionConstants::START) && ($idxBatch + 1 < $this->topfeedOptionsHelperService->getOption(OptionConstants::START))) {
+//                continue;
+//            }
+//
+//            if ($this->topfeedOptionsHelperService->getOption(OptionConstants::END) && ($idxBatch + 1 > $this->topfeedOptionsHelperService->getOption(OptionConstants::END))) {
+//                break;
+//            }
 
             CliLogger::activity('xxx3 - Getting data from remote server part ' . ($idxBatch + 1) . '/' . count($batches) . ' (' . count($batch) . ' products)...');
 

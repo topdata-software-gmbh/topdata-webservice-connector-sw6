@@ -45,13 +45,13 @@ class DeviceSynonymsService
         CliLogger::lap(true);
 
         foreach ($chunks as $idxChunk => $chunk) {
-            if ($this->optionsHelperService->getOption(OptionConstants::START) && ($idxChunk + 1 < $this->optionsHelperService->getOption(OptionConstants::START))) {
-                continue;
-            }
-
-            if ($this->optionsHelperService->getOption(OptionConstants::END) && ($idxChunk + 1 > $this->optionsHelperService->getOption(OptionConstants::END))) {
-                break;
-            }
+//            if ($this->optionsHelperService->getOption(OptionConstants::START) && ($idxChunk + 1 < $this->optionsHelperService->getOption(OptionConstants::START))) {
+//                continue;
+//            }
+//
+//            if ($this->optionsHelperService->getOption(OptionConstants::END) && ($idxChunk + 1 > $this->optionsHelperService->getOption(OptionConstants::END))) {
+//                break;
+//            }
 
             CliLogger::activity('xxx1 - Getting data from remote server part ' . ($idxChunk + 1) . '/' . count($chunks) . '...');
             $response = $this->topdataWebserviceClient->myProductList([

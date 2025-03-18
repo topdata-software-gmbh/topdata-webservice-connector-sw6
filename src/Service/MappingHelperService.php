@@ -560,10 +560,10 @@ class MappingHelperService
             CliLogger::writeln('');
             $functionTimeStart = microtime(true);
             $chunkNumber = 0;
-            if ((int)$this->optionsHelperService->getOption(OptionConstants::START)) {
-                $chunkNumber = (int)$this->optionsHelperService->getOption(OptionConstants::START) - 1;
-                $start = $chunkNumber * $limit;
-            }
+//            if ((int)$this->optionsHelperService->getOption(OptionConstants::START)) {
+//                $chunkNumber = (int)$this->optionsHelperService->getOption(OptionConstants::START) - 1;
+//                $start = $chunkNumber * $limit;
+//            }
             $repeat = true;
             CliLogger::lap(true);
             $seriesArray = $this->topdataSeriesService->getSeriesArray(true);
@@ -574,9 +574,9 @@ class MappingHelperService
                     CliLogger::activity(CliLogger::lap() . 'sec');
                 }
                 $chunkNumber++;
-                if ((int)$this->optionsHelperService->getOption(OptionConstants::END) && ($chunkNumber > (int)$this->optionsHelperService->getOption(OptionConstants::END))) {
-                    break;
-                }
+//                if ((int)$this->optionsHelperService->getOption(OptionConstants::END) && ($chunkNumber > (int)$this->optionsHelperService->getOption(OptionConstants::END))) {
+//                    break;
+//                }
                 CliLogger::activity("\nGetting device chunk $chunkNumber from remote server...");
                 ImportReport::incCounter('Device Chunks');
                 $response = $this->topdataWebserviceClient->getModels($limit, $start);
@@ -822,16 +822,16 @@ class MappingHelperService
             CliLogger::writeln("Chunk size is $limit devices");
             $start = 0;
             $chunkNumber = 0;
-            if ((int)$this->optionsHelperService->getOption(OptionConstants::START)) {
-                $chunkNumber = (int)$this->optionsHelperService->getOption(OptionConstants::START) - 1;
-                $start = $chunkNumber * $limit;
-            }
+//            if ((int)$this->optionsHelperService->getOption(OptionConstants::START)) {
+//                $chunkNumber = (int)$this->optionsHelperService->getOption(OptionConstants::START) - 1;
+//                $start = $chunkNumber * $limit;
+//            }
             CliLogger::lap(true);
             while (true) {
                 $chunkNumber++;
-                if ((int)$this->optionsHelperService->getOption(OptionConstants::END) && ($chunkNumber > (int)$this->optionsHelperService->getOption(OptionConstants::END))) {
-                    break;
-                }
+//                if ((int)$this->optionsHelperService->getOption(OptionConstants::END) && ($chunkNumber > (int)$this->optionsHelperService->getOption(OptionConstants::END))) {
+//                    break;
+//                }
                 CliLogger::activity("\nGetting media chunk $chunkNumber from remote server...");
                 ImportReport::incCounter('Device Media Chunks');
                 $models = $this->topdataWebserviceClient->getModels($limit, $start);
@@ -1329,13 +1329,13 @@ SQL;
 
         $invalidProd = true;
         for ($i = 0; $i < count($groups); $i++) {
-            if ($this->optionsHelperService->getOption(OptionConstants::START) && ($i + 1 < $this->optionsHelperService->getOption(OptionConstants::START))) {
-                continue;
-            }
-
-            if ($this->optionsHelperService->getOption(OptionConstants::END) && ($i + 1 > $this->optionsHelperService->getOption(OptionConstants::END))) {
-                break;
-            }
+//            if ($this->optionsHelperService->getOption(OptionConstants::START) && ($i + 1 < $this->optionsHelperService->getOption(OptionConstants::START))) {
+//                continue;
+//            }
+//
+//            if ($this->optionsHelperService->getOption(OptionConstants::END) && ($i + 1 > $this->optionsHelperService->getOption(OptionConstants::END))) {
+//                break;
+//            }
 
             CliLogger::activity('Group ' . ($i + 1) . '...');
 

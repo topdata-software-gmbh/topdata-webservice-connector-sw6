@@ -13,8 +13,8 @@ class OptionConstants
     const ATTRIBUTE_OEM             = 'attributeOem';
     const ATTRIBUTE_EAN             = 'attributeEan';
     const ATTRIBUTE_ORDERNUMBER     = 'attributeOrdernumber';
-    const START                     = 'start'; // TODO: remove --> belongs to ImportCommandCliOptionsDTO
-    const END                       = 'end'; // TODO: remove --> belongs to ImportCommandCliOptionsDTO
+//    const START                     = 'start'; // TODO: remove --> belongs to ImportCommandCliOptionsDTO
+//    const END                       = 'end'; // TODO: remove --> belongs to ImportCommandCliOptionsDTO
     const PRODUCT_WAREGROUPS        = 'productWaregroups'; // unused?
     const PRODUCT_WAREGROUPS_DELETE = 'productWaregroupsDelete'; // unused?
     const PRODUCT_WAREGROUPS_PARENT = 'productWaregroupsParent'; // unused?
