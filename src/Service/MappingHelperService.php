@@ -230,7 +230,6 @@ class MappingHelperService
             $brands = $this->topdataWebserviceClient->getBrands();
             CliLogger::activity('Got ' . count($brands->data) . " brands from remote server\n");
             ImportReport::setCounter('Fetched Brands', count($brands->data));
-            $topdataBrandRepository = $this->topdataBrandRepository;
 
             $duplicates = [];
             $dataCreate = [];
@@ -250,8 +249,7 @@ class MappingHelperService
                 $duplicates[$code] = true;
 
                 // Search for existing brand in the local database
-                $brand = $topdataBrandRepository
-                    ->search(
+                $brand = $this->topdataBrandRepository                    ->search(
                         (new Criteria())->addFilter(new EqualsFilter('code', $code))->setLimit(1),
                         $this->context
                     )
@@ -283,14 +281,14 @@ class MappingHelperService
 
                 // Create new brands in batches of 100
                 if (count($dataCreate) > 100) {
-                    $topdataBrandRepository->create($dataCreate, $this->context);
+                    $this->topdataBrandRepository->create($dataCreate, $this->context);
                     $dataCreate = [];
                     CliLogger::activity();
                 }
 
                 // Update existing brands in batches of 100
                 if (count($dataUpdate) > 100) {
-                    $topdataBrandRepository->update($dataUpdate, $this->context);
+                    $this->topdataBrandRepository->update($dataUpdate, $this->context);
                     $dataUpdate = [];
                     CliLogger::activity();
                 }
@@ -298,19 +296,18 @@ class MappingHelperService
 
             // Create any remaining new brands
             if (count($dataCreate)) {
-                $topdataBrandRepository->create($dataCreate, $this->context);
+                $this->topdataBrandRepository->create($dataCreate, $this->context);
                 CliLogger::activity();
             }
 
             // Update any remaining existing brands
             if (count($dataUpdate)) {
-                $topdataBrandRepository->update($dataUpdate, $this->context);
+                $this->topdataBrandRepository->update($dataUpdate, $this->context);
                 CliLogger::activity();
             }
 
             // Log the completion of the brands process
             CliLogger::writeln("\nBrands done " . CliLogger::lap() . 'sec');
-            $topdataBrandRepository = null;
             $duplicates = null;
             $brands = null;
 
@@ -582,15 +579,15 @@ class MappingHelperService
                 }
                 CliLogger::activity("\nGetting device chunk $chunkNumber from remote server...");
                 ImportReport::incCounter('Device Chunks');
-                $models = $this->topdataWebserviceClient->getModels($limit, $start);
+                $response = $this->topdataWebserviceClient->getModels($limit, $start);
                 CliLogger::activity(CliLogger::lap() . "sec\n");
-                if (!isset($models->data) || count($models->data) == 0) {
+                if (!isset($response->data) || count($response->data) == 0) {
                     $repeat = false;
                     break;
                 }
                 CliLogger::activity("Processing data chunk $chunkNumber");
                 $i = 1;
-                foreach ($models->data as $s) {
+                foreach ($response->data as $s) {
                     $i++;
                     if ($i > 500) {
                         $i = 1;
@@ -764,13 +761,13 @@ class MappingHelperService
                 }
 
                 $start += $limit;
-                if (count($models->data) < $limit) {
+                if (count($response->data) < $limit) {
                     $repeat = false;
                     break;
                 }
             }
 
-            $models = null;
+            $response = null;
             $duplicates = null;
             CliLogger::writeln('');
             $totalSecs = microtime(true) - $functionTimeStart;
@@ -1064,7 +1061,7 @@ class MappingHelperService
                  */
 
                 $deviceIdsToEnable = array_keys($deviceWS);
-                $devices = $this->getDeviceArrayByWsIdArray($deviceIdsToEnable);
+                $devices = $this->topdataDeviceService->getDeviceArrayByWsIdArray($deviceIdsToEnable);
                 CliLogger::activity();
                 if (!count($devices)) {
                     continue;
@@ -1167,30 +1164,6 @@ class MappingHelperService
     }
 
 
-    private function getDeviceArrayByWsIdArray(array $wsIds): array
-    {
-        if (!count($wsIds)) {
-            return [];
-        }
-        $result = []; // a list of devices
-
-        // $this->brandWsArray = []; // FIXME: why is this here?
-        $queryRez = $this->connection->createQueryBuilder()
-            ->select('*')
-            ->from('topdata_device')
-            ->where('ws_id IN (' . implode(',', $wsIds) . ')')
-            ->execute()
-            ->fetchAllAssociative();
-        foreach ($queryRez as $device) {
-            $device['id'] = bin2hex($device['id']);
-            $device['brand_id'] = bin2hex($device['brand_id'] ?? '');
-            $device['type_id'] = bin2hex($device['type_id'] ?? '');
-            $device['series_id'] = bin2hex($device['series_id'] ?? '');
-            $result[] = $device;
-        }
-
-        return $result;
-    }
 
     private function getBrandByWsIdArray(int $brandWsId): array
     {

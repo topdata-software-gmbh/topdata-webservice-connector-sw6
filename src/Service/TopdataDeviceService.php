@@ -44,4 +44,33 @@ class TopdataDeviceService
         return $query->execute()->fetchAllAssociative();
     }
 
+    /**
+     * 03/2025 extracted from MappingHelperService
+     */
+    public function getDeviceArrayByWsIdArray(array $wsIds): array
+    {
+        if (!count($wsIds)) {
+            return [];
+        }
+        $ret = []; // a list of devices
+
+        // $this->brandWsArray = []; // FIXME: why is this here?
+        $queryRez = $this->connection->createQueryBuilder()
+            ->select('*')
+            ->from('topdata_device')
+            ->where('ws_id IN (' . implode(',', $wsIds) . ')')
+            ->execute()
+            ->fetchAllAssociative();
+
+        foreach ($queryRez as $device) {
+            $device['id'] = bin2hex($device['id']);
+            $device['brand_id'] = bin2hex($device['brand_id'] ?? '');
+            $device['type_id'] = bin2hex($device['type_id'] ?? '');
+            $device['series_id'] = bin2hex($device['series_id'] ?? '');
+            $ret[] = $device;
+        }
+
+        return $ret;
+    }
+
 }
