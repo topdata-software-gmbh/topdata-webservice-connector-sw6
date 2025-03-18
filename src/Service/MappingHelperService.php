@@ -86,7 +86,6 @@ class MappingHelperService
     const IMAGE_PREFIX = 'td-';
 
     private ?array $brandWsArray = null; // aka mapWsIdToBrand
-    private ?array $seriesArray = null;
     private ?array $typesArray = null;
     /**
      * Array to store mapped products.
@@ -107,6 +106,7 @@ class MappingHelperService
     private string $systemDefaultLocaleCode;
 
 
+
     public function __construct(
         private readonly LoggerInterface               $logger,
         private readonly Connection                    $connection,
@@ -122,6 +122,7 @@ class MappingHelperService
         private readonly MediaHelperService            $mediaHelperService,
         private readonly TopdataDeviceService          $topdataDeviceService,
         private readonly TopdataWebserviceClient       $topdataWebserviceClient,
+        private readonly TopdataSeriesService $topdataSeriesService
     )
     {
         $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();
@@ -335,7 +336,7 @@ class MappingHelperService
             $dataCreate = [];
             $dataUpdate = [];
             CliLogger::activity('Processing data');
-            $allSeries = $this->getSeriesArray(true);
+            $allSeries = $this->topdataSeriesService->getSeriesArray(true);
             foreach ($series->data as $s) {
                 foreach ($s->brandIds as $brandWsId) {
                     $brand = $this->getBrandByWsIdArray((int)$brandWsId);
@@ -567,7 +568,7 @@ class MappingHelperService
             }
             $repeat = true;
             CliLogger::lap(true);
-            $seriesArray = $this->getSeriesArray(true);
+            $seriesArray = $this->topdataSeriesService->getSeriesArray(true);
             $typesArray = $this->getTypesArray(true);
             while ($repeat) {
                 if ($start) {
@@ -944,6 +945,8 @@ class MappingHelperService
     }
 
     /**
+     * ==== MAIN ====
+     *
      * The setProducts() method in the MappingHelperService class is responsible for linking devices to products. Here's a step-by-step breakdown of what it does:
      * It starts by disabling all devices, brands, series, and types in the database. This is done by setting the is_enabled field to 0 for each of these entities.
      * It unlinks all products by deleting all entries in the topdata_device_to_product table.
@@ -1207,27 +1210,6 @@ class MappingHelperService
         return isset($this->brandWsArray[$brandWsId]) ? $this->brandWsArray[$brandWsId] : [];
     }
 
-    private function getSeriesArray($forceReload = false): array
-    {
-        if ($this->seriesArray === null || $forceReload) {
-            $this->seriesArray = [];
-            $results = $this
-                ->connection
-                ->createQueryBuilder()
-                ->select('*')
-//                ->select(['id','code', 'label', 'brand_id', 'ws_id'])
-                ->from('topdata_series')
-                ->execute()
-                ->fetchAllAssociative();
-            foreach ($results as $r) {
-                $this->seriesArray[bin2hex($r['id'])] = $r;
-                $this->seriesArray[bin2hex($r['id'])]['id'] = bin2hex($r['id']);
-                $this->seriesArray[bin2hex($r['id'])]['brand_id'] = bin2hex($r['brand_id']);
-            }
-        }
-
-        return $this->seriesArray;
-    }
 
     private function getTypesArray($forceReload = false): array
     {
