@@ -21,7 +21,7 @@ class ProductMappingService
 
     public function __construct(
         private readonly Connection                    $connection,
-        private readonly OptionsHelperService          $optionsHelperService,
+        private readonly TopfeedOptionsHelperService   $optionsHelperService,
         private readonly TopdataToProductHelperService $topdataToProductHelperService,
         private readonly TopdataWebserviceClient       $topdataWebserviceClient,
     )
@@ -98,7 +98,7 @@ class ProductMappingService
                     VALUES ' . implode(',', $dataInsert) . '
                 ');
                     $dataInsert = [];
-                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                    CliLogger::activity();
                 }
             }
         }
@@ -109,7 +109,7 @@ class ProductMappingService
                 VALUES ' . implode(',', $dataInsert) . '
             ');
             $dataInsert = [];
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+            CliLogger::activity();
         }
     }
 
@@ -156,7 +156,7 @@ class ProductMappingService
                             foreach ($artnos[$key] as $artnosValue) {
                                 $stored++;
                                 if (($stored % 50) == 0) {
-                                    \Topdata\TopdataFoundationSW6\Util\CliLogger::activity();
+                                    CliLogger::activity();
                                 }
                                 $dataInsert[] = [
                                     'topDataId'        => $prod->products_id,
@@ -173,8 +173,8 @@ class ProductMappingService
                 }
             }
 
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::activity("\ndistributor $i/$available_pages");
-            \Topdata\TopdataFoundationSW6\Util\CliLogger::mem();
+            CliLogger::activity("\ndistributor $i/$available_pages");
+            CliLogger::mem();
             CliLogger::writeln('');
 
             if ($i >= $available_pages) {

@@ -16,10 +16,10 @@ class DeviceSynonymsService
 {
 
     public function __construct(
-        private readonly TopdataWebserviceClient $topdataWebserviceClient,
-        private readonly TopdataDeviceService   $topdataDeviceService,
-        private readonly OptionsHelperService   $optionsHelperService,
-        private readonly Connection             $connection,
+        private readonly TopdataWebserviceClient     $topdataWebserviceClient,
+        private readonly TopdataDeviceService        $topdataDeviceService,
+        private readonly TopfeedOptionsHelperService $optionsHelperService,
+        private readonly Connection                  $connection,
     )
     {
     }

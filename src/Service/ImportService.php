@@ -38,14 +38,14 @@ class ImportService
 
 
     public function __construct(
-        private readonly SystemConfigService       $systemConfigService,
-        private readonly MappingHelperService      $mappingHelperService,
-        private readonly ConfigCheckerService      $configCheckerService,
-        private readonly OptionsHelperService      $optionsHelperService,
-        private readonly PluginHelperService       $pluginHelperService,
-        private readonly ProductMappingService     $productMappingService,
-        private readonly DeviceSynonymsService     $deviceSynonymsService,
-        private readonly ProductInformationService $productInformationService,
+        private readonly SystemConfigService         $systemConfigService,
+        private readonly MappingHelperService        $mappingHelperService,
+        private readonly ConfigCheckerService        $configCheckerService,
+        private readonly TopfeedOptionsHelperService $topfeedOptionsHelperService,
+        private readonly PluginHelperService         $pluginHelperService,
+        private readonly ProductMappingService       $productMappingService,
+        private readonly DeviceSynonymsService       $deviceSynonymsService,
+        private readonly ProductInformationService   $productInformationService,
     )
     {
     }
@@ -245,7 +245,7 @@ class ImportService
         }
 
         // ---- go
-        $this->optionsHelperService->loadTopdataTopFeedPluginConfig();
+        $this->topfeedOptionsHelperService->loadTopdataTopFeedPluginConfig();
 
         // ---- Load product information or update media
         if (!$this->productInformationService->setProductInformation($cliOptionsDto->getOptionProductMediaOnly())) {
@@ -303,7 +303,7 @@ class ImportService
         $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
         $pluginConfig = array_merge($configDefaults, $pluginConfig);
 
-        $this->optionsHelperService->setOptions([
+        $this->topfeedOptionsHelperService->setOptions([
             OptionConstants::MAPPING_TYPE          => $pluginConfig['mappingType'],
             OptionConstants::ATTRIBUTE_OEM         => $pluginConfig['attributeOem'],
             OptionConstants::ATTRIBUTE_EAN         => $pluginConfig['attributeEan'],

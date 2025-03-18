@@ -7,11 +7,12 @@ use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 
 /**
  * Service class to handle options for Topdata's Topfeed plugin.
- *
- * This class is responsible for loading configuration settings from the Topfeed plugin
- * and setting them as options that can be used elsewhere in the application.
+ * as some of the import options are in the settings of the Topfeed plugin, 
+ * we need to load them here
+ * 
+ * 03/2025 renamed from OptionsHelperService to TopfeedOptionsHelperService
  */
-class OptionsHelperService
+class TopfeedOptionsHelperService
 {
     private array $options = [];
 
@@ -71,6 +72,6 @@ class OptionsHelperService
      */
     public function getOption(string $name): mixed
     {
-        return (isset($this->options[$name])) ? $this->options[$name] : false;
+        return $this->options[$name] ?? false;
     }
 }

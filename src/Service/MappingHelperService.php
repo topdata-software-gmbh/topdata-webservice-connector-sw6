@@ -116,14 +116,14 @@ class MappingHelperService
         private readonly EntityRepository              $topdataDeviceTypeRepository,
         private readonly EntityRepository              $productRepository,
         private readonly ProductMappingService         $productMappingService,
-        private readonly OptionsHelperService          $optionsHelperService,
+        private readonly TopfeedOptionsHelperService   $optionsHelperService,
         private readonly LocaleHelperService           $localeHelperService,
         private readonly TopdataToProductHelperService $topdataToProductHelperService,
         private readonly MediaHelperService            $mediaHelperService,
         private readonly TopdataDeviceService          $topdataDeviceService,
         private readonly TopdataWebserviceClient       $topdataWebserviceClient,
-        private readonly TopdataSeriesService $topdataSeriesService,
-        private readonly TopdataDeviceTypeService $topdataDeviceTypeService
+        private readonly TopdataSeriesService          $topdataSeriesService,
+        private readonly TopdataDeviceTypeService      $topdataDeviceTypeService
     )
     {
         $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();

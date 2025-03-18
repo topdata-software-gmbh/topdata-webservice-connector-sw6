@@ -80,7 +80,7 @@ class ProductInformationService
 
     public function __construct(
         private readonly TopdataToProductHelperService $topdataToProductHelperService,
-        private readonly OptionsHelperService          $optionsHelperService,
+        private readonly TopfeedOptionsHelperService   $topfeedOptionsHelperService,
         private readonly ProductLinkingService         $productLinkingService,
         private readonly EntityRepository              $productRepository,
         private readonly TopdataWebserviceClient       $topdataWebserviceClient,
@@ -125,11 +125,11 @@ class ProductInformationService
 
         foreach ($batches as $idxBatch => $batch) {
             // ---- Skip chunks based on start and end options
-            if ($this->optionsHelperService->getOption(OptionConstants::START) && ($idxBatch + 1 < $this->optionsHelperService->getOption(OptionConstants::START))) {
+            if ($this->topfeedOptionsHelperService->getOption(OptionConstants::START) && ($idxBatch + 1 < $this->topfeedOptionsHelperService->getOption(OptionConstants::START))) {
                 continue;
             }
 
-            if ($this->optionsHelperService->getOption(OptionConstants::END) && ($idxBatch + 1 > $this->optionsHelperService->getOption(OptionConstants::END))) {
+            if ($this->topfeedOptionsHelperService->getOption(OptionConstants::END) && ($idxBatch + 1 > $this->topfeedOptionsHelperService->getOption(OptionConstants::END))) {
                 break;
             }
 
@@ -147,7 +147,7 @@ class ProductInformationService
             }
             CliLogger::activity('Processing data...');
 
-            $temp = array_slice($topid_products, $idxBatch * $chunkSize, $chunkSize);
+            $temp = array_slice($topid_products, $idxBatch * self::CHUNK_SIZE, self::CHUNK_SIZE);
             $currentChunkProductIds = [];
             foreach ($temp as $p) {
                 $currentChunkProductIds[] = $p[0]['product_id']; // FIXME? isnt this the same as $batch?
@@ -272,43 +272,43 @@ class ProductInformationService
             return;
         }
 
-        $ids = $this->filterIdsByConfig('productSimilar', $productIds);
+        $ids = $this->_filterIdsByConfig('productSimilar', $productIds);
         if (count($ids)) {
             $ids = '0x' . implode(',0x', $ids);
             $this->connection->executeStatement("DELETE FROM topdata_product_to_similar WHERE product_id IN ($ids)");
         }
 
-        $ids = $this->filterIdsByConfig('productAlternate', $productIds);
+        $ids = $this->_filterIdsByConfig('productAlternate', $productIds);
         if (count($ids)) {
             $ids = '0x' . implode(',0x', $ids);
             $this->connection->executeStatement("DELETE FROM topdata_product_to_alternate WHERE product_id IN ($ids)");
         }
 
-        $ids = $this->filterIdsByConfig('productRelated', $productIds);
+        $ids = $this->_filterIdsByConfig('productRelated', $productIds);
         if (count($ids)) {
             $ids = '0x' . implode(',0x', $ids);
             $this->connection->executeStatement("DELETE FROM topdata_product_to_related WHERE product_id IN ($ids)");
         }
 
-        $ids = $this->filterIdsByConfig('productBundled', $productIds);
+        $ids = $this->_filterIdsByConfig('productBundled', $productIds);
         if (count($ids)) {
             $ids = '0x' . implode(',0x', $ids);
             $this->connection->executeStatement("DELETE FROM topdata_product_to_bundled WHERE product_id IN ($ids)");
         }
 
-        $ids = $this->filterIdsByConfig('productColorVariant', $productIds);
+        $ids = $this->_filterIdsByConfig('productColorVariant', $productIds);
         if (count($ids)) {
             $ids = '0x' . implode(',0x', $ids);
             $this->connection->executeStatement("DELETE FROM topdata_product_to_color_variant WHERE product_id IN ($ids)");
         }
 
-        $ids = $this->filterIdsByConfig('productCapacityVariant', $productIds);
+        $ids = $this->_filterIdsByConfig('productCapacityVariant', $productIds);
         if (count($ids)) {
             $ids = '0x' . implode(',0x', $ids);
             $this->connection->executeStatement("DELETE FROM topdata_product_to_capacity_variant WHERE product_id IN ($ids)");
         }
 
-        $ids = $this->filterIdsByConfig('productVariant', $productIds);
+        $ids = $this->_filterIdsByConfig('productVariant', $productIds);
         if (count($ids)) {
             $ids = '0x' . implode(',0x', $ids);
             $this->connection->executeStatement("DELETE FROM topdata_product_to_variant WHERE product_id IN ($ids)");
@@ -326,7 +326,7 @@ class ProductInformationService
             return;
         }
 
-        $ids = $this->filterIdsByConfig('productSpecifications', $productIds);
+        $ids = $this->_filterIdsByConfig('productSpecifications', $productIds);
         if (count($ids)) {
             $ids = '0x' . implode(',0x', $ids);
             $this->connection->executeStatement("UPDATE product SET property_ids = NULL WHERE id IN ($ids)");
@@ -345,11 +345,11 @@ class ProductInformationService
             return;
         }
 
-        $ids = $this->filterIdsByConfig('productImages', $productIds);
+        $ids = $this->_filterIdsByConfig('productImages', $productIds);
         if (!count($ids)) {
             return;
         }
-        $ids = $this->filterIdsByConfig('productImagesDelete', $ids);
+        $ids = $this->_filterIdsByConfig('productImagesDelete', $ids);
         if (count($ids)) {
             $ids = '0x' . implode(',0x', $ids);
             $this->connection->executeStatement("UPDATE product SET product_media_id = NULL, product_media_version_id = NULL WHERE id IN ($ids)");
@@ -365,8 +365,8 @@ class ProductInformationService
     private function _unlinkCategories(array $productIds): void
     {
         if (!count($productIds)
-            || !$this->optionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS)
-            || !$this->optionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS_DELETE)) {
+            || !$this->topfeedOptionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS)
+            || !$this->topfeedOptionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS_DELETE)) {
             return;
         }
 
@@ -396,7 +396,7 @@ class ProductInformationService
 
         // ---- Prepare product description
         if (!$onlyMedia && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productDescription, $productId) && $remoteProductData->short_description != '') {
-            $productData['description'] = $remoteProductData->short_description;
+            $productData['description'] = $this->_renderDescription($productData['description'], $remoteProductData->short_description);
         }
 
         //        $this->getOption('productLongDescription') ???
@@ -539,12 +539,12 @@ class ProductInformationService
         // ---- Prepare product waregroups (categories)
         if (
             !$onlyMedia
-            && $this->optionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS)
+            && $this->topfeedOptionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS)
             && isset($remoteProductData->waregroups)
         ) {
             foreach ($remoteProductData->waregroups as $waregroupObject) {
                 $categoriesChain = json_decode(json_encode($waregroupObject->waregroup_tree), true);
-                $categoryId = $this->entitiesHelperService->getCategoryId($categoriesChain, (string)$this->optionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS_PARENT));
+                $categoryId = $this->entitiesHelperService->getCategoryId($categoriesChain, (string)$this->topfeedOptionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS_PARENT));
                 if (!$categoryId) {
                     break;
                 }
@@ -572,7 +572,7 @@ class ProductInformationService
      * @param array $productIds An array of product IDs to filter.
      * @return array An array of product IDs that match the configuration option.
      */
-    private function filterIdsByConfig(string $optionName, array $productIds): array
+    private function _filterIdsByConfig(string $optionName, array $productIds): array
     {
         $returnIds = [];
         foreach ($productIds as $pid) {
@@ -582,5 +582,14 @@ class ProductInformationService
         }
 
         return $returnIds;
+    }
+
+    /**
+     * 03/2025 created
+     */
+    private function _renderDescription(string $originalDescription, $descriptionFromWebservice)
+    {
+        // TODO: depending on a setting we want to replace just a a part of the description
+        return $descriptionFromWebservice;
     }
 }
