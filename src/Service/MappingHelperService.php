@@ -86,7 +86,7 @@ class MappingHelperService
     const IMAGE_PREFIX = 'td-';
 
     private ?array $brandWsArray = null; // aka mapWsIdToBrand
-    private ?array $typesArray = null;
+
     /**
      * Array to store mapped products.
      *
@@ -122,7 +122,8 @@ class MappingHelperService
         private readonly MediaHelperService            $mediaHelperService,
         private readonly TopdataDeviceService          $topdataDeviceService,
         private readonly TopdataWebserviceClient       $topdataWebserviceClient,
-        private readonly TopdataSeriesService $topdataSeriesService
+        private readonly TopdataSeriesService $topdataSeriesService,
+        private readonly TopdataDeviceTypeService $topdataDeviceTypeService
     )
     {
         $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();
@@ -449,7 +450,7 @@ class MappingHelperService
             CliLogger::activity('Processing data...');
 
             // Get all existing types from the local database
-            $allTypes = $this->getTypesArray(true);
+            $allTypes = $this->topdataDeviceTypeService->getTypesArray(true);
 
             // Process each fetched device type
             foreach ($types->data as $s) {
@@ -569,7 +570,7 @@ class MappingHelperService
             $repeat = true;
             CliLogger::lap(true);
             $seriesArray = $this->topdataSeriesService->getSeriesArray(true);
-            $typesArray = $this->getTypesArray(true);
+            $typesArray = $this->topdataDeviceTypeService->getTypesArray(true);
             while ($repeat) {
                 if ($start) {
                     CliLogger::mem();
@@ -1210,28 +1211,6 @@ class MappingHelperService
         return isset($this->brandWsArray[$brandWsId]) ? $this->brandWsArray[$brandWsId] : [];
     }
 
-
-    private function getTypesArray($forceReload = false): array
-    {
-        if ($this->typesArray === null || $forceReload) {
-            $this->typesArray = [];
-            $results = $this
-                ->connection
-                ->createQueryBuilder()
-                ->select('*')
-//                ->select(['id','code', 'label', 'brand_id', 'ws_id'])
-                ->from('topdata_device_type')
-                ->execute()
-                ->fetchAllAssociative();
-            foreach ($results as $r) {
-                $this->typesArray[bin2hex($r['id'])] = $r;
-                $this->typesArray[bin2hex($r['id'])]['id'] = bin2hex($r['id']);
-                $this->typesArray[bin2hex($r['id'])]['brand_id'] = bin2hex($r['brand_id']);
-            }
-        }
-
-        return $this->typesArray;
-    }
 
 
     private function formSearchKeywords(array $keywords): string
