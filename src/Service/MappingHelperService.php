@@ -72,6 +72,16 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
 class MappingHelperService
 {
 
+    const CAPACITY_NAMES = [
+        'Kapazität (Zusatz)',
+        'Kapazität',
+        'Capacity',
+    ];
+
+    const COLOR_NAMES = [
+        'Farbe',
+        'Color',
+    ];
 
     const IMAGE_PREFIX = 'td-';
 
@@ -1256,30 +1266,8 @@ class MappingHelperService
     }
 
 
-    private function capacityNames(): array
-    {
-        return [
-            'Kapazität (Zusatz)',
-            'Kapazität',
-            'Capacity',
-        ];
-    }
-
-    private function colorNames(): array
-    {
-        return [
-            'Farbe',
-            'Color',
-        ];
-    }
-
     private function addToGroup($groups, $ids, $variants): array
     {
-        //        $debug = false;
-        //        if(in_array('beb4af5a46a84eb8ad921d46d57d0076', $ids) && $variants=='capacity') {
-        //            $debug = true;
-        //        }
-
         $colorVariants = ($variants == 'color');
         $capacityVariants = ($variants == 'capacity');
         $groupExists = false;
@@ -1292,10 +1280,6 @@ class MappingHelperService
             }
 
             if ($groupExists) {
-                //                if($debug) {
-                //                    echo "\nbefore:";
-                //                    print_r($groups[$key]);
-                //                }
                 $groups[$key]['ids'] = array_unique(array_merge($group['ids'], $ids));
                 if ($colorVariants) {
                     $groups[$key]['color'] = true;
@@ -1304,10 +1288,6 @@ class MappingHelperService
                     $groups[$key]['capacity'] = true;
                 }
 
-                //                if($debug) {
-                //                    echo "\nafter:";
-                //                    print_r($groups[$key]);
-                //                }
                 return $groups;
             }
         }
@@ -1466,20 +1446,15 @@ SQL;
                     $prodOptions = [];
 
                     foreach ($product->getProperties() as $property) {
-                        if ($groups[$i]['color'] && in_array($property->getGroup()->getName(), $this->colorNames())) {
+                        if ($groups[$i]['color'] && in_array($property->getGroup()->getName(), self::COLOR_NAMES)) {
                             $prodOptions['colorId'] = $property->getId();
                             $prodOptions['colorGroupId'] = $property->getGroup()->getId();
                         }
-                        if ($groups[$i]['capacity'] && in_array($property->getGroup()->getName(), $this->capacityNames())) {
+                        if ($groups[$i]['capacity'] && in_array($property->getGroup()->getName(), self::CAPACITY_NAMES)) {
                             $prodOptions['capacityId'] = $property->getId();
                             $prodOptions['capacityGroupId'] = $property->getGroup()->getId();
                         }
                     }
-
-                    //                    echo "\n".$product->getName();
-                    //
-                    //                    print_r($prodOptions);
-                    //                    echo "\n";
 
                     /*
                      * @todo: Add product property Color=none or Capacity=none if needed but not exist
