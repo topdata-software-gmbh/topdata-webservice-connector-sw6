@@ -5,8 +5,10 @@ namespace Topdata\TopdataConnectorSW6\Service;
 use Doctrine\DBAL\Connection;
 use Exception;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Topdata\TopdataConnectorSW6\Constants\DescriptionImportTypeConstant;
@@ -397,8 +399,11 @@ class ProductInformationService
 
         // ---- Prepare product description
         $descriptionImportType = $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productDescriptionImportType, $productId);
-        if (!$onlyMedia && $descriptionImportType && $remoteProductData->short_description != '') {
-            $productData['description'] = $this->_renderDescription($descriptionImportType, $productData['description'], $remoteProductData->short_description);
+        if (!$onlyMedia && $descriptionImportType && ($descriptionImportType !== DescriptionImportTypeConstant::NO_IMPORT) && $remoteProductData->short_description != '') {
+            $newDescription = $this->_renderDescription($descriptionImportType, $productId, $remoteProductData->short_description);
+            if($newDescription !== null) {
+                $productData['description'] = $newDescription;
+            }
         }
 
         //        $this->getOption('productLongDescription') ???
@@ -589,10 +594,10 @@ class ProductInformationService
     /**
      * 03/2025 created
      */
-    private function _renderDescription(?string $descriptionImportType, ?string $originalDescription, $descriptionFromWebservice): ?string
+    private function _renderDescription(?string $descriptionImportType, string $productId, $descriptionFromWebservice): ?string
     {
         if (empty($descriptionFromWebservice)) {
-            return $originalDescription;
+            return null;
         }
 
         if($descriptionImportType === DescriptionImportTypeConstant::REPLACE) {
@@ -600,17 +605,29 @@ class ProductInformationService
         }
 
         if($descriptionImportType === DescriptionImportTypeConstant::NO_IMPORT) {
-            return $originalDescription;
+            return null;
         }
 
+        // -- fetch original description from DB
+        $criteria = new Criteria([$productId]);
+        /** @var ProductEntity $product */
+        $product = $this->productRepository->search($criteria, $this->context)->first();
+        if (!$product) {
+            return null;
+        }
+        $originalDescription = $product->getDescription();
+
+        // -- append
         if($descriptionImportType === DescriptionImportTypeConstant::APPEND) {
-            return $originalDescription . ' ' . $descriptionFromWebservice;
+            return $originalDescription . ' ' . $descriptionFromWebservice; // fixme: will not work if running the 2nd time
         }
 
+        // -- prepend
         if($descriptionImportType === DescriptionImportTypeConstant::PREPEND) {
-            return $descriptionFromWebservice . ' ' . $originalDescription;
+            return $descriptionFromWebservice . ' ' . $originalDescription; // fixme: will not work if running the 2nd time
         }
 
+        // -- inject
         if($descriptionImportType === DescriptionImportTypeConstant::INJECT) {
             $regex = '@<!--\s*TOPDATA_DESCRIPTION_BEGIN\s*-->(.*)<!--\s*TOPDATA_DESCRIPTION_END\s*-->@si'; // si stands for case insensitive and multiline
             $replacement = '<!-- TOPDATA_DESCRIPTION_BEGIN -->' . $descriptionFromWebservice . '<!-- TOPDATA_DESCRIPTION_END -->';
