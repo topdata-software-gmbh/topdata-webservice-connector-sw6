@@ -589,9 +589,9 @@ class ProductInformationService
     /**
      * 03/2025 created
      */
-    private function _renderDescription(string $descriptionImportType, string $originalDescription, $descriptionFromWebservice)
+    private function _renderDescription(?string $descriptionImportType, ?string $originalDescription, $descriptionFromWebservice): ?string
     {
-        if (trim($descriptionFromWebservice) == '') {
+        if (empty($descriptionFromWebservice)) {
             return $originalDescription;
         }
 

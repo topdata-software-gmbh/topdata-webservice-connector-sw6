@@ -4,14 +4,12 @@ namespace Topdata\TopdataConnectorSW6\Service;
 
 use Doctrine\DBAL\Connection;
 use Exception;
-use Psr\Log\LoggerInterface;
-use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
-use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
+use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 
 /**
  * 10/2024 created (extracted from MappingHelperService).
@@ -184,7 +182,7 @@ class ProductMappingService
         if (count($dataInsert) > 0) {
             $this->topdataToProductHelperService->insertMany($dataInsert);
         }
-        CliLogger::writeln("\n" . $stored . ' - stored topdata products');
+        CliLogger::writeln("\n" . UtilFormatter::formatInteger($stored) . ' - stored topdata products');
         unset($artnos);
     }
 
@@ -273,7 +271,7 @@ class ProductMappingService
             }
         }
         $this->topdataToProductHelperService->insertMany($dataInsert);
-        CliLogger::writeln("DONE. fetched {$total} EANs from Webservice");
+        CliLogger::writeln("DONE. fetched " . UtilFormatter::formatInteger($total) . " EANs from Webservice");
         ImportReport::setCounter('Fetched EANs', $total);
     }
 
@@ -327,7 +325,7 @@ class ProductMappingService
             }
         }
         $this->topdataToProductHelperService->insertMany($dataInsert);
-        CliLogger::writeln("DONE. fetched {$total} OEMs from Webservice");
+        CliLogger::writeln("DONE. fetched " . UtilFormatter::formatInteger($total) . " OEMs from Webservice");
         ImportReport::setCounter('Fetched OEMs', $total);
     }
 
@@ -380,7 +378,7 @@ class ProductMappingService
             }
         }
         $this->topdataToProductHelperService->insertMany($dataInsert);
-        CliLogger::writeln("DONE. fetched {$total} PCDs from Webservice");
+        CliLogger::writeln("DONE. fetched " . UtilFormatter::formatInteger($total) . " PCDs from Webservice");
         ImportReport::setCounter('Fetched PCDs', $total);
     }
 
