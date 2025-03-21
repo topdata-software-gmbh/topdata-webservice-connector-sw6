@@ -11,7 +11,7 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
 /**
  * 03/2025 created (extracted from ProductMappingService)
  */
-final class ProductNumberAsMappingStrategy extends AbstractMappingStrategy
+final class MappingStrategy_ProductNumberAs extends AbstractMappingStrategy
 {
     const BATCH_SIZE = 99;
 

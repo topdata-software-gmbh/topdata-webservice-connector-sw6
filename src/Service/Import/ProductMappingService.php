@@ -6,9 +6,9 @@ use Doctrine\DBAL\Connection;
 use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\AbstractMappingStrategy;
-use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\DefaultMappingStrategy;
-use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\DistributorMappingStrategy;
-use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\ProductNumberAsMappingStrategy;
+use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Default;
+use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Distributor;
+use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_ProductNumberAs;
 use Topdata\TopdataConnectorSW6\Service\TopfeedOptionsHelperService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
@@ -28,14 +28,14 @@ class ProductMappingService
     private array $setted;
 
     public function __construct(
-        private readonly Connection                     $connection,
-        private readonly TopfeedOptionsHelperService    $topfeedOptionsHelperService,
+        private readonly Connection                      $connection,
+        private readonly TopfeedOptionsHelperService     $topfeedOptionsHelperService,
 //        private readonly TopdataToProductService        $topdataToProductHelperService,
 //        private readonly TopdataWebserviceClient        $topdataWebserviceClient,
 //        private readonly ShopwareProductService         $shopwareProductService,
-        private readonly ProductNumberAsMappingStrategy $productNumberAsMappingStrategy,
-        private readonly DistributorMappingStrategy     $distributorMappingStrategy,
-        private readonly DefaultMappingStrategy         $defaultMappingStrategy,
+        private readonly MappingStrategy_ProductNumberAs $mappingStrategy_ProductNumberAs,
+        private readonly MappingStrategy_Distributor     $mappingStrategy_Distributor,
+        private readonly MappingStrategy_Default         $mappingStrategy_Default,
     )
     {
     }
@@ -61,17 +61,17 @@ class ProductMappingService
         return match ($mappingType) {
 
             // ---- Product Number Mapping Strategy
-            MappingTypeConstants::PRODUCT_NUMBER_AS_WS_ID  => $this->productNumberAsMappingStrategy,
+            MappingTypeConstants::PRODUCT_NUMBER_AS_WS_ID  => $this->mappingStrategy_ProductNumberAs,
 
             // ---- Distributor Mapping Strategy
             MappingTypeConstants::DISTRIBUTOR_DEFAULT,
             MappingTypeConstants::DISTRIBUTOR_CUSTOM,
-            MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD => $this->distributorMappingStrategy,
+            MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD => $this->mappingStrategy_Distributor,
 
             // ---- Default Mapping Strategy
             MappingTypeConstants::DEFAULT,
             MappingTypeConstants::CUSTOM,
-            MappingTypeConstants::CUSTOM_FIELD             => $this->defaultMappingStrategy,
+            MappingTypeConstants::CUSTOM_FIELD             => $this->mappingStrategy_Default,
 
             // ---- unknown mapping type --> throw exception
             default                                        => throw new \Exception('Unknown mapping type: ' . $mappingType),

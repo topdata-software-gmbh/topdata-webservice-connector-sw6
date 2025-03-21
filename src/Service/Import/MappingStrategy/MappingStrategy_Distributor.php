@@ -18,14 +18,14 @@ use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 /**
  * 03/2025 created (extracted from ProductMappingService)
  */
-final class DistributorMappingStrategy extends AbstractMappingStrategy
+final class MappingStrategy_Distributor extends AbstractMappingStrategy
 {
 
     const BATCH_SIZE = 500;
 
     public function __construct(
         private readonly TopFeedOptionsHelperService $optionsHelperService,
-        private readonly TopdataToProductService     $topdataToProductHelperService,
+        private readonly TopdataToProductService     $topdataToProductService,
         private readonly TopdataWebserviceClient     $topdataWebserviceClient,
         private readonly ShopwareProductService      $shopwareProductService,
     )
@@ -93,7 +93,7 @@ final class DistributorMappingStrategy extends AbstractMappingStrategy
                                     'productVersionId' => $artnosValue['version_id'],
                                 ];
                                 if (count($dataInsert) > self::BATCH_SIZE) {
-                                    $this->topdataToProductHelperService->insertMany($dataInsert);
+                                    $this->topdataToProductService->insertMany($dataInsert);
                                     $dataInsert = [];
                                 }
                             }
@@ -111,7 +111,7 @@ final class DistributorMappingStrategy extends AbstractMappingStrategy
             }
         }
         if (count($dataInsert) > 0) {
-            $this->topdataToProductHelperService->insertMany($dataInsert);
+            $this->topdataToProductService->insertMany($dataInsert);
         }
         CliLogger::writeln("\n" . UtilFormatter::formatInteger($stored) . ' - stored topdata products');
         unset($artnos);

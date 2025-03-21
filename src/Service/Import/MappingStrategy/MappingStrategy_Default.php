@@ -18,7 +18,7 @@ use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 /**
  * 03/2025 created (extracted from ProductMappingService)
  */
-final class DefaultMappingStrategy extends AbstractMappingStrategy
+final class MappingStrategy_Default extends AbstractMappingStrategy
 {
     const BATCH_SIZE = 500;
     private array $setted;
