@@ -3,8 +3,6 @@
 namespace Topdata\TopdataConnectorSW6\Util;
 
 
-use Topdata\TopdataConnectorSW6\Service\MappingHelperService;
-
 /**
  * 11/2024 created (extracted from MappingHelperService)
  */

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Service;
 
-use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
-use Symfony\Component\Console\Command\Command;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
+use Topdata\TopdataConnectorSW6\Service\Import\MappingHelperService;
+use Topdata\TopdataConnectorSW6\Service\Import\ProductMappingService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;

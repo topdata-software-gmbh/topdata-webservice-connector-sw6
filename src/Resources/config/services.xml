@@ -89,9 +89,7 @@
         <service id="Topdata\TopdataConnectorSW6\Service\ConfigCheckerService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\EntitiesHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\TopfeedOptionsHelperService" autowire="true"/>
-        <service id="Topdata\TopdataConnectorSW6\Service\ProductMappingService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ProgressLoggingService" autowire="true"/>
-        <service id="Topdata\TopdataConnectorSW6\Service\MappingHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\TopdataBrandService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\TopdataSeriesService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\TopdataDeviceTypeService" autowire="true" />
@@ -101,6 +99,11 @@
         <service id="Topdata\TopdataConnectorSW6\Service\ProductLinkingService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\ProductImportSettingsService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\ProductInformationService" autowire="true" />
+
+        <!-- Import Services -->
+        <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingHelperService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\Import\ProductMappingService" autowire="true"/>
+
 
         <!-- Controllers -->
         <service id="Topdata\TopdataConnectorSW6\Controller\Admin\TopdataWebserviceConnectorAdminApiController" public="true" autowire="true">

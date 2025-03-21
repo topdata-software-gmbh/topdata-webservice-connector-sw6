@@ -5,7 +5,7 @@
  * @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-namespace Topdata\TopdataConnectorSW6\Service;
+namespace Topdata\TopdataConnectorSW6\Service\Import;
 
 use Doctrine\DBAL\Connection;
 use Exception;
@@ -20,7 +20,13 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
 use Topdata\TopdataConnectorSW6\Constants\WebserviceFilterTypeConstants;
-use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
+use Topdata\TopdataConnectorSW6\Service\MediaHelperService;
+use Topdata\TopdataConnectorSW6\Service\TopdataDeviceService;
+use Topdata\TopdataConnectorSW6\Service\TopdataDeviceTypeService;
+use Topdata\TopdataConnectorSW6\Service\TopdataSeriesService;
+use Topdata\TopdataConnectorSW6\Service\TopdataToProductHelperService;
+use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Service\TopfeedOptionsHelperService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
 use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;

@@ -1,18 +1,22 @@
 <?php
 
-namespace Topdata\TopdataConnectorSW6\Service;
+namespace Topdata\TopdataConnectorSW6\Service\Import;
 
 use Doctrine\DBAL\Connection;
 use Exception;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
+use Topdata\TopdataConnectorSW6\Service\TopdataToProductHelperService;
+use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Service\TopfeedOptionsHelperService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 
 /**
- * 10/2024 created (extracted from MappingHelperService).
+ * Service class for mapping products between Topdata and Shopware 6.
+ * 07/2024 created (extracted from MappingHelperService).
  */
 class ProductMappingService
 {
@@ -20,11 +24,13 @@ class ProductMappingService
     const BATCH_SIZE                    = 500;
     const BATCH_SIZE_TOPDATA_TO_PRODUCT = 99;
 
+
     public function __construct(
         private readonly Connection                    $connection,
         private readonly TopfeedOptionsHelperService   $optionsHelperService,
         private readonly TopdataToProductHelperService $topdataToProductHelperService,
         private readonly TopdataWebserviceClient       $topdataWebserviceClient,
+        private readonly ShopwareProductService        $shopwareProductService,
     )
     {
     }
@@ -52,17 +58,21 @@ class ProductMappingService
         // FIXME: TRUNCATE topdata_to_product shoukd be solved in a better way (temp table? transaction?)
         $this->connection->executeStatement('TRUNCATE TABLE topdata_to_product');
 
+        // ---- Determine mapping type and call appropriate method
         switch ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE)) {
+            // ---- Mapping type: Product number as WS ID
             case MappingTypeConstants::PRODUCT_NUMBER_AS_WS_ID:
                 $this->_mapProductNumberAsWsId();
                 break;
 
+            // ---- Mapping type: Distributor default, custom, or custom field
             case MappingTypeConstants::DISTRIBUTOR_DEFAULT:
             case MappingTypeConstants::DISTRIBUTOR_CUSTOM:
             case MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD:
                 $this->_mapDistributor();
                 break;
 
+            // ---- Mapping type: Default, custom, or custom field (default case)
             case MappingTypeConstants::DEFAULT:
             case MappingTypeConstants::CUSTOM:
             case MappingTypeConstants::CUSTOM_FIELD:
@@ -73,13 +83,16 @@ class ProductMappingService
     }
 
     /**
-     * TopID from the webservice is used as shopware product number
+     * Maps products using the product number as the web service ID.
+     *
+     * This method retrieves product numbers and their corresponding IDs from the database,
+     * then inserts the mapped data into the `topdata_to_product` table.
      */
     private function _mapProductNumberAsWsId(): void
     {
         $dataInsert = [];
 
-        $artnos = self::_convertMultiArrayBinaryIdsToHex($this->_getKeysByProductNumber());
+        $artnos = self::_convertMultiArrayBinaryIdsToHex($this->shopwareProductService->getKeysByProductNumber());
         $currentDateTime = date('Y-m-d H:i:s');
         foreach ($artnos as $wsid => $prods) {
             foreach ($prods as $prodid) {
@@ -127,12 +140,13 @@ class ProductMappingService
     {
         $dataInsert = [];
 
+        // ---- Determine the source of product numbers based on the mapping type
         if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::DISTRIBUTOR_CUSTOM && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
-            $artnos = self::_convertMultiArrayBinaryIdsToHex($this->_getKeysByOptionValueUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER)));
+            $artnos = self::_convertMultiArrayBinaryIdsToHex($this->shopwareProductService->getKeysByOptionValueUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER)));
         } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
-            $artnos = $this->_getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER));
+            $artnos = $this->shopwareProductService->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER));
         } else {
-            $artnos = self::_convertMultiArrayBinaryIdsToHex($this->_getKeysByProductNumber());
+            $artnos = self::_convertMultiArrayBinaryIdsToHex($this->shopwareProductService->getKeysByProductNumber());
         }
 
         if (count($artnos) == 0) {
@@ -141,12 +155,16 @@ class ProductMappingService
 
         $stored = 0;
         CliLogger::info(count($artnos) . ' products to check ...');
+
+        // ---- Iterate through the pages of distributor data from the web service
         for ($i = 1; ; $i++) {
             $all_artnr = $this->topdataWebserviceClient->matchMyDistributer(['page' => $i]);
             if (!isset($all_artnr->page->available_pages)) {
                 throw new Exception('distributor webservice no pages');
             }
             $available_pages = $all_artnr->page->available_pages;
+
+            // ---- Process each product in the current page
             foreach ($all_artnr->match as $prod) {
                 foreach ($prod->distributors as $distri) {
                     //if((int)$s['distributor_id'] != (int)$distri->distributor_id)
@@ -207,12 +225,12 @@ class ProductMappingService
         [$oemMap, $eanMap] = $this->_buildMaps();
 
         $setted = [];
-        // Process EAN mappings
+        // ---- Process EAN mappings
         if (count($eanMap) > 0) {
             $this->_processEANs($eanMap, $setted);
         }
 
-        // Process OEM and PCD mappings
+        // ---- Process OEM and PCD mappings
         if (count($oemMap) > 0) {
             $this->_processOEMs($oemMap, $setted);
             $this->_processPCDs($oemMap, $setted);
@@ -237,6 +255,8 @@ class ProductMappingService
         $dataInsert = [];
         CliLogger::writeln('fetching EANs from Webservice...');
         $total = 0;
+
+        // ---- Iterate through the pages of EAN data from the web service
         for ($i = 1; ; $i++) {
             $response = $this->topdataWebserviceClient->matchMyEANs(['page' => $i]);
             $total += count($response->match);
@@ -244,6 +264,8 @@ class ProductMappingService
                 throw new Exception('ean webservice no pages');
             }
             $available_pages = $response->page->available_pages;
+
+            // ---- Process each product in the current page
             foreach ($response->match as $prod) {
                 foreach ($prod->values as $ean) {
                     $ean = (string)$ean;
@@ -291,6 +313,8 @@ class ProductMappingService
         $dataInsert = [];
         CliLogger::writeln('fetching OEMs from Webservice...');
         $total = 0;
+
+        // ---- Iterate through the pages of OEM data from the web service
         for ($i = 1; ; $i++) {
             $all_artnr = $this->topdataWebserviceClient->matchMyOems(['page' => $i]);
             $total += count($all_artnr->match);
@@ -298,6 +322,8 @@ class ProductMappingService
                 throw new Exception('oem webservice no pages');
             }
             $available_pages = $all_artnr->page->available_pages;
+
+            // ---- Process each product in the current page
             foreach ($all_artnr->match as $prod) {
                 foreach ($prod->values as $oem) {
                     $oem = (string)$oem;
@@ -344,6 +370,8 @@ class ProductMappingService
     {
         $dataInsert = [];
         $total = 0;
+
+        // ---- Iterate through the pages of PCD data from the web service
         for ($i = 1; ; $i++) {
             $all_artnr = $this->topdataWebserviceClient->matchMyPcds(['page' => $i]);
             $total += count($all_artnr->match);
@@ -351,6 +379,8 @@ class ProductMappingService
                 throw new Exception('pcd webservice no pages');
             }
             $available_pages = $all_artnr->page->available_pages;
+
+            // ---- Process each product in the current page
             foreach ($all_artnr->match as $prod) {
                 foreach ($prod->values as $oem) {
                     $oem = (string)$oem;
@@ -385,39 +415,6 @@ class ProductMappingService
         ImportReport::setCounter('Fetched PCDs', $total);
     }
 
-    private function _getKeysByOptionValue(string $optionName, string $colName = 'name'): array
-    {
-        $query = $this->connection->createQueryBuilder();
-
-        //        $query->select(['val.value', 'det.id'])
-        //            ->from('s_filter_articles', 'art')
-        //            ->innerJoin('art', 's_articles_details','det', 'det.articleID = art.articleID')
-        //            ->innerJoin('art', 's_filter_values','val', 'art.valueID = val.id')
-        //            ->innerJoin('val', 's_filter_options', 'opt', 'opt.id = val.optionID')
-        //            ->where('opt.name = :option')
-        //            ->setParameter(':option', $optionName)
-        //        ;
-
-        $query->select(['pgot.name ' . $colName, 'p.id', 'p.version_id'])
-            ->from('product', 'p')
-            ->innerJoin('p', 'product_property', 'pp', '(pp.product_id = p.id) AND (pp.product_version_id = p.version_id)')
-            ->innerJoin('pp', 'property_group_option_translation', 'pgot', 'pgot.property_group_option_id = pp.property_group_option_id')
-            ->innerJoin('pp', 'property_group_option', 'pgo', 'pgo.id = pp.property_group_option_id')
-            ->innerJoin('pgo', 'property_group_translation', 'pgt', 'pgt.property_group_id = pgo.property_group_id')
-            ->where('pgt.name = :option')
-            ->setParameter(':option', $optionName);
-        //print_r($query->getSQL());die();
-        $returnArray = $query->execute()->fetchAllAssociative();
-
-        //        foreach ($returnArray as $key=>$val) {
-        //            $returnArray[$key] = [
-        //                $colName => $val[$colName],
-        //                'id' => bin2hex($val['id']),
-        //                'version_id' => bin2hex($val['version_id']),
-        //            ];
-        //        }
-        return $returnArray;
-    }
 
     private static function _fixArrayBinaryIds(array $arr): array
     {
@@ -458,53 +455,12 @@ class ProductMappingService
         return $arr;
     }
 
-    /**
-     * 03/2025 renamed from getKeysByOrdernumber to _getKeysByProductNumber
-     */
-    private function _getKeysByProductNumber(): array
-    {
-        $query = $this->connection->createQueryBuilder();
-        $query->select(['p.product_number', 'p.id', 'p.version_id'])
-            ->from('product', 'p');
-
-        $results = $query->execute()->fetchAllAssociative();
-        $returnArray = [];
-        foreach ($results as $res) {
-            $returnArray[(string)$res['product_number']][] = [
-                'id'         => $res['id'],
-                'version_id' => $res['version_id'],
-            ];
-        }
-
-        return $returnArray;
-    }
-
-    private function _getKeysByOptionValueUnique($optionName)
-    {
-        $query = $this->connection->createQueryBuilder();
-        $query->select(['pgot.name', 'p.id', 'p.version_id'])
-            ->from('product', 'p')
-            ->innerJoin('p', 'product_property', 'pp', '(pp.product_id = p.id) AND (pp.product_version_id = p.version_id)')
-            ->innerJoin('pp', 'property_group_option_translation', 'pgot', 'pgot.property_group_option_id = pp.property_group_option_id')
-            ->innerJoin('pp', 'property_group_option', 'pgo', 'pgo.id = pp.property_group_option_id')
-            ->innerJoin('pgo', 'property_group_translation', 'pgt', 'pgt.property_group_id = pgo.property_group_id')
-            ->where('pgt.name = :option')
-            ->setParameter(':option', $optionName);
-
-        $results = $query->execute()->fetchAllAssociative();
-        $returnArray = [];
-        foreach ($results as $res) {
-            $returnArray[(string)$res['name']][] = [
-                'id'         => $res['id'],
-                'version_id' => $res['version_id'],
-            ];
-        }
-
-        return $returnArray;
-    }
 
     /**
+     * Retrieves the technical name of a custom field.
      * 03/2025 UNUSED
+     * @param string $name The name of the custom field.
+     * @return string|null The technical name of the custom field, or null if not found.
      */
     public function getCustomFieldTechnicalName(string $name): ?string
     {
@@ -516,68 +472,6 @@ class ProductMappingService
         $result = $rez->fetchOne();
 
         return $result ?: null;
-    }
-
-    private function _getKeysByCustomFieldUnique(string $technicalName, ?string $fieldName = null)
-    {
-        //$technicalName = $this->getCustomFieldTechnicalName($optionName);
-        $rez = $this->connection
-            ->prepare('SELECT '
-                . ' custom_fields, '
-                . ' LOWER(HEX(product_id)) as `id`, '
-                . ' LOWER(HEX(product_version_id)) as version_id'
-                . ' FROM product_translation ');
-        $rez->execute();
-        $results = $rez->fetchAllAssociative();
-        $returnArray = [];
-        foreach ($results as $val) {
-            if (!$val['custom_fields']) {
-                continue;
-            }
-            $cf = json_decode($val['custom_fields'], true);
-            if (empty($cf[$technicalName])) {
-                continue;
-            }
-
-            if (!empty($fieldName)) {
-                $returnArray[] = [
-                    $fieldName   => (string)$cf[$technicalName],
-                    'id'         => $val['id'],
-                    'version_id' => $val['version_id'],
-                ];
-            } else {
-                $returnArray[(string)$cf[$technicalName]][] = [
-                    'id'         => $val['id'],
-                    'version_id' => $val['version_id'],
-                ];
-            }
-        }
-
-        return $returnArray;
-    }
-
-    /**
-     * 03/2025 renamed from getKeysBySuppliernumber to getKeysByMpn
-     * Gets product id and variant_id by MANUFACTURER NUMBER.
-     */
-    private function _getKeysByMpn()
-    {
-        $query = $this->connection->createQueryBuilder();
-        $query->select(['p.manufacturer_number', 'p.id', 'p.version_id'])
-            ->from('product', 'p')
-            ->where('(p.manufacturer_number != \'\') AND (p.manufacturer_number IS NOT NULL)');
-
-        return $query->execute()->fetchAllAssociative();
-    }
-
-    private function _getKeysByEan()
-    {
-        $query = $this->connection->createQueryBuilder();
-        $query->select(['p.ean', 'p.id', 'p.version_id'])
-            ->from('product', 'p')
-            ->where('(p.ean != \'\') AND (p.ean IS NOT NULL)');
-
-        return $query->execute()->fetchAllAssociative();
     }
 
 
@@ -600,24 +494,24 @@ class ProductMappingService
         if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::CUSTOM) {
             if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
                 $oems = self::_fixArrayBinaryIds(
-                    $this->_getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number')
+                    $this->shopwareProductService->getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number')
                 );
             }
             if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN) != '') {
                 $eans = self::_fixArrayBinaryIds(
-                    $this->_getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean')
+                    $this->shopwareProductService->getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean')
                 );
             }
         } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::CUSTOM_FIELD) {
             if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
-                $oems = $this->_getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number');
+                $oems = $this->shopwareProductService->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number');
             }
             if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN) != '') {
-                $eans = $this->_getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean');
+                $eans = $this->shopwareProductService->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean');
             }
         } else {
-            $oems = self::_fixArrayBinaryIds($this->_getKeysByMpn());
-            $eans = self::_fixArrayBinaryIds($this->_getKeysByEan());
+            $oems = self::_fixArrayBinaryIds($this->shopwareProductService->getKeysByMpn());
+            $eans = self::_fixArrayBinaryIds($this->shopwareProductService->getKeysByEan());
         }
 
         // ---- Build OEM number mapping
