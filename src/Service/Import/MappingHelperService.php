@@ -21,10 +21,10 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
 use Topdata\TopdataConnectorSW6\Constants\WebserviceFilterTypeConstants;
 use Topdata\TopdataConnectorSW6\Service\MediaHelperService;
-use Topdata\TopdataConnectorSW6\Service\TopdataDeviceService;
-use Topdata\TopdataConnectorSW6\Service\TopdataDeviceTypeService;
-use Topdata\TopdataConnectorSW6\Service\TopdataSeriesService;
-use Topdata\TopdataConnectorSW6\Service\TopdataToProductHelperService;
+use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceService;
+use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceTypeService;
+use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataSeriesService;
+use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\TopfeedOptionsHelperService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
@@ -114,22 +114,22 @@ class MappingHelperService
 
 
     public function __construct(
-        private readonly LoggerInterface               $logger,
-        private readonly Connection                    $connection,
-        private readonly EntityRepository              $topdataBrandRepository,
-        private readonly EntityRepository              $topdataDeviceRepository,
-        private readonly EntityRepository              $topdataSeriesRepository,
-        private readonly EntityRepository              $topdataDeviceTypeRepository,
-        private readonly EntityRepository              $productRepository,
-        private readonly ProductMappingService         $productMappingService,
-        private readonly TopfeedOptionsHelperService   $optionsHelperService,
-        private readonly LocaleHelperService           $localeHelperService,
-        private readonly TopdataToProductHelperService $topdataToProductHelperService,
-        private readonly MediaHelperService            $mediaHelperService,
-        private readonly TopdataDeviceService          $topdataDeviceService,
-        private readonly TopdataWebserviceClient       $topdataWebserviceClient,
-        private readonly TopdataSeriesService          $topdataSeriesService,
-        private readonly TopdataDeviceTypeService      $topdataDeviceTypeService
+        private readonly LoggerInterface             $logger,
+        private readonly Connection                  $connection,
+        private readonly EntityRepository            $topdataBrandRepository,
+        private readonly EntityRepository            $topdataDeviceRepository,
+        private readonly EntityRepository            $topdataSeriesRepository,
+        private readonly EntityRepository            $topdataDeviceTypeRepository,
+        private readonly EntityRepository            $productRepository,
+        private readonly ProductMappingService       $productMappingService,
+        private readonly TopfeedOptionsHelperService $optionsHelperService,
+        private readonly LocaleHelperService         $localeHelperService,
+        private readonly TopdataToProductService     $topdataToProductHelperService,
+        private readonly MediaHelperService          $mediaHelperService,
+        private readonly TopdataDeviceService        $topdataDeviceService,
+        private readonly TopdataWebserviceClient     $topdataWebserviceClient,
+        private readonly TopdataSeriesService        $topdataSeriesService,
+        private readonly TopdataDeviceTypeService    $topdataDeviceTypeService
     )
     {
         $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();

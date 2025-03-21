@@ -1,6 +1,6 @@
 <?php
 
-namespace Topdata\TopdataConnectorSW6\Service;
+namespace Topdata\TopdataConnectorSW6\Service\DbHelper;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Context;
@@ -9,7 +9,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 /**
  * 11/2024 created (extracted from MappingHelperService)
  */
-class TopdataToProductHelperService
+class TopdataToProductService
 {
 
     /**

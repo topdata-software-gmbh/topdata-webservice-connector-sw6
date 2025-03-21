@@ -15,7 +15,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
-use Topdata\TopdataConnectorSW6\Service\TopdataBrandService;
+use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataBrandService;
 
 /**
  * 10/2024 renamed TopdataConnectorController --> TopdataWebserviceConnectorAdminApiController

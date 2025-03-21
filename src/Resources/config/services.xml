@@ -83,28 +83,31 @@
 
         <!-- SERVICES -->
         <service id="Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient" autowire="true"/>
-        <service id="Topdata\TopdataConnectorSW6\Service\TopdataToProductHelperService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ConnectionTestService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ImportService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ConfigCheckerService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\EntitiesHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\TopfeedOptionsHelperService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ProgressLoggingService" autowire="true"/>
-        <service id="Topdata\TopdataConnectorSW6\Service\TopdataBrandService" autowire="true" />
-        <service id="Topdata\TopdataConnectorSW6\Service\TopdataSeriesService" autowire="true" />
-        <service id="Topdata\TopdataConnectorSW6\Service\TopdataDeviceTypeService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\MediaHelperService" autowire="true" />
-        <service id="Topdata\TopdataConnectorSW6\Service\TopdataDeviceService" autowire="true" />
-        <service id="Topdata\TopdataConnectorSW6\Service\DeviceSynonymsService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\ProductLinkingService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\ProductImportSettingsService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\ProductInformationService" autowire="true" />
-
+        <!-- DB Helper Services -->
+        <service id="Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceSynonymsService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataBrandService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataSeriesService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceTypeService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService" autowire="true"/>
         <!-- Import Services -->
         <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\Import\ProductMappingService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService" autowire="true"/>
-
+        <!-- Mapping Strategies -->
+        <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\DistributorMappingStrategy" autowire="true"/>
+        <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\DefaultMappingStrategy" autowire="true"/>
+        <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\ProductNumberAsMappingStrategy" autowire="true"/>
 
         <!-- Controllers -->
         <service id="Topdata\TopdataConnectorSW6\Controller\Admin\TopdataWebserviceConnectorAdminApiController" public="true" autowire="true">

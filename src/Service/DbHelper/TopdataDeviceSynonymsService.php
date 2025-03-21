@@ -1,24 +1,25 @@
 <?php
 
-namespace Topdata\TopdataConnectorSW6\Service;
+namespace Topdata\TopdataConnectorSW6\Service\DbHelper;
 
 use Doctrine\DBAL\Connection;
 use Exception;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Constants\WebserviceFilterTypeConstants;
+use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
+ * TODO: split: Db Helper Service + Import Service
  * Service to handle device synonyms.
  * 11/2024 created (extracted from MappingHelperService)
  */
-class DeviceSynonymsService
+class TopdataDeviceSynonymsService
 {
 
     public function __construct(
         private readonly TopdataWebserviceClient     $topdataWebserviceClient,
         private readonly TopdataDeviceService        $topdataDeviceService,
-        private readonly TopfeedOptionsHelperService $optionsHelperService,
         private readonly Connection                  $connection,
     )
     {

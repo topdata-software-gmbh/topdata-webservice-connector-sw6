@@ -1,6 +1,6 @@
 <?php
 
-namespace Topdata\TopdataConnectorSW6\Service;
+namespace Topdata\TopdataConnectorSW6\Service\DbHelper;
 
 use Doctrine\DBAL\Connection;
 use Exception;
