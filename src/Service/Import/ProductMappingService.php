@@ -24,6 +24,11 @@ class ProductMappingService
     const BATCH_SIZE                    = 500;
     const BATCH_SIZE_TOPDATA_TO_PRODUCT = 99;
 
+    /**
+     * @var array already processed products
+     */
+    private array $setted;
+
 
     public function __construct(
         private readonly Connection                    $connection,
@@ -224,19 +229,19 @@ class ProductMappingService
 
         [$oemMap, $eanMap] = $this->_buildMaps();
 
-        $setted = [];
+        $this->setted = [];
         // ---- Process EAN mappings
         if (count($eanMap) > 0) {
-            $this->_processEANs($eanMap, $setted);
+            $this->_processEANs($eanMap);
         }
 
         // ---- Process OEM and PCD mappings
         if (count($oemMap) > 0) {
-            $this->_processOEMs($oemMap, $setted);
-            $this->_processPCDs($oemMap, $setted);
+            $this->_processOEMs($oemMap);
+            $this->_processPCDs($oemMap);
         }
 
-        unset($setted);
+        unset($this->setted);
         unset($oemMap);
         unset($eanMap);
     }
@@ -245,12 +250,12 @@ class ProductMappingService
      * Processes EANs (European Article Numbers) by fetching data from the web service and mapping them to products.
      *
      * @param array $eanMap an associative array mapping EANs to product data
-     * @param array &$setted A reference to an array that keeps track of already processed products
+     * @param array &$this->setted A reference to an array that keeps track of already processed products
      * @param array &$dataInsert A reference to an array that accumulates data to be inserted into the repository
      *
      * @throws Exception if the web service does not return the expected number of pages
      */
-    private function _processEANs(array $eanMap, array &$setted): void
+    private function _processEANs(array $eanMap): void
     {
         $dataInsert = [];
         CliLogger::writeln('fetching EANs from Webservice...');
@@ -272,7 +277,7 @@ class ProductMappingService
                     $ean = ltrim(trim($ean), '0');
                     if (isset($eanMap[$ean])) {
                         foreach ($eanMap[$ean] as $key => $product) {
-                            if (isset($setted[$key])) {
+                            if (isset($this->setted[$key])) {
                                 continue;
                             }
 
@@ -285,7 +290,7 @@ class ProductMappingService
                                 $this->topdataToProductHelperService->insertMany($dataInsert);
                                 $dataInsert = [];
                             }
-                            $setted[$key] = true;
+                            $this->setted[$key] = true;
                         }
                     }
                 }
@@ -304,11 +309,11 @@ class ProductMappingService
      * Processes OEMs (Original Equipment Manufacturer numbers) by fetching data from the web service and mapping them to products.
      *
      * @param array $oemMap an associative array mapping OEMs to product data
-     * @param array &$setted A reference to an array that keeps track of already processed products
+     * @param array &$this->setted A reference to an array that keeps track of already processed products
      *
      * @throws Exception if the web service does not return the expected number of pages
      */
-    private function _processOEMs(array $oemMap, array &$setted): void
+    private function _processOEMs(array $oemMap): void
     {
         $dataInsert = [];
         CliLogger::writeln('fetching OEMs from Webservice...');
@@ -330,7 +335,7 @@ class ProductMappingService
                     $oem = strtolower($oem);
                     if (isset($oemMap[$oem])) {
                         foreach ($oemMap[$oem] as $key => $product) {
-                            if (isset($setted[$key])) {
+                            if (isset($this->setted[$key])) {
                                 continue;
                             }
                             $dataInsert[] = [
@@ -343,7 +348,7 @@ class ProductMappingService
                                 $dataInsert = [];
                             }
 
-                            $setted[$key] = true;
+                            $this->setted[$key] = true;
                         }
                     }
                 }
@@ -362,11 +367,11 @@ class ProductMappingService
      * Processes PCDs (Product Category Descriptions) by fetching data from the web service and mapping them to products.
      *
      * @param array $oemMap an associative array mapping OEMs to product data
-     * @param array &$setted A reference to an array that keeps track of already processed products
+     * @param array &$this->setted A reference to an array that keeps track of already processed products
      *
      * @throws Exception if the web service does not return the expected number of pages
      */
-    private function _processPCDs(array $oemMap, array &$setted): void
+    private function _processPCDs(array $oemMap): void
     {
         $dataInsert = [];
         $total = 0;
@@ -387,7 +392,7 @@ class ProductMappingService
                     $oem = strtolower($oem);
                     if (isset($oemMap[$oem])) {
                         foreach ($oemMap[$oem] as $key => $product) {
-                            if (isset($setted[$key])) {
+                            if (isset($this->setted[$key])) {
                                 continue;
                             }
                             $dataInsert[] = [
@@ -400,7 +405,7 @@ class ProductMappingService
                                 $dataInsert = [];
                             }
 
-                            $setted[$key] = true;
+                            $this->setted[$key] = true;
                         }
                     }
                 }
@@ -481,6 +486,8 @@ class ProductMappingService
      * Creates two mapping arrays based on the configured mapping type (custom, custom field, or default).
      * Normalizes manufacturer numbers and EAN codes by removing leading zeros and formatting.
      *
+     * TODO? make a DTO for the return array
+     *
      * @return array[] Returns an array containing two maps:
      *                 [0] => array of OEM numbers mapped to product IDs and version IDs
      *                 [1] => array of EAN numbers mapped to product IDs and version IDs
@@ -513,6 +520,9 @@ class ProductMappingService
             $oems = self::_fixArrayBinaryIds($this->shopwareProductService->getKeysByMpn());
             $eans = self::_fixArrayBinaryIds($this->shopwareProductService->getKeysByEan());
         }
+
+        CliLogger::info(count($oems) . ' OEMs found');
+        CliLogger::info(count($eans) . ' EANs found');
 
         // ---- Build OEM number mapping
         $oemMap = [];

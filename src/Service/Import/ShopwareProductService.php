@@ -6,7 +6,11 @@ namespace Topdata\TopdataConnectorSW6\Service\Import;
 use Doctrine\DBAL\Connection;
 
 /**
- * basically just utility methods for fetching data from shopware's product table
+ * Provides utility methods for fetching product data from Shopware 6.
+ *
+ * This service class encapsulates database queries to retrieve product information
+ * based on various criteria such as product number, property group option,
+ * manufacturer number (MPN), EAN, and custom field values.
  *
  * 03/2025 created (extracted from ProductMappingService)
  */
@@ -25,7 +29,7 @@ class ShopwareProductService
      *
      * 03/2025 renamed from getKeysByOrdernumber to _getKeysByProductNumber
      *
-     * @return array An array of product data.
+     * @return array An array of product data, where the key is the product number and the value is an array of product IDs and version IDs.
      */
     public function getKeysByProductNumber(): array
     {
@@ -61,15 +65,7 @@ class ShopwareProductService
     {
         $query = $this->connection->createQueryBuilder();
 
-        //        $query->select(['val.value', 'det.id'])
-        //            ->from('s_filter_articles', 'art')
-        //            ->innerJoin('art', 's_articles_details','det', 'det.articleID = art.articleID')
-        //            ->innerJoin('art', 's_filter_values','val', 'art.valueID = val.id')
-        //            ->innerJoin('val', 's_filter_options', 'opt', 'opt.id = val.optionID')
-        //            ->where('opt.name = :option')
-        //            ->setParameter(':option', $optionName)
-        //        ;
-
+        // ---- Building the query to fetch product data
         $query->select(['pgot.name ' . $colName, 'p.id', 'p.version_id'])
             ->from('product', 'p')
             ->innerJoin('p', 'product_property', 'pp', '(pp.product_id = p.id) AND (pp.product_version_id = p.version_id)')
@@ -78,16 +74,9 @@ class ShopwareProductService
             ->innerJoin('pgo', 'property_group_translation', 'pgt', 'pgt.property_group_id = pgo.property_group_id')
             ->where('pgt.name = :option')
             ->setParameter(':option', $optionName);
-        //print_r($query->getSQL());die();
+
         $returnArray = $query->execute()->fetchAllAssociative();
 
-        //        foreach ($returnArray as $key=>$val) {
-        //            $returnArray[$key] = [
-        //                $colName => $val[$colName],
-        //                'id' => bin2hex($val['id']),
-        //                'version_id' => bin2hex($val['version_id']),
-        //            ];
-        //        }
         return $returnArray;
     }
 
@@ -96,7 +85,7 @@ class ShopwareProductService
      * Retrieves product data based on a unique property group option name.
      *
      * @param string $optionName The name of the property group option.
-     * @return array An array of product data.
+     * @return array An array of product data, where the key is the option name and the value is an array of product IDs and version IDs.
      */
     public function getKeysByOptionValueUnique($optionName)
     {
@@ -175,6 +164,8 @@ class ShopwareProductService
         $rez->execute();
         $results = $rez->fetchAllAssociative();
         $returnArray = [];
+
+        // ---- Iterate through the results and extract custom field values
         foreach ($results as $val) {
             if (!$val['custom_fields']) {
                 continue;
@@ -184,6 +175,7 @@ class ShopwareProductService
                 continue;
             }
 
+            // ---- Build the return array based on whether a field name is provided
             if (!empty($fieldName)) {
                 $returnArray[] = [
                     $fieldName   => (string)$cf[$technicalName],

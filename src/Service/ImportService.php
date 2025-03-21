@@ -103,7 +103,7 @@ class ImportService
      * helper methods to perform the import operations.
      *
      * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
-     * @return int|null the error code or null if no error occurred
+     * @return int|null the error code or null if no error occurred.. todo remove the error code thing. just use exceptions
      */
     private function executeImportOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
