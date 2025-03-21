@@ -17,6 +17,9 @@ use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 class ProductMappingService
 {
 
+    const BATCH_SIZE                    = 500;
+    const BATCH_SIZE_TOPDATA_TO_PRODUCT = 99;
+
     public function __construct(
         private readonly Connection                    $connection,
         private readonly TopfeedOptionsHelperService   $optionsHelperService,
@@ -27,6 +30,8 @@ class ProductMappingService
     }
 
     /**
+     * ==== MAIN ====
+     *
      * This is executed if --mapping option is set.
      *
      * FIXME: `TRUNCATE topdata_to_product` should be solved in a better way
@@ -49,20 +54,20 @@ class ProductMappingService
 
         switch ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE)) {
             case MappingTypeConstants::PRODUCT_NUMBER_AS_WS_ID:
-                $this->mapProductNumberAsWsId();
+                $this->_mapProductNumberAsWsId();
                 break;
 
             case MappingTypeConstants::DISTRIBUTOR_DEFAULT:
             case MappingTypeConstants::DISTRIBUTOR_CUSTOM:
             case MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD:
-                $this->mapDistributor();
+                $this->_mapDistributor();
                 break;
 
             case MappingTypeConstants::DEFAULT:
             case MappingTypeConstants::CUSTOM:
             case MappingTypeConstants::CUSTOM_FIELD:
             default:
-                $this->mapDefault();
+                $this->_mapDefault();
                 break;
         }
     }
@@ -70,13 +75,11 @@ class ProductMappingService
     /**
      * TopID from the webservice is used as shopware product number
      */
-    private function mapProductNumberAsWsId(): void
+    private function _mapProductNumberAsWsId(): void
     {
         $dataInsert = [];
 
-        $artnos = $this->_convertMultiArrayBinaryIdsToHex(
-            $this->getKeysByOrdernumber()
-        );
+        $artnos = self::_convertMultiArrayBinaryIdsToHex($this->_getKeysByProductNumber());
         $currentDateTime = date('Y-m-d H:i:s');
         foreach ($artnos as $wsid => $prods) {
             foreach ($prods as $prodid) {
@@ -89,7 +92,7 @@ class ProductMappingService
                         "'$currentDateTime'" .
                         ')';
                 }
-                if (count($dataInsert) > 99) {
+                if (count($dataInsert) > self::BATCH_SIZE_TOPDATA_TO_PRODUCT) {
                     $this->connection->executeStatement('
                     INSERT INTO topdata_to_product 
                     (id, top_data_id, product_id, product_version_id, created_at) 
@@ -120,16 +123,16 @@ class ProductMappingService
      *
      * @throws Exception if no products are found or if the web service does not return the expected number of pages
      */
-    private function mapDistributor(): void
+    private function _mapDistributor(): void
     {
         $dataInsert = [];
 
         if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::DISTRIBUTOR_CUSTOM && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
-            $artnos = $this->_convertMultiArrayBinaryIdsToHex($this->getKeysByOptionValueUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER)));
+            $artnos = self::_convertMultiArrayBinaryIdsToHex($this->_getKeysByOptionValueUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER)));
         } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
-            $artnos = $this->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER));
+            $artnos = $this->_getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER));
         } else {
-            $artnos = $this->_convertMultiArrayBinaryIdsToHex($this->getKeysByOrdernumber());
+            $artnos = self::_convertMultiArrayBinaryIdsToHex($this->_getKeysByProductNumber());
         }
 
         if (count($artnos) == 0) {
@@ -161,7 +164,7 @@ class ProductMappingService
                                     'productId'        => $artnosValue['id'],
                                     'productVersionId' => $artnosValue['version_id'],
                                 ];
-                                if (count($dataInsert) > 500) {
+                                if (count($dataInsert) > self::BATCH_SIZE) {
                                     $this->topdataToProductHelperService->insertMany($dataInsert);
                                     $dataInsert = [];
                                 }
@@ -197,7 +200,7 @@ class ProductMappingService
      *
      * @throws Exception if any error occurs during the mapping process
      */
-    private function mapDefault(): void
+    private function _mapDefault(): void
     {
         CliLogger::section('ProductMappingService::mapDefault()');
 
@@ -256,7 +259,7 @@ class ProductMappingService
                                 'productId'        => $product['id'],
                                 'productVersionId' => $product['version_id'],
                             ];
-                            if (count($dataInsert) > 500) {
+                            if (count($dataInsert) > self::BATCH_SIZE) {
                                 $this->topdataToProductHelperService->insertMany($dataInsert);
                                 $dataInsert = [];
                             }
@@ -309,7 +312,7 @@ class ProductMappingService
                                 'productId'        => $product['id'],
                                 'productVersionId' => $product['version_id'],
                             ];
-                            if (count($dataInsert) > 500) {
+                            if (count($dataInsert) > self::BATCH_SIZE) {
                                 $this->topdataToProductHelperService->insertMany($dataInsert);
                                 $dataInsert = [];
                             }
@@ -362,7 +365,7 @@ class ProductMappingService
                                 'productId'        => $product['id'],
                                 'productVersionId' => $product['version_id'],
                             ];
-                            if (count($dataInsert) > 500) {
+                            if (count($dataInsert) > self::BATCH_SIZE) {
                                 $this->topdataToProductHelperService->insertMany($dataInsert);
                                 $dataInsert = [];
                             }
@@ -382,7 +385,7 @@ class ProductMappingService
         ImportReport::setCounter('Fetched PCDs', $total);
     }
 
-    private function getKeysByOptionValue(string $optionName, string $colName = 'name'): array
+    private function _getKeysByOptionValue(string $optionName, string $colName = 'name'): array
     {
         $query = $this->connection->createQueryBuilder();
 
@@ -416,7 +419,7 @@ class ProductMappingService
         return $returnArray;
     }
 
-    private function fixArrayBinaryIds(array $arr): array
+    private static function _fixArrayBinaryIds(array $arr): array
     {
         foreach ($arr as $key => $val) {
             if (isset($arr[$key]['id'])) {
@@ -439,7 +442,7 @@ class ProductMappingService
      * @param array $arr The input array containing binary IDs.
      * @return array The modified array with hexadecimal string IDs.
      */
-    private function _convertMultiArrayBinaryIdsToHex(array $arr): array
+    private static function _convertMultiArrayBinaryIdsToHex(array $arr): array
     {
         foreach ($arr as $no => $vals) {
             foreach ($vals as $key => $val) {
@@ -456,9 +459,9 @@ class ProductMappingService
     }
 
     /**
-     * FIXME? ordernumber?
+     * 03/2025 renamed from getKeysByOrdernumber to _getKeysByProductNumber
      */
-    private function getKeysByOrdernumber(): array
+    private function _getKeysByProductNumber(): array
     {
         $query = $this->connection->createQueryBuilder();
         $query->select(['p.product_number', 'p.id', 'p.version_id'])
@@ -476,7 +479,7 @@ class ProductMappingService
         return $returnArray;
     }
 
-    private function getKeysByOptionValueUnique($optionName)
+    private function _getKeysByOptionValueUnique($optionName)
     {
         $query = $this->connection->createQueryBuilder();
         $query->select(['pgot.name', 'p.id', 'p.version_id'])
@@ -500,6 +503,9 @@ class ProductMappingService
         return $returnArray;
     }
 
+    /**
+     * 03/2025 UNUSED
+     */
     public function getCustomFieldTechnicalName(string $name): ?string
     {
         $rez = $this->connection
@@ -512,7 +518,7 @@ class ProductMappingService
         return $result ?: null;
     }
 
-    public function getKeysByCustomFieldUnique(string $technicalName, ?string $fieldName = null)
+    private function _getKeysByCustomFieldUnique(string $technicalName, ?string $fieldName = null)
     {
         //$technicalName = $this->getCustomFieldTechnicalName($optionName);
         $rez = $this->connection
@@ -551,9 +557,10 @@ class ProductMappingService
     }
 
     /**
+     * 03/2025 renamed from getKeysBySuppliernumber to getKeysByMpn
      * Gets product id and variant_id by MANUFACTURER NUMBER.
      */
-    private function getKeysBySuppliernumber()
+    private function _getKeysByMpn()
     {
         $query = $this->connection->createQueryBuilder();
         $query->select(['p.manufacturer_number', 'p.id', 'p.version_id'])
@@ -563,7 +570,7 @@ class ProductMappingService
         return $query->execute()->fetchAllAssociative();
     }
 
-    private function getKeysByEan()
+    private function _getKeysByEan()
     {
         $query = $this->connection->createQueryBuilder();
         $query->select(['p.ean', 'p.id', 'p.version_id'])
@@ -592,25 +599,25 @@ class ProductMappingService
         // ---- Fetch product data based on mapping type configuration
         if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::CUSTOM) {
             if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
-                $oems = $this->fixArrayBinaryIds(
-                    $this->getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number')
+                $oems = self::_fixArrayBinaryIds(
+                    $this->_getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number')
                 );
             }
             if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN) != '') {
-                $eans = $this->fixArrayBinaryIds(
-                    $this->getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean')
+                $eans = self::_fixArrayBinaryIds(
+                    $this->_getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean')
                 );
             }
         } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::CUSTOM_FIELD) {
             if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
-                $oems = $this->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number');
+                $oems = $this->_getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number');
             }
             if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN) != '') {
-                $eans = $this->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean');
+                $eans = $this->_getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean');
             }
         } else {
-            $oems = $this->fixArrayBinaryIds($this->getKeysBySuppliernumber());
-            $eans = $this->fixArrayBinaryIds($this->getKeysByEan());
+            $oems = self::_fixArrayBinaryIds($this->_getKeysByMpn());
+            $eans = self::_fixArrayBinaryIds($this->_getKeysByEan());
         }
 
         // ---- Build OEM number mapping
