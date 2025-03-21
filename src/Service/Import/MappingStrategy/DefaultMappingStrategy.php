@@ -20,6 +20,7 @@ use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
  */
 final class DefaultMappingStrategy extends AbstractMappingStrategy
 {
+    const BATCH_SIZE = 500;
     private array $setted;
 
     public function __construct(
