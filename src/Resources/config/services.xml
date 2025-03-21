@@ -103,6 +103,7 @@
         <!-- Import Services -->
         <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\Import\ProductMappingService" autowire="true"/>
+        <service id="Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService" autowire="true"/>
 
 
         <!-- Controllers -->
