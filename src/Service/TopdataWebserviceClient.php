@@ -35,11 +35,12 @@ class TopdataWebserviceClient
     )
     {
         $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
-        $this->apiBaseUrl = rtrim($pluginConfig['apiBaseUrl'], '/');
-        $this->apiUid = $pluginConfig['apiUid'];
-        $this->apiPassword = $pluginConfig['apiPassword'];
-        $this->apiSecurityKey = $pluginConfig['apiSecurityKey'];
-        $this->apiLanguage = $pluginConfig['apiLanguage'];
+//        var_dump( $pluginConfig);
+        $this->apiBaseUrl = rtrim($pluginConfig['apiBaseUrl'], '/') ?? '';
+        $this->apiUid = $pluginConfig['apiUid'] ?? '';
+        $this->apiPassword = $pluginConfig['apiPassword'] ?? '';
+        $this->apiSecurityKey = $pluginConfig['apiSecurityKey'] ?? '';
+        $this->apiLanguage = $pluginConfig['apiLanguage'] ?? '';
         $this->curlHttpClient = new CurlHttpClient();
     }
 
