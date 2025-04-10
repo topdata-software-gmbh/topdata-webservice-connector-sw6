@@ -20,6 +20,14 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
  */
 class ProductLinkingService
 {
+    const CHUNK_SIZE_A = 30;
+    const CHUNK_SIZE_B = 30;
+    const CHUNK_SIZE_C = 30;
+    const CHUNK_SIZE_D = 30;
+    const CHUNK_SIZE_E = 30;
+    const CHUNK_SIZE_F = 30;
+    const CHUNK_SIZE_G = 30;
+
     private Context $context;
 
 
@@ -308,12 +316,12 @@ class ProductLinkingService
             }
 
             if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, 30);
-                foreach ($insertDataChunks as $chunk) {
+                $insertDataChunks = array_chunk($dataInsert, self::CHUNK_SIZE_A);
+                foreach ($insertDataChunks as $idxChunk => $chunk) {
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_similar (product_id, product_version_id, similar_product_id, similar_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
                     ');
-                    CliLogger::activity();
+                    CliLogger::progress($idxChunk, count($insertDataChunks));
                 }
 
                 if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productSimilarCross, $productId)) {
@@ -330,7 +338,7 @@ class ProductLinkingService
             }
 
             if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, 30);
+                $insertDataChunks = array_chunk($dataInsert, self::CHUNK_SIZE_B);
                 foreach ($insertDataChunks as $chunk) {
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_alternate (product_id, product_version_id, alternate_product_id, alternate_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
@@ -352,7 +360,7 @@ class ProductLinkingService
             }
 
             if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, 30);
+                $insertDataChunks = array_chunk($dataInsert, self::CHUNK_SIZE_C);
                 foreach ($insertDataChunks as $chunk) {
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_related (product_id, product_version_id, related_product_id, related_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
@@ -374,7 +382,7 @@ class ProductLinkingService
             }
 
             if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, 30);
+                $insertDataChunks = array_chunk($dataInsert, self::CHUNK_SIZE_D);
                 foreach ($insertDataChunks as $chunk) {
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_bundled (product_id, product_version_id, bundled_product_id, bundled_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
@@ -396,7 +404,7 @@ class ProductLinkingService
             }
 
             if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, 30);
+                $insertDataChunks = array_chunk($dataInsert, self::CHUNK_SIZE_E);
                 foreach ($insertDataChunks as $chunk) {
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_color_variant 
@@ -420,7 +428,7 @@ class ProductLinkingService
             }
 
             if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, 30);
+                $insertDataChunks = array_chunk($dataInsert, self::CHUNK_SIZE_F);
                 foreach ($insertDataChunks as $chunk) {
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_capacity_variant 
@@ -444,7 +452,7 @@ class ProductLinkingService
             }
 
             if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, 30);
+                $insertDataChunks = array_chunk($dataInsert, self::CHUNK_SIZE_G);
                 foreach ($insertDataChunks as $chunk) {
                     $this->connection->executeStatement('
                         INSERT INTO topdata_product_to_variant 
