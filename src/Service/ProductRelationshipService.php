@@ -10,7 +10,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Topdata\TopdataConnectorSW6\Constants\CrossSellingTypeConstant;
+use Topdata\TopdataConnectorSW6\Constants\ProductRelationshipTypeEnum;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
@@ -23,9 +23,10 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
  *
  * 11/2024 created (extracted from MappingHelperService)
  */
-class ProductLinkingService
+class ProductRelationshipService
 {
-    const CHUNK_SIZE = 30;
+    const CHUNK_SIZE         = 30;
+    const MAX_CROSS_SELLINGS = 24;
 
     private Context $context;
 
@@ -42,66 +43,63 @@ class ProductLinkingService
     }
 
     /**
-     * Returns an array mapping numeric keys to cross-selling type constants
+     * 04/2025 introduced to decouple the enum value from type in database... but maybe we can change the types in the database instead to the UPPERCASE enum values for consistency?
      */
-    private static function getCrossTypes(): array
+    private static function _getCrossDbType(ProductRelationshipTypeEnum $crossType)
     {
-        return [
-            1 => CrossSellingTypeConstant::CROSS_CAPACITY_VARIANT,
-            2 => CrossSellingTypeConstant::CROSS_COLOR_VARIANT,
-            3 => CrossSellingTypeConstant::CROSS_ALTERNATE,
-            4 => CrossSellingTypeConstant::CROSS_RELATED,
-            5 => CrossSellingTypeConstant::CROSS_VARIANT,
-            6 => CrossSellingTypeConstant::CROSS_BUNDLED,
-            7 => CrossSellingTypeConstant::CROSS_SIMILAR,
-        ];
+        return match ($crossType) {
+            ProductRelationshipTypeEnum::SIMILAR          => 'similar',
+            ProductRelationshipTypeEnum::ALTERNATE        => 'alternate',
+            ProductRelationshipTypeEnum::RELATED          => 'related',
+            ProductRelationshipTypeEnum::BUNDLED          => 'bundled',
+            ProductRelationshipTypeEnum::COLOR_VARIANT    => 'colorVariant',
+            ProductRelationshipTypeEnum::CAPACITY_VARIANT => 'capacityVariant',
+            ProductRelationshipTypeEnum::VARIANT          => 'variant',
+            default                                       => throw new \RuntimeException("Unknown cross-selling type: {$crossType->value}"),
+        };
     }
 
-    /**
-     * TODO: refactor: use match()
-     * TODO: make it static
-     */
-    private function getCrossName(string $crossType)
+
+    private static function _getCrossNameTranslations(ProductRelationshipTypeEnum $crossType): array
     {
-        $names = [
-            CrossSellingTypeConstant::CROSS_CAPACITY_VARIANT => [
+        return match ($crossType) {
+            ProductRelationshipTypeEnum::CAPACITY_VARIANT => [
                 'de-DE' => 'Kapazitätsvarianten',
                 'en-GB' => 'Capacity Variants',
                 'nl-NL' => 'capaciteit varianten',
             ],
-            CrossSellingTypeConstant::CROSS_COLOR_VARIANT    => [
+            ProductRelationshipTypeEnum::COLOR_VARIANT    => [
                 'de-DE' => 'Farbvarianten',
                 'en-GB' => 'Color Variants',
                 'nl-NL' => 'kleur varianten',
             ],
-            CrossSellingTypeConstant::CROSS_ALTERNATE        => [
+            ProductRelationshipTypeEnum::ALTERNATE        => [
                 'de-DE' => 'Alternative Produkte',
                 'en-GB' => 'Alternate Products',
                 'nl-NL' => 'alternatieve producten',
             ],
-            CrossSellingTypeConstant::CROSS_RELATED          => [
+            ProductRelationshipTypeEnum::RELATED          => [
                 'de-DE' => 'Zubehör',
                 'en-GB' => 'Accessories',
                 'nl-NL' => 'Accessoires',
             ],
-            CrossSellingTypeConstant::CROSS_VARIANT          => [
+            ProductRelationshipTypeEnum::VARIANT          => [
                 'de-DE' => 'Varianten',
                 'en-GB' => 'Variants',
                 'nl-NL' => 'varianten',
             ],
-            CrossSellingTypeConstant::CROSS_BUNDLED          => [
+            ProductRelationshipTypeEnum::BUNDLED          => [
                 'de-DE' => 'Im Bundle',
                 'en-GB' => 'In Bundle',
                 'nl-NL' => 'In een bundel',
             ],
-            CrossSellingTypeConstant::CROSS_SIMILAR          => [
+            ProductRelationshipTypeEnum::SIMILAR          => [
                 'de-DE' => 'Ähnlich',
                 'en-GB' => 'Similar',
                 'nl-NL' => 'Vergelijkbaar',
             ],
-        ];
-
-        return isset($names[$crossType]) ? $names[$crossType] : $crossType;
+            default                                => throw new \RuntimeException("Unknown cross-selling type: {$crossType->value}"),
+        };
     }
 
 
@@ -227,9 +225,9 @@ class ProductLinkingService
      *
      * @param array $currentProductId The current product ID information
      * @param array $linkedProductIds Array of products to be linked
-     * @param string $crossType The type of cross-selling relationship
+     * @param ProductRelationshipTypeEnum $crossType The type of cross-selling relationship
      */
-    private function addProductCrossSelling(array $currentProductId, array $linkedProductIds, string $crossType): void
+    private function addProductCrossSelling(array $currentProductId, array $linkedProductIds, ProductRelationshipTypeEnum $crossType): void
     {
         if ($currentProductId['parent_id']) {
             //don't create cross if product is variation!
@@ -240,21 +238,17 @@ class ProductLinkingService
 
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('productId', $currentProductId['product_id']));
-        $criteria->addFilter(new EqualsFilter('topdataExtension.type', $crossType));
+        $criteria->addFilter(new EqualsFilter('topdataExtension.type', self::_getCrossDbType($crossType)));
         $productCrossSellingEntity = $this->productCrossSellingRepository->search($criteria, $this->context)->first();
 
         if ($productCrossSellingEntity) {
-            $crossId = $productCrossSellingEntity->getId();
-            //            $this
-            //                ->productCrossSellingAssignedProductsRepository
-            //                ->delete([['crossSellingId'=>$crossId]], $this->context);
-
             // ---- Remove existing cross-selling product assignments
-            $this
-                ->connection
-                ->executeStatement("DELETE 
+            $crossId = $productCrossSellingEntity->getId();
+            $this->connection->executeStatement("
+                    DELETE 
                     FROM product_cross_selling_assigned_products 
-                    WHERE cross_selling_id = 0x$crossId");
+                    WHERE cross_selling_id = 0x$crossId
+            ");
         } else {
             // ---- Create new cross-selling entity
             $crossId = Uuid::randomHex();
@@ -262,14 +256,16 @@ class ProductLinkingService
                 'id'               => $crossId,
                 'productId'        => $currentProductId['product_id'],
                 'productVersionId' => $currentProductId['product_version_id'],
-                'name'             => $this->getCrossName($crossType),
-                'position'         => array_search($crossType, self::getCrossTypes()),
+                'name'             => self::_getCrossNameTranslations($crossType),
+                'position'         => self::_getCrossPosition($crossType),
                 'type'             => ProductCrossSellingDefinition::TYPE_PRODUCT_LIST,
                 'sortBy'           => ProductCrossSellingDefinition::SORT_BY_NAME,
                 'sortDirection'    => FieldSorting::ASCENDING,
                 'active'           => true,
-                'limit'            => 24,
-                'topdataExtension' => ['type' => $crossType],
+                'limit'            => self::MAX_CROSS_SELLINGS,
+                'topdataExtension' => [
+                    'type' => self::_getCrossDbType($crossType)
+                ],
             ];
             $this->productCrossSellingRepository->create([$data], $this->context);
             CliLogger::activity();
@@ -365,18 +361,18 @@ class ProductLinkingService
      * @param array $relatedProducts Array of products to be linked
      * @param string $tableName The database table to insert into
      * @param string $idColumnPrefix The prefix for the ID column in the table
-     * @param string $crossType The type of cross-selling relationship
+     * @param ProductRelationshipTypeEnum $crossType The type of cross-selling relationship
      * @param bool $enableCrossSelling Whether to enable cross-selling
      * @param string $dateTime The current date/time string
      */
     private function processProductRelationship(
-        array  $productId_versionId,
-        array  $relatedProducts,
-        string $tableName,
-        string $idColumnPrefix,
-        string $crossType,
-        bool   $enableCrossSelling,
-        string $dateTime
+        array                       $productId_versionId,
+        array                       $relatedProducts,
+        string                      $tableName,
+        string                      $idColumnPrefix,
+        ProductRelationshipTypeEnum $crossType,
+        bool                        $enableCrossSelling,
+        string                      $dateTime
     ): void
     {
         if (empty($relatedProducts)) {
@@ -431,7 +427,7 @@ class ProductLinkingService
                 $this->_findSimilarProducts($remoteProductData),
                 'topdata_product_to_similar',
                 'similar',
-                CrossSellingTypeConstant::CROSS_SIMILAR,
+                ProductRelationshipTypeEnum::SIMILAR,
                 $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productSimilarCross, $productId),
                 $dateTime
             );
@@ -444,7 +440,7 @@ class ProductLinkingService
                 $this->findAlternateProducts($remoteProductData),
                 'topdata_product_to_alternate',
                 'alternate',
-                CrossSellingTypeConstant::CROSS_ALTERNATE,
+                ProductRelationshipTypeEnum::ALTERNATE,
                 $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productAlternateCross, $productId),
                 $dateTime
             );
@@ -457,7 +453,7 @@ class ProductLinkingService
                 $this->findRelatedProducts($remoteProductData),
                 'topdata_product_to_related',
                 'related',
-                CrossSellingTypeConstant::CROSS_RELATED,
+                ProductRelationshipTypeEnum::RELATED,
                 $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productRelatedCross, $productId),
                 $dateTime
             );
@@ -470,7 +466,7 @@ class ProductLinkingService
                 $this->findBundledProducts($remoteProductData),
                 'topdata_product_to_bundled',
                 'bundled',
-                CrossSellingTypeConstant::CROSS_BUNDLED,
+                ProductRelationshipTypeEnum::BUNDLED,
                 $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productBundledCross, $productId),
                 $dateTime
             );
@@ -483,7 +479,7 @@ class ProductLinkingService
                 $this->findColorVariantProducts($remoteProductData),
                 'topdata_product_to_color_variant',
                 'color_variant',
-                CrossSellingTypeConstant::CROSS_COLOR_VARIANT,
+                ProductRelationshipTypeEnum::COLOR_VARIANT,
                 $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productVariantColorCross, $productId),
                 $dateTime
             );
@@ -496,7 +492,7 @@ class ProductLinkingService
                 $this->findCapacityVariantProducts($remoteProductData),
                 'topdata_product_to_capacity_variant',
                 'capacity_variant',
-                CrossSellingTypeConstant::CROSS_CAPACITY_VARIANT,
+                ProductRelationshipTypeEnum::CAPACITY_VARIANT,
                 $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productVariantCapacityCross, $productId),
                 $dateTime
             );
@@ -509,11 +505,28 @@ class ProductLinkingService
                 $this->findVariantProducts($remoteProductData),
                 'topdata_product_to_variant',
                 'variant',
-                CrossSellingTypeConstant::CROSS_VARIANT,
+                ProductRelationshipTypeEnum::VARIANT,
                 $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productVariantCross, $productId),
                 $dateTime
             );
         }
+    }
+
+    /**
+     * 04/2025 created
+     */
+    private static function _getCrossPosition(ProductRelationshipTypeEnum $crossType): int
+    {
+        return match ($crossType) {
+            ProductRelationshipTypeEnum::CAPACITY_VARIANT => 1,
+            ProductRelationshipTypeEnum::COLOR_VARIANT    => 2,
+            ProductRelationshipTypeEnum::ALTERNATE        => 3,
+            ProductRelationshipTypeEnum::RELATED          => 4,
+            ProductRelationshipTypeEnum::VARIANT          => 5,
+            ProductRelationshipTypeEnum::BUNDLED          => 6,
+            ProductRelationshipTypeEnum::SIMILAR          => 7,
+            default                                       => throw new \RuntimeException("Unknown cross-selling type: {$crossType->value}"),
+        };
     }
 
 }

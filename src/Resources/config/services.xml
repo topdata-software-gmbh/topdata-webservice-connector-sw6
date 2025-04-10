@@ -90,7 +90,7 @@
         <service id="Topdata\TopdataConnectorSW6\Service\TopfeedOptionsHelperService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ProgressLoggingService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\MediaHelperService" autowire="true" />
-        <service id="Topdata\TopdataConnectorSW6\Service\ProductLinkingService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\ProductRelationshipService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\ProductImportSettingsService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\ProductInformationService" autowire="true" />
         <!-- DB Helper Services -->

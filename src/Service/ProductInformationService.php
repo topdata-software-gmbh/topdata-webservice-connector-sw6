@@ -84,7 +84,7 @@ class ProductInformationService
     public function __construct(
         private readonly TopdataToProductService      $topdataToProductHelperService,
         private readonly TopfeedOptionsHelperService  $topfeedOptionsHelperService,
-        private readonly ProductLinkingService        $productLinkingService,
+        private readonly ProductRelationshipService   $productRelationshipService,
         private readonly EntityRepository             $productRepository,
         private readonly TopdataWebserviceClient      $topdataWebserviceClient,
         private readonly ProductImportSettingsService $productImportSettingsService,
@@ -208,7 +208,7 @@ class ProductInformationService
 
                 // ---- Link products
                 if (!$onlyMedia) {
-                    $this->productLinkingService->linkProducts($topid_products[$product->products_id][0], $product);
+                    $this->productRelationshipService->linkProducts($topid_products[$product->products_id][0], $product);
                 }
             }
             CliLogger::mem();
