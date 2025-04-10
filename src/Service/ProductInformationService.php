@@ -10,11 +10,11 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Topdata\TopdataConnectorSW6\Constants\DescriptionImportTypeConstant;
 use Topdata\TopdataConnectorSW6\Constants\WebserviceFilterTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Exception\WebserviceResponseException;
+use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
 use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
@@ -82,17 +82,17 @@ class ProductInformationService
     private Context $context;
 
     public function __construct(
-        private readonly TopdataToProductHelperService $topdataToProductHelperService,
-        private readonly TopfeedOptionsHelperService   $topfeedOptionsHelperService,
-        private readonly ProductLinkingService         $productLinkingService,
-        private readonly EntityRepository              $productRepository,
-        private readonly TopdataWebserviceClient       $topdataWebserviceClient,
-        private readonly ProductImportSettingsService  $productImportSettingsService,
-        private readonly EntitiesHelperService         $entitiesHelperService,
-        private readonly MediaHelperService            $mediaHelperService,
-        private readonly LoggerInterface               $logger,
-        private readonly ManufacturerService           $manufacturerService,
-        private readonly Connection                    $connection,
+        private readonly TopdataToProductService      $topdataToProductHelperService,
+        private readonly TopfeedOptionsHelperService  $topfeedOptionsHelperService,
+        private readonly ProductLinkingService        $productLinkingService,
+        private readonly EntityRepository             $productRepository,
+        private readonly TopdataWebserviceClient      $topdataWebserviceClient,
+        private readonly ProductImportSettingsService $productImportSettingsService,
+        private readonly EntitiesHelperService        $entitiesHelperService,
+        private readonly MediaHelperService           $mediaHelperService,
+        private readonly LoggerInterface              $logger,
+        private readonly ManufacturerService          $manufacturerService,
+        private readonly Connection                   $connection,
     ){
         $this->context = Context::createDefaultContext();
     }

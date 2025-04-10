@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Service;
 
-use Psr\Log\LoggerInterface;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
-use Symfony\Component\Console\Command\Command;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
+use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceSynonymsService;
+use Topdata\TopdataConnectorSW6\Service\Import\MappingHelperService;
+use Topdata\TopdataConnectorSW6\Service\Import\ProductMappingService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
-use Topdata\TopdataFoundationSW6\Util\UtilMarkdown;
 
 /**
  * Service class responsible for handling the import operations.
@@ -24,6 +24,9 @@ use Topdata\TopdataFoundationSW6\Util\UtilMarkdown;
 class ImportService
 {
 
+    /**
+     * TODO create new TopdataImportException with these error codes
+     */
     // Error codes for various failure scenarios
     const ERROR_CODE_SUCCESS                          = 0;
     const ERROR_CODE_PLUGIN_INACTIVE                  = 1;
@@ -38,14 +41,14 @@ class ImportService
 
 
     public function __construct(
-        private readonly SystemConfigService         $systemConfigService,
-        private readonly MappingHelperService        $mappingHelperService,
-        private readonly ConfigCheckerService        $configCheckerService,
-        private readonly TopfeedOptionsHelperService $topfeedOptionsHelperService,
-        private readonly PluginHelperService         $pluginHelperService,
-        private readonly ProductMappingService       $productMappingService,
-        private readonly DeviceSynonymsService       $deviceSynonymsService,
-        private readonly ProductInformationService   $productInformationService,
+        private readonly SystemConfigService          $systemConfigService,
+        private readonly MappingHelperService         $mappingHelperService,
+        private readonly ConfigCheckerService         $configCheckerService,
+        private readonly TopfeedOptionsHelperService  $topfeedOptionsHelperService,
+        private readonly PluginHelperService          $pluginHelperService,
+        private readonly ProductMappingService        $productMappingService,
+        private readonly TopdataDeviceSynonymsService $deviceSynonymsService,
+        private readonly ProductInformationService    $productInformationService,
     )
     {
     }
@@ -103,7 +106,7 @@ class ImportService
      * helper methods to perform the import operations.
      *
      * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
-     * @return int|null the error code or null if no error occurred
+     * @return int|null the error code or null if no error occurred.. todo remove the error code thing. just use exceptions
      */
     private function executeImportOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
@@ -297,7 +300,7 @@ class ImportService
         $configDefaults = [
             'attributeOem'         => '',
             'attributeEan'         => '',
-            'attributeOrdernumber' => '',
+            'attributeOrdernumber' => '',  // fixme: this is not an ordernumber, but a product number
         ];
 
         $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');

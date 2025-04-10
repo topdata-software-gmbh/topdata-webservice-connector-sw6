@@ -1,6 +1,6 @@
 <?php
 
-namespace Topdata\TopdataConnectorSW6\Service;
+namespace Topdata\TopdataConnectorSW6\Service\DbHelper;
 
 use Doctrine\DBAL\Connection;
 use Exception;
@@ -23,6 +23,7 @@ use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
 use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
 
 /**
+ * Service class for handling Topdata device related operations.
  * 11/2024 created (extracted from MappingHelperService)
  */
 class TopdataDeviceService
@@ -34,6 +35,11 @@ class TopdataDeviceService
     {
     }
 
+    /**
+     * Retrieves all enabled devices from the database.
+     *
+     * @return array An array of associative arrays representing the enabled devices.
+     */
     public function _getEnabledDevices(): array
     {
         $query = $this->connection->createQueryBuilder();
@@ -45,7 +51,12 @@ class TopdataDeviceService
     }
 
     /**
+     * Retrieves an array of devices based on an array of WS IDs.
      * 03/2025 extracted from MappingHelperService
+     *
+     * @param array $wsIds An array of WS IDs to filter devices by.
+     *
+     * @return array An array of devices matching the provided WS IDs.
      */
     public function getDeviceArrayByWsIdArray(array $wsIds): array
     {
@@ -62,6 +73,7 @@ class TopdataDeviceService
             ->execute()
             ->fetchAllAssociative();
 
+        // ---- Process the query results
         foreach ($queryRez as $device) {
             $device['id'] = bin2hex($device['id']);
             $device['brand_id'] = bin2hex($device['brand_id'] ?? '');

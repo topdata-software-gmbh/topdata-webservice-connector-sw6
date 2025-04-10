@@ -11,6 +11,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\CrossSellingTypeConstant;
+use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
@@ -32,11 +33,11 @@ class ProductLinkingService
 
 
     public function __construct(
-        private readonly ProductImportSettingsService  $productImportSettingsService,
-        private readonly Connection                    $connection,
-        private readonly TopdataToProductHelperService $topdataToProductHelperService,
-        private readonly EntityRepository              $productCrossSellingRepository,
-        private readonly EntityRepository              $productCrossSellingAssignedProductsRepository,
+        private readonly ProductImportSettingsService $productImportSettingsService,
+        private readonly Connection                   $connection,
+        private readonly TopdataToProductService      $topdataToProductHelperService,
+        private readonly EntityRepository             $productCrossSellingRepository,
+        private readonly EntityRepository             $productCrossSellingAssignedProductsRepository,
     )
     {
         $this->context = Context::createDefaultContext();

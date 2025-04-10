@@ -5,7 +5,7 @@
  * @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
-namespace Topdata\TopdataConnectorSW6\Service;
+namespace Topdata\TopdataConnectorSW6\Service\Import;
 
 use Doctrine\DBAL\Connection;
 use Exception;
@@ -20,7 +20,13 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
 use Topdata\TopdataConnectorSW6\Constants\WebserviceFilterTypeConstants;
-use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
+use Topdata\TopdataConnectorSW6\Service\MediaHelperService;
+use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceService;
+use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceTypeService;
+use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataSeriesService;
+use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
+use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Service\TopfeedOptionsHelperService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
 use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
@@ -108,22 +114,22 @@ class MappingHelperService
 
 
     public function __construct(
-        private readonly LoggerInterface               $logger,
-        private readonly Connection                    $connection,
-        private readonly EntityRepository              $topdataBrandRepository,
-        private readonly EntityRepository              $topdataDeviceRepository,
-        private readonly EntityRepository              $topdataSeriesRepository,
-        private readonly EntityRepository              $topdataDeviceTypeRepository,
-        private readonly EntityRepository              $productRepository,
-        private readonly ProductMappingService         $productMappingService,
-        private readonly TopfeedOptionsHelperService   $optionsHelperService,
-        private readonly LocaleHelperService           $localeHelperService,
-        private readonly TopdataToProductHelperService $topdataToProductHelperService,
-        private readonly MediaHelperService            $mediaHelperService,
-        private readonly TopdataDeviceService          $topdataDeviceService,
-        private readonly TopdataWebserviceClient       $topdataWebserviceClient,
-        private readonly TopdataSeriesService          $topdataSeriesService,
-        private readonly TopdataDeviceTypeService      $topdataDeviceTypeService
+        private readonly LoggerInterface             $logger,
+        private readonly Connection                  $connection,
+        private readonly EntityRepository            $topdataBrandRepository,
+        private readonly EntityRepository            $topdataDeviceRepository,
+        private readonly EntityRepository            $topdataSeriesRepository,
+        private readonly EntityRepository            $topdataDeviceTypeRepository,
+        private readonly EntityRepository            $productRepository,
+        private readonly ProductMappingService       $productMappingService,
+        private readonly TopfeedOptionsHelperService $optionsHelperService,
+        private readonly LocaleHelperService         $localeHelperService,
+        private readonly TopdataToProductService     $topdataToProductHelperService,
+        private readonly MediaHelperService          $mediaHelperService,
+        private readonly TopdataDeviceService        $topdataDeviceService,
+        private readonly TopdataWebserviceClient     $topdataWebserviceClient,
+        private readonly TopdataSeriesService        $topdataSeriesService,
+        private readonly TopdataDeviceTypeService    $topdataDeviceTypeService
     )
     {
         $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();

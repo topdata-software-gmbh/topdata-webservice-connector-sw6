@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Topdata\TopdataConnectorSW6\Service;
+namespace Topdata\TopdataConnectorSW6\Service\DbHelper;
 
 use Doctrine\DBAL\Connection;
 
