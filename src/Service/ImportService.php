@@ -11,6 +11,7 @@ use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceSynonymsService;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingHelperService;
 use Topdata\TopdataConnectorSW6\Service\Import\ProductMappingService;
+use Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
@@ -41,14 +42,15 @@ class ImportService
 
 
     public function __construct(
-        private readonly SystemConfigService          $systemConfigService,
-        private readonly MappingHelperService         $mappingHelperService,
-        private readonly ConfigCheckerService         $configCheckerService,
-        private readonly TopfeedOptionsHelperService  $topfeedOptionsHelperService,
-        private readonly PluginHelperService          $pluginHelperService,
-        private readonly ProductMappingService        $productMappingService,
-        private readonly TopdataDeviceSynonymsService $deviceSynonymsService,
-        private readonly ProductInformationService    $productInformationService,
+        private readonly SystemConfigService              $systemConfigService,
+        private readonly MappingHelperService             $mappingHelperService,
+        private readonly ConfigCheckerService             $configCheckerService,
+        private readonly TopfeedOptionsHelperService      $topfeedOptionsHelperService,
+        private readonly PluginHelperService              $pluginHelperService,
+        private readonly ProductMappingService            $productMappingService,
+        private readonly TopdataDeviceSynonymsService     $deviceSynonymsService,
+        private readonly ProductInformationService        $productInformationService,
+        private readonly ProductDeviceRelationshipService $productDeviceRelationshipService,
     )
     {
     }
@@ -180,7 +182,7 @@ class ImportService
         // ---- Product to device linking
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionProduct()) {
             CliLogger::getCliStyle()->blue('--all || --product');
-            if (!$this->mappingHelperService->setProducts()) {
+            if (!$this->productDeviceRelationshipService->syncDeviceProductRelationships()) {
                 CliLogger::error('Set products to devices failed!');
 
                 return self::ERROR_CODE_PRODUCT_TO_DEVICE_LINKING_FAILED;
