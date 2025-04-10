@@ -25,13 +25,7 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
  */
 class ProductLinkingService
 {
-    const CHUNK_SIZE_A = 30;
-    const CHUNK_SIZE_B = 30;
-    const CHUNK_SIZE_C = 30;
-    const CHUNK_SIZE_D = 30;
-    const CHUNK_SIZE_E = 30;
-    const CHUNK_SIZE_F = 30;
-    const CHUNK_SIZE_G = 30;
+    const CHUNK_SIZE = 30;
 
     private Context $context;
 
@@ -113,7 +107,7 @@ class ProductLinkingService
 
     /**
      * Finds similar products based on the remote product data
-     * 
+     *
      * @param object $remoteProductData The product data from remote source
      * @return array Array of similar products
      */
@@ -158,7 +152,7 @@ class ProductLinkingService
 
     /**
      * Finds color variant products based on the remote product data
-     * 
+     *
      * @param object $remoteProductData The product data from remote source
      * @return array Array of color variant products
      */
@@ -180,7 +174,7 @@ class ProductLinkingService
 
     /**
      * Finds capacity variant products based on the remote product data
-     * 
+     *
      * @param object $remoteProductData The product data from remote source
      * @return array Array of capacity variant products
      */
@@ -202,7 +196,7 @@ class ProductLinkingService
 
     /**
      * Finds general variant products based on the remote product data
-     * 
+     *
      * @param object $remoteProductData The product data from remote source
      * @return array Array of variant products
      */
@@ -230,7 +224,7 @@ class ProductLinkingService
 
     /**
      * Adds cross-selling relationships between products
-     * 
+     *
      * @param array $currentProductId The current product ID information
      * @param array $linkedProductIds Array of products to be linked
      * @param string $crossType The type of cross-selling relationship
@@ -241,7 +235,7 @@ class ProductLinkingService
             //don't create cross if product is variation!
             return;
         }
-        
+
         // ---- Check if cross-selling already exists for this product and type
 
         $criteria = new Criteria();
@@ -299,7 +293,7 @@ class ProductLinkingService
 
     /**
      * Finds alternate products based on the remote product data
-     * 
+     *
      * @param object $remoteProductData The product data from remote source
      * @return array Array of alternate products
      */
@@ -321,7 +315,7 @@ class ProductLinkingService
 
     /**
      * Finds related products (accessories) based on the remote product data
-     * 
+     *
      * @param object $remoteProductData The product data from remote source
      * @return array Array of related products
      */
@@ -343,7 +337,7 @@ class ProductLinkingService
 
     /**
      * Finds bundled products based on the remote product data
-     * 
+     *
      * @param object $remoteProductData The product data from remote source
      * @return array Array of bundled products
      */
@@ -364,12 +358,64 @@ class ProductLinkingService
     }
 
     /**
+     * Generic method to process product relationships
+     * Handles database insertion and cross-selling for all relationship types
+     *
+     * @param array $productId_versionId The current product ID information
+     * @param array $relatedProducts Array of products to be linked
+     * @param string $tableName The database table to insert into
+     * @param string $idColumnPrefix The prefix for the ID column in the table
+     * @param string $crossType The type of cross-selling relationship
+     * @param bool $enableCrossSelling Whether to enable cross-selling
+     * @param string $dateTime The current date/time string
+     */
+    private function processProductRelationship(
+        array  $productId_versionId,
+        array  $relatedProducts,
+        string $tableName,
+        string $idColumnPrefix,
+        string $crossType,
+        bool   $enableCrossSelling,
+        string $dateTime
+    ): void
+    {
+        if (empty($relatedProducts)) {
+            return;
+        }
+
+        $dataInsert = [];
+        foreach ($relatedProducts as $tempProd) {
+            $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
+        }
+
+        $insertDataChunks = array_chunk($dataInsert, self::CHUNK_SIZE);
+        foreach ($insertDataChunks as $chunk) {
+            $columns = implode(', ', [
+                'product_id',
+                'product_version_id',
+                "{$idColumnPrefix}_product_id",
+                "{$idColumnPrefix}_product_version_id",
+                'created_at'
+            ]);
+
+            $this->connection->executeStatement(
+                "INSERT INTO $tableName ($columns) VALUES " . implode(',', $chunk)
+            );
+            CliLogger::activity();
+        }
+
+        if ($enableCrossSelling) {
+            $this->addProductCrossSelling($productId_versionId, $relatedProducts, $crossType);
+        }
+    }
+
+    /**
      * Main method to link products with various relationships based on remote product data
-     * 
+     *
      * ==== MAIN ====
      *
      * 11/2024 created
-     * 
+     *
      * @param array $productId_versionId Product ID and version information
      * @param object $remoteProductData The product data from remote source
      */
@@ -380,169 +426,93 @@ class ProductLinkingService
 
         // ---- Process similar products
         if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productSimilar, $productId)) {
-            $dataInsert = [];
-            $temp = $this->_findSimilarProducts($remoteProductData);
-            foreach ($temp as $tempProd) {
-                $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
-            }
-
-            if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, self::CHUNK_SIZE_A);
-                foreach ($insertDataChunks as $idxChunk => $chunk) {
-                    $this->connection->executeStatement('
-                        INSERT INTO topdata_product_to_similar (product_id, product_version_id, similar_product_id, similar_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
-                    ');
-                    CliLogger::progress($idxChunk, count($insertDataChunks));
-                }
-
-                if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productSimilarCross, $productId)) {
-                    $this->addProductCrossSelling($productId_versionId, $temp, CrossSellingTypeConstant::CROSS_SIMILAR);
-                }
-            }
+            $this->processProductRelationship(
+                $productId_versionId,
+                $this->_findSimilarProducts($remoteProductData),
+                'topdata_product_to_similar',
+                'similar',
+                CrossSellingTypeConstant::CROSS_SIMILAR,
+                $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productSimilarCross, $productId),
+                $dateTime
+            );
         }
 
         // ---- Process alternate products
         if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productAlternate, $productId)) {
-            $dataInsert = [];
-            $temp = $this->findAlternateProducts($remoteProductData);
-            foreach ($temp as $tempProd) {
-                $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
-            }
-
-            if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, self::CHUNK_SIZE_B);
-                foreach ($insertDataChunks as $chunk) {
-                    $this->connection->executeStatement('
-                        INSERT INTO topdata_product_to_alternate (product_id, product_version_id, alternate_product_id, alternate_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
-                    ');
-                    CliLogger::activity();
-                }
-
-                if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productAlternateCross, $productId)) {
-                    $this->addProductCrossSelling($productId_versionId, $temp, CrossSellingTypeConstant::CROSS_ALTERNATE);
-                }
-            }
+            $this->processProductRelationship(
+                $productId_versionId,
+                $this->findAlternateProducts($remoteProductData),
+                'topdata_product_to_alternate',
+                'alternate',
+                CrossSellingTypeConstant::CROSS_ALTERNATE,
+                $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productAlternateCross, $productId),
+                $dateTime
+            );
         }
 
         // ---- Process related products (accessories)
         if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productRelated, $productId)) {
-            $dataInsert = [];
-            $temp = $this->findRelatedProducts($remoteProductData);
-            foreach ($temp as $tempProd) {
-                $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
-            }
-
-            if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, self::CHUNK_SIZE_C);
-                foreach ($insertDataChunks as $chunk) {
-                    $this->connection->executeStatement('
-                        INSERT INTO topdata_product_to_related (product_id, product_version_id, related_product_id, related_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
-                    ');
-                    CliLogger::activity();
-                }
-
-                if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productRelatedCross, $productId)) {
-                    $this->addProductCrossSelling($productId_versionId, $temp, CrossSellingTypeConstant::CROSS_RELATED);
-                }
-            }
+            $this->processProductRelationship(
+                $productId_versionId,
+                $this->findRelatedProducts($remoteProductData),
+                'topdata_product_to_related',
+                'related',
+                CrossSellingTypeConstant::CROSS_RELATED,
+                $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productRelatedCross, $productId),
+                $dateTime
+            );
         }
 
         // ---- Process bundled products
         if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productBundled, $productId)) {
-            $dataInsert = [];
-            $temp = $this->findBundledProducts($remoteProductData);
-            foreach ($temp as $tempProd) {
-                $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
-            }
-
-            if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, self::CHUNK_SIZE_D);
-                foreach ($insertDataChunks as $chunk) {
-                    $this->connection->executeStatement('
-                        INSERT INTO topdata_product_to_bundled (product_id, product_version_id, bundled_product_id, bundled_product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
-                    ');
-                    CliLogger::activity();
-                }
-
-                if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productBundledCross, $productId)) {
-                    $this->addProductCrossSelling($productId_versionId, $temp, CrossSellingTypeConstant::CROSS_BUNDLED);
-                }
-            }
+            $this->processProductRelationship(
+                $productId_versionId,
+                $this->findBundledProducts($remoteProductData),
+                'topdata_product_to_bundled',
+                'bundled',
+                CrossSellingTypeConstant::CROSS_BUNDLED,
+                $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productBundledCross, $productId),
+                $dateTime
+            );
         }
 
         // ---- Process color variant products
         if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productColorVariant, $productId)) {
-            $dataInsert = [];
-            $temp = $this->findColorVariantProducts($remoteProductData);
-            foreach ($temp as $tempProd) {
-                $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
-            }
-
-            if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, self::CHUNK_SIZE_E);
-                foreach ($insertDataChunks as $chunk) {
-                    $this->connection->executeStatement('
-                        INSERT INTO topdata_product_to_color_variant 
-                        (product_id, product_version_id, color_variant_product_id, color_variant_product_version_id, created_at) 
-                        VALUES ' . implode(',', $chunk) . '
-                    ');
-                    CliLogger::activity();
-                }
-
-                if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productVariantColorCross, $productId)) {
-                    $this->addProductCrossSelling($productId_versionId, $temp, CrossSellingTypeConstant::CROSS_COLOR_VARIANT);
-                }
-            }
+            $this->processProductRelationship(
+                $productId_versionId,
+                $this->findColorVariantProducts($remoteProductData),
+                'topdata_product_to_color_variant',
+                'color_variant',
+                CrossSellingTypeConstant::CROSS_COLOR_VARIANT,
+                $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productVariantColorCross, $productId),
+                $dateTime
+            );
         }
 
         // ---- Process capacity variant products
         if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productCapacityVariant, $productId)) {
-            $dataInsert = [];
-            $temp = $this->findCapacityVariantProducts($remoteProductData);
-            foreach ($temp as $tempProd) {
-                $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
-            }
-
-            if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, self::CHUNK_SIZE_F);
-                foreach ($insertDataChunks as $chunk) {
-                    $this->connection->executeStatement('
-                        INSERT INTO topdata_product_to_capacity_variant 
-                        (product_id, product_version_id, capacity_variant_product_id, capacity_variant_product_version_id, created_at) 
-                        VALUES ' . implode(',', $chunk) . '
-                    ');
-                    CliLogger::activity();
-                }
-
-                if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productVariantCapacityCross, $productId)) {
-                    $this->addProductCrossSelling($productId_versionId, $temp, CrossSellingTypeConstant::CROSS_CAPACITY_VARIANT);
-                }
-            }
+            $this->processProductRelationship(
+                $productId_versionId,
+                $this->findCapacityVariantProducts($remoteProductData),
+                'topdata_product_to_capacity_variant',
+                'capacity_variant',
+                CrossSellingTypeConstant::CROSS_CAPACITY_VARIANT,
+                $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productVariantCapacityCross, $productId),
+                $dateTime
+            );
         }
 
         // ---- Process general variant products
         if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productVariant, $productId)) {
-            $dataInsert = [];
-            $temp = $this->findVariantProducts($remoteProductData);
-            foreach ($temp as $tempProd) {
-                $dataInsert[] = "(0x{$productId_versionId['product_id']}, 0x{$productId_versionId['product_version_id']}, 0x{$tempProd['product_id']}, 0x{$tempProd['product_version_id']}, '$dateTime')";
-            }
-
-            if (count($dataInsert)) {
-                $insertDataChunks = array_chunk($dataInsert, self::CHUNK_SIZE_G);
-                foreach ($insertDataChunks as $chunk) {
-                    $this->connection->executeStatement('
-                        INSERT INTO topdata_product_to_variant 
-                        (product_id, product_version_id, variant_product_id, variant_product_version_id, created_at) 
-                        VALUES ' . implode(',', $chunk) . '
-                    ');
-                    CliLogger::activity();
-                }
-
-                if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productVariantCross, $productId)) {
-                    $this->addProductCrossSelling($productId_versionId, $temp, CrossSellingTypeConstant::CROSS_VARIANT);
-                }
-            }
+            $this->processProductRelationship(
+                $productId_versionId,
+                $this->findVariantProducts($remoteProductData),
+                'topdata_product_to_variant',
+                'variant',
+                CrossSellingTypeConstant::CROSS_VARIANT,
+                $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productVariantCross, $productId),
+                $dateTime
+            );
         }
     }
 
