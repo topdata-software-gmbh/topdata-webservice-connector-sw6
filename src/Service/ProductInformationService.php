@@ -15,6 +15,7 @@ use Topdata\TopdataConnectorSW6\Constants\WebserviceFilterTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Exception\WebserviceResponseException;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
+use Topdata\TopdataConnectorSW6\Service\Linking\ProductProductRelationshipService;
 use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
 use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
@@ -82,18 +83,19 @@ class ProductInformationService
     private Context $context;
 
     public function __construct(
-        private readonly TopdataToProductService      $topdataToProductHelperService,
-        private readonly TopfeedOptionsHelperService  $topfeedOptionsHelperService,
-        private readonly ProductRelationshipService   $productRelationshipService,
-        private readonly EntityRepository             $productRepository,
-        private readonly TopdataWebserviceClient      $topdataWebserviceClient,
-        private readonly ProductImportSettingsService $productImportSettingsService,
-        private readonly EntitiesHelperService        $entitiesHelperService,
-        private readonly MediaHelperService           $mediaHelperService,
-        private readonly LoggerInterface              $logger,
-        private readonly ManufacturerService          $manufacturerService,
-        private readonly Connection                   $connection,
-    ){
+        private readonly TopdataToProductService           $topdataToProductHelperService,
+        private readonly TopfeedOptionsHelperService       $topfeedOptionsHelperService,
+        private readonly ProductProductRelationshipService $productProductRelationshipService,
+        private readonly EntityRepository                  $productRepository,
+        private readonly TopdataWebserviceClient           $topdataWebserviceClient,
+        private readonly ProductImportSettingsService      $productImportSettingsService,
+        private readonly EntitiesHelperService             $entitiesHelperService,
+        private readonly MediaHelperService                $mediaHelperService,
+        private readonly LoggerInterface                   $logger,
+        private readonly ManufacturerService               $manufacturerService,
+        private readonly Connection                        $connection,
+    )
+    {
         $this->context = Context::createDefaultContext();
     }
 
@@ -208,7 +210,7 @@ class ProductInformationService
 
                 // ---- Link products
                 if (!$onlyMedia) {
-                    $this->productRelationshipService->linkProducts($topid_products[$product->products_id][0], $product);
+                    $this->productProductRelationshipService->linkProducts($topid_products[$product->products_id][0], $product);
                 }
             }
             CliLogger::mem();
@@ -401,7 +403,7 @@ class ProductInformationService
         $descriptionImportType = $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productDescriptionImportType, $productId);
         if (!$onlyMedia && $descriptionImportType && ($descriptionImportType !== DescriptionImportTypeConstant::NO_IMPORT) && $remoteProductData->short_description != '') {
             $newDescription = $this->_renderDescription($descriptionImportType, $productId, $remoteProductData->short_description);
-            if($newDescription !== null) {
+            if ($newDescription !== null) {
                 $productData['description'] = $newDescription;
             }
         }
@@ -600,11 +602,11 @@ class ProductInformationService
             return null;
         }
 
-        if($descriptionImportType === DescriptionImportTypeConstant::REPLACE) {
+        if ($descriptionImportType === DescriptionImportTypeConstant::REPLACE) {
             return $descriptionFromWebservice;
         }
 
-        if($descriptionImportType === DescriptionImportTypeConstant::NO_IMPORT) {
+        if ($descriptionImportType === DescriptionImportTypeConstant::NO_IMPORT) {
             return null;
         }
 
@@ -618,17 +620,17 @@ class ProductInformationService
         $originalDescription = $product->getDescription();
 
         // -- append
-        if($descriptionImportType === DescriptionImportTypeConstant::APPEND) {
+        if ($descriptionImportType === DescriptionImportTypeConstant::APPEND) {
             return $originalDescription . ' ' . $descriptionFromWebservice; // fixme: will not work if running the 2nd time
         }
 
         // -- prepend
-        if($descriptionImportType === DescriptionImportTypeConstant::PREPEND) {
+        if ($descriptionImportType === DescriptionImportTypeConstant::PREPEND) {
             return $descriptionFromWebservice . ' ' . $originalDescription; // fixme: will not work if running the 2nd time
         }
 
         // -- inject
-        if($descriptionImportType === DescriptionImportTypeConstant::INJECT) {
+        if ($descriptionImportType === DescriptionImportTypeConstant::INJECT) {
             $regex = '@<!--\s*TOPDATA_DESCRIPTION_BEGIN\s*-->(.*)<!--\s*TOPDATA_DESCRIPTION_END\s*-->@si'; // si stands for case insensitive and multiline
             $replacement = '<!-- TOPDATA_DESCRIPTION_BEGIN -->' . $descriptionFromWebservice . '<!-- TOPDATA_DESCRIPTION_END -->';
             return preg_replace($regex, $replacement, $originalDescription);

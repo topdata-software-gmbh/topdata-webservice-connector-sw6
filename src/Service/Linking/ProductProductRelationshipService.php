@@ -1,6 +1,6 @@
 <?php
 
-namespace Topdata\TopdataConnectorSW6\Service;
+namespace Topdata\TopdataConnectorSW6\Service\Linking;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingDefinition;
@@ -12,6 +12,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\ProductRelationshipTypeEnum;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
+use Topdata\TopdataConnectorSW6\Service\ProductImportSettingsService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
@@ -23,7 +24,7 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
  *
  * 11/2024 created (extracted from MappingHelperService)
  */
-class ProductRelationshipService
+class ProductProductRelationshipService
 {
     const CHUNK_SIZE         = 30;
     const MAX_CROSS_SELLINGS = 24;
