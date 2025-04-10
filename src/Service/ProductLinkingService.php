@@ -15,6 +15,10 @@ use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
+ * Service responsible for managing product linking relationships and cross-selling functionality.
+ * Handles various types of product relationships such as similar products, alternates, variants,
+ * color variants, capacity variants, related products, and bundled products.
+ *
  * aka ProductCrossSellingService
  *
  * 11/2024 created (extracted from MappingHelperService)
@@ -43,6 +47,9 @@ class ProductLinkingService
         $this->context = Context::createDefaultContext();
     }
 
+    /**
+     * Returns an array mapping numeric keys to cross-selling type constants
+     */
     private static function getCrossTypes(): array
     {
         return [
@@ -104,11 +111,18 @@ class ProductLinkingService
     }
 
 
+    /**
+     * Finds similar products based on the remote product data
+     * 
+     * @param object $remoteProductData The product data from remote source
+     * @return array Array of similar products
+     */
     private function _findSimilarProducts($remoteProductData): array
     {
         $similarProducts = [];
         $topid_products = $this->topdataToProductHelperService->getTopidProducts();
 
+        // ---- Check for products with same accessories
         if (isset($remoteProductData->product_same_accessories->products) && count($remoteProductData->product_same_accessories->products)) {
             foreach ($remoteProductData->product_same_accessories->products as $tid) {
                 if (!isset($topid_products[$tid])) {
@@ -118,6 +132,7 @@ class ProductLinkingService
             }
         }
 
+        // ---- Check for products with same application
         if (isset($remoteProductData->product_same_application_in->products) && count($remoteProductData->product_same_application_in->products)) {
             foreach ($remoteProductData->product_same_application_in->products as $tid) {
                 if (!isset($topid_products[$tid])) {
@@ -127,6 +142,7 @@ class ProductLinkingService
             }
         }
 
+        // ---- Check for product variants
         if (isset($remoteProductData->product_variants->products) && count($remoteProductData->product_variants->products)) {
             foreach ($remoteProductData->product_variants->products as $rprod) {
                 if (!isset($topid_products[$rprod->id])) {
@@ -140,6 +156,12 @@ class ProductLinkingService
     }
 
 
+    /**
+     * Finds color variant products based on the remote product data
+     * 
+     * @param object $remoteProductData The product data from remote source
+     * @return array Array of color variant products
+     */
     private function findColorVariantProducts($remoteProductData): array
     {
         $linkedProducts = [];
@@ -156,6 +178,12 @@ class ProductLinkingService
         return $linkedProducts;
     }
 
+    /**
+     * Finds capacity variant products based on the remote product data
+     * 
+     * @param object $remoteProductData The product data from remote source
+     * @return array Array of capacity variant products
+     */
     private function findCapacityVariantProducts($remoteProductData): array
     {
         $linkedProducts = [];
@@ -172,11 +200,18 @@ class ProductLinkingService
         return $linkedProducts;
     }
 
+    /**
+     * Finds general variant products based on the remote product data
+     * 
+     * @param object $remoteProductData The product data from remote source
+     * @return array Array of variant products
+     */
     private function findVariantProducts($remoteProductData): array
     {
         $products = [];
         $topid_products = $this->topdataToProductHelperService->getTopidProducts();
 
+        // ---- Process product variants that don't have a specific type
         if (isset($remoteProductData->product_variants->products) && count($remoteProductData->product_variants->products)) {
             foreach ($remoteProductData->product_variants->products as $rprod) {
                 if ($rprod->type !== null) {
@@ -193,12 +228,21 @@ class ProductLinkingService
         return $products;
     }
 
+    /**
+     * Adds cross-selling relationships between products
+     * 
+     * @param array $currentProductId The current product ID information
+     * @param array $linkedProductIds Array of products to be linked
+     * @param string $crossType The type of cross-selling relationship
+     */
     private function addProductCrossSelling(array $currentProductId, array $linkedProductIds, string $crossType): void
     {
         if ($currentProductId['parent_id']) {
             //don't create cross if product is variation!
             return;
         }
+        
+        // ---- Check if cross-selling already exists for this product and type
 
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('productId', $currentProductId['product_id']));
@@ -211,12 +255,14 @@ class ProductLinkingService
             //                ->productCrossSellingAssignedProductsRepository
             //                ->delete([['crossSellingId'=>$crossId]], $this->context);
 
+            // ---- Remove existing cross-selling product assignments
             $this
                 ->connection
                 ->executeStatement("DELETE 
                     FROM product_cross_selling_assigned_products 
                     WHERE cross_selling_id = 0x$crossId");
         } else {
+            // ---- Create new cross-selling entity
             $crossId = Uuid::randomHex();
             $data = [
                 'id'               => $crossId,
@@ -251,6 +297,12 @@ class ProductLinkingService
     }
 
 
+    /**
+     * Finds alternate products based on the remote product data
+     * 
+     * @param object $remoteProductData The product data from remote source
+     * @return array Array of alternate products
+     */
     private function findAlternateProducts($remoteProductData): array
     {
         $alternateProducts = [];
@@ -267,6 +319,12 @@ class ProductLinkingService
         return $alternateProducts;
     }
 
+    /**
+     * Finds related products (accessories) based on the remote product data
+     * 
+     * @param object $remoteProductData The product data from remote source
+     * @return array Array of related products
+     */
     private function findRelatedProducts($remoteProductData): array
     {
         $relatedProducts = [];
@@ -283,6 +341,12 @@ class ProductLinkingService
         return $relatedProducts;
     }
 
+    /**
+     * Finds bundled products based on the remote product data
+     * 
+     * @param object $remoteProductData The product data from remote source
+     * @return array Array of bundled products
+     */
     private function findBundledProducts($remoteProductData): array
     {
         $bundledProducts = [];
@@ -300,15 +364,21 @@ class ProductLinkingService
     }
 
     /**
+     * Main method to link products with various relationships based on remote product data
+     * 
      * ==== MAIN ====
      *
      * 11/2024 created
+     * 
+     * @param array $productId_versionId Product ID and version information
+     * @param object $remoteProductData The product data from remote source
      */
     public function linkProducts(array $productId_versionId, $remoteProductData): void
     {
         $dateTime = date('Y-m-d H:i:s');
         $productId = $productId_versionId['product_id'];
 
+        // ---- Process similar products
         if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productSimilar, $productId)) {
             $dataInsert = [];
             $temp = $this->_findSimilarProducts($remoteProductData);
@@ -331,6 +401,7 @@ class ProductLinkingService
             }
         }
 
+        // ---- Process alternate products
         if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productAlternate, $productId)) {
             $dataInsert = [];
             $temp = $this->findAlternateProducts($remoteProductData);
@@ -353,6 +424,7 @@ class ProductLinkingService
             }
         }
 
+        // ---- Process related products (accessories)
         if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productRelated, $productId)) {
             $dataInsert = [];
             $temp = $this->findRelatedProducts($remoteProductData);
@@ -375,6 +447,7 @@ class ProductLinkingService
             }
         }
 
+        // ---- Process bundled products
         if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productBundled, $productId)) {
             $dataInsert = [];
             $temp = $this->findBundledProducts($remoteProductData);
@@ -397,6 +470,7 @@ class ProductLinkingService
             }
         }
 
+        // ---- Process color variant products
         if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productColorVariant, $productId)) {
             $dataInsert = [];
             $temp = $this->findColorVariantProducts($remoteProductData);
@@ -421,6 +495,7 @@ class ProductLinkingService
             }
         }
 
+        // ---- Process capacity variant products
         if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productCapacityVariant, $productId)) {
             $dataInsert = [];
             $temp = $this->findCapacityVariantProducts($remoteProductData);
@@ -445,6 +520,7 @@ class ProductLinkingService
             }
         }
 
+        // ---- Process general variant products
         if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productVariant, $productId)) {
             $dataInsert = [];
             $temp = $this->findVariantProducts($remoteProductData);
