@@ -119,7 +119,7 @@ class ProductInformationService
         }
 
         // ---- Fetch the topid products
-        $topid_products = $this->topdataToProductHelperService->getTopidProducts(true);
+        $topid_products = $this->topdataToProductHelperService->getTopdataProductMappings(true);
         $productDataUpdate = [];
         $productDataUpdateCovers = [];
         $productDataDeleteDuplicateMedia = [];
@@ -163,7 +163,7 @@ class ProductInformationService
 
             // ---- Unlink products, properties, categories and images before re-linking
             if (!$onlyMedia) {
-                $this->_unlinkProducts($currentChunkProductIds);
+                $this->productProductRelationshipService->unlinkProducts($currentChunkProductIds);
                 $this->_unlinkProperties($currentChunkProductIds);
                 $this->_unlinkCategories($currentChunkProductIds);
             }
@@ -267,60 +267,6 @@ class ProductInformationService
     }
 
     /**
-     * Unlinks products from similar, alternate, related, bundled, color variant, capacity variant and variant products.
-     *
-     * @param array $productIds Array of product IDs to unlink.
-     */
-    private function _unlinkProducts(array $productIds): void
-    {
-        if (!count($productIds)) {
-            return;
-        }
-
-        $ids = $this->_filterIdsByConfig('productSimilar', $productIds);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("DELETE FROM topdata_product_to_similar WHERE product_id IN ($ids)");
-        }
-
-        $ids = $this->_filterIdsByConfig('productAlternate', $productIds);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("DELETE FROM topdata_product_to_alternate WHERE product_id IN ($ids)");
-        }
-
-        $ids = $this->_filterIdsByConfig('productRelated', $productIds);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("DELETE FROM topdata_product_to_related WHERE product_id IN ($ids)");
-        }
-
-        $ids = $this->_filterIdsByConfig('productBundled', $productIds);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("DELETE FROM topdata_product_to_bundled WHERE product_id IN ($ids)");
-        }
-
-        $ids = $this->_filterIdsByConfig('productColorVariant', $productIds);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("DELETE FROM topdata_product_to_color_variant WHERE product_id IN ($ids)");
-        }
-
-        $ids = $this->_filterIdsByConfig('productCapacityVariant', $productIds);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("DELETE FROM topdata_product_to_capacity_variant WHERE product_id IN ($ids)");
-        }
-
-        $ids = $this->_filterIdsByConfig('productVariant', $productIds);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("DELETE FROM topdata_product_to_variant WHERE product_id IN ($ids)");
-        }
-    }
-
-    /**
      * Unlinks properties from products.
      *
      * @param array $productIds Array of product IDs to unlink properties from.
@@ -331,13 +277,14 @@ class ProductInformationService
             return;
         }
 
-        $ids = $this->_filterIdsByConfig('productSpecifications', $productIds);
+        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productSpecifications', $productIds);
         if (count($ids)) {
             $ids = '0x' . implode(',0x', $ids);
             $this->connection->executeStatement("UPDATE product SET property_ids = NULL WHERE id IN ($ids)");
             $this->connection->executeStatement("DELETE FROM product_property WHERE product_id IN ($ids)");
         }
     }
+
 
     /**
      * Unlinks images from products.
@@ -350,11 +297,11 @@ class ProductInformationService
             return;
         }
 
-        $ids = $this->_filterIdsByConfig('productImages', $productIds);
+        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productImages', $productIds);
         if (!count($ids)) {
             return;
         }
-        $ids = $this->_filterIdsByConfig('productImagesDelete', $ids);
+        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productImagesDelete', $ids);
         if (count($ids)) {
             $ids = '0x' . implode(',0x', $ids);
             $this->connection->executeStatement("UPDATE product SET product_media_id = NULL, product_media_version_id = NULL WHERE id IN ($ids)");
@@ -395,12 +342,12 @@ class ProductInformationService
         $productId = $productId_versionId['product_id'];
 
         // ---- Prepare product name
-        if (!$onlyMedia && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productName, $productId) && $remoteProductData->short_description != '') {
+        if (!$onlyMedia && $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productName, $productId) && $remoteProductData->short_description != '') {
             $productData['name'] = trim(substr($remoteProductData->short_description, 0, 255));
         }
 
         // ---- Prepare product description
-        $descriptionImportType = $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productDescriptionImportType, $productId);
+        $descriptionImportType = $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productDescription, $productId);
         if (!$onlyMedia && $descriptionImportType && ($descriptionImportType !== DescriptionImportTypeConstant::NO_IMPORT) && $remoteProductData->short_description != '') {
             $newDescription = $this->_renderDescription($descriptionImportType, $productId, $remoteProductData->short_description);
             if ($newDescription !== null) {
@@ -412,20 +359,20 @@ class ProductInformationService
         //         $productData['description'] = $remoteProductData->short_description;
 
         // ---- Prepare product manufacturer
-        if (!$onlyMedia && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productBrand, $productId) && $remoteProductData->manufacturer != '') {
+        if (!$onlyMedia && $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productBrand, $productId) && $remoteProductData->manufacturer != '') {
             $productData['manufacturerId'] = $this->manufacturerService->getManufacturerIdByName($remoteProductData->manufacturer); // fixme
         }
         // ---- Prepare product EAN
-        if (!$onlyMedia && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productEan, $productId) && count($remoteProductData->eans)) {
+        if (!$onlyMedia && $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productEan, $productId) && count($remoteProductData->eans)) {
             $productData['ean'] = $remoteProductData->eans[0];
         }
         // ---- Prepare product OEM
-        if (!$onlyMedia && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productOem, $productId) && count($remoteProductData->oems)) {
+        if (!$onlyMedia && $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productOem, $productId) && count($remoteProductData->oems)) {
             $productData['manufacturerNumber'] = $remoteProductData->oems[0];
         }
 
         // ---- Prepare product images
-        if ($this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productImages, $productId)) {
+        if ($this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productImages, $productId)) {
             if (isset($remoteProductData->images) && count($remoteProductData->images)) {
                 $media = [];
                 foreach ($remoteProductData->images as $k => $img) {
@@ -475,7 +422,7 @@ class ProductInformationService
 
         // ---- Prepare product reference PCD
         if (!$onlyMedia
-            && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_specReferencePCD, $productId)
+            && $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_specReferencePCD, $productId)
             && isset($remoteProductData->reference_pcds)
             && count((array)$remoteProductData->reference_pcds)
         ) {
@@ -497,7 +444,7 @@ class ProductInformationService
 
         // ---- Prepare product reference OEM
         if (!$onlyMedia
-            && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_specReferenceOEM, $productId)
+            && $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_specReferenceOEM, $productId)
             && isset($remoteProductData->reference_oems)
             && count((array)$remoteProductData->reference_oems)
         ) {
@@ -518,7 +465,7 @@ class ProductInformationService
 
         // ---- Prepare product specifications
         if (!$onlyMedia
-            && $this->productImportSettingsService->getProductOption(ProductImportSettingsService::OPTION_NAME_productSpecifications, $productId)
+            && $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productSpecifications, $productId)
             && isset($remoteProductData->specifications)
             && count($remoteProductData->specifications)
         ) {
@@ -574,24 +521,6 @@ class ProductInformationService
         return $productData;
     }
 
-    /**
-     * Filters product IDs based on a given configuration option.
-     *
-     * @param string $optionName The name of the configuration option to check.
-     * @param array $productIds An array of product IDs to filter.
-     * @return array An array of product IDs that match the configuration option.
-     */
-    private function _filterIdsByConfig(string $optionName, array $productIds): array
-    {
-        $returnIds = [];
-        foreach ($productIds as $pid) {
-            if ($this->productImportSettingsService->getProductOption($optionName, $pid)) {
-                $returnIds[] = $pid;
-            }
-        }
-
-        return $returnIds;
-    }
 
     /**
      * 03/2025 created

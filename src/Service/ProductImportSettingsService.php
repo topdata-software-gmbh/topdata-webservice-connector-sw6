@@ -14,30 +14,31 @@ use Shopware\Core\Framework\Uuid\Uuid;
  */
 class ProductImportSettingsService
 {
-    const OPTION_NAME_productName                  = 'productName';
-    const OPTION_NAME_productDescriptionImportType = 'productDescriptionImportType';
-    const OPTION_NAME_productBrand                 = 'productBrand';
-    const OPTION_NAME_productEan                   = 'productEan';
-    const OPTION_NAME_productOem                   = 'productOem';
-    const OPTION_NAME_productImages                = 'productImages';
-    const OPTION_NAME_specReferencePCD             = 'specReferencePCD';
-    const OPTION_NAME_specReferenceOEM             = 'specReferenceOEM';
-    const OPTION_NAME_productSpecifications        = 'productSpecifications';
-    const OPTION_NAME_productImagesDelete          = 'productImagesDelete'; // not used?
-    const OPTION_NAME_productSimilar               = 'productSimilar';
-    const OPTION_NAME_productSimilarCross          = 'productSimilarCross';
-    const OPTION_NAME_productAlternate             = 'productAlternate';
-    const OPTION_NAME_productAlternateCross        = 'productAlternateCross';
-    const OPTION_NAME_productRelated               = 'productRelated';
-    const OPTION_NAME_productRelatedCross          = 'productRelatedCross';
-    const OPTION_NAME_productBundled               = 'productBundled';
-    const OPTION_NAME_productBundledCross          = 'productBundledCross';
-    const OPTION_NAME_productColorVariant          = 'productColorVariant';
-    const OPTION_NAME_productVariantColorCross     = 'productVariantColorCross';
-    const OPTION_NAME_productCapacityVariant       = 'productCapacityVariant';
-    const OPTION_NAME_productVariantCapacityCross  = 'productVariantCapacityCross';
-    const OPTION_NAME_productVariant               = 'productVariant';
-    const OPTION_NAME_productVariantCross          = 'productVariantCross';
+    // TODO: make it enum
+    const OPTION_NAME_productName                 = 'productName';
+    const OPTION_NAME_productDescription          = 'productDescription';
+    const OPTION_NAME_productBrand                = 'productBrand';
+    const OPTION_NAME_productEan                  = 'productEan';
+    const OPTION_NAME_productOem                  = 'productOem';
+    const OPTION_NAME_productImages               = 'productImages';
+    const OPTION_NAME_specReferencePCD            = 'specReferencePCD';
+    const OPTION_NAME_specReferenceOEM            = 'specReferenceOEM';
+    const OPTION_NAME_productSpecifications       = 'productSpecifications';
+    const OPTION_NAME_productImagesDelete         = 'productImagesDelete'; // not used?
+    const OPTION_NAME_productSimilar              = 'productSimilar';
+    const OPTION_NAME_productSimilarCross         = 'productSimilarCross';
+    const OPTION_NAME_productAlternate            = 'productAlternate';
+    const OPTION_NAME_productAlternateCross       = 'productAlternateCross';
+    const OPTION_NAME_productRelated              = 'productRelated';
+    const OPTION_NAME_productRelatedCross         = 'productRelatedCross';
+    const OPTION_NAME_productBundled              = 'productBundled';
+    const OPTION_NAME_productBundledCross         = 'productBundledCross';
+    const OPTION_NAME_productColorVariant         = 'productColorVariant';
+    const OPTION_NAME_productVariantColorCross    = 'productVariantColorCross';
+    const OPTION_NAME_productCapacityVariant      = 'productCapacityVariant';
+    const OPTION_NAME_productVariantCapacityCross = 'productVariantCapacityCross';
+    const OPTION_NAME_productVariant              = 'productVariant';
+    const OPTION_NAME_productVariantCross         = 'productVariantCross';
 
 
     private array $productImportSettings = [];
@@ -59,7 +60,7 @@ class ProductImportSettingsService
      * @param string $productId The ID of the product for which to retrieve the option.
      * @return bool Returns true if the option is enabled, false otherwise.
      */
-    public function getProductOption(string $optionName, string $productId): bool
+    public function isProductOptionEnabled(string $optionName, string $productId): bool
     {
         if (isset($this->productImportSettings[$productId])) {
             // ---- get mapped option name
@@ -170,6 +171,28 @@ class ProductImportSettingsService
                 }
             }
         }
+    }
+
+
+    /**
+     * Filters product IDs based on a given configuration option.
+     *
+     * @param string $optionName The name of the configuration option to check.
+     * @param array $productIds An array of product IDs to filter.
+     * @return array An array of product IDs that match the configuration option.
+     *
+     * 04/2025 moved from ProductInformationService::_filterIdsByConfig() to ProductImportSettingsService::filterProductIdsByConfig()
+     */
+    public function filterProductIdsByConfig(string $optionName, array $productIds): array
+    {
+        $returnIds = [];
+        foreach ($productIds as $pid) {
+            if ($this->isProductOptionEnabled($optionName, $pid)) {
+                $returnIds[] = $pid;
+            }
+        }
+
+        return $returnIds;
     }
 
 

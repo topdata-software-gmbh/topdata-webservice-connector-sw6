@@ -116,7 +116,7 @@ class ProductDeviceRelationshipService
                 'unlinked device-to-product ' => $cntE,
             ]);
 
-            $topidProducts = $this->topdataToProductHelperService->getTopidProducts();
+            $topidProducts = $this->topdataToProductHelperService->getTopdataProductMappings();
 
             CliLogger::activity(CliLogger::lap() . "sec\n");
             $enabledBrands = [];
