@@ -176,6 +176,7 @@ class ImportService
     }
 
     /**
+     * TODO: remove the return of an error code, just throw a exceptions
      * Handles product-related import operations.
      *
      * This method manages the import of product-related data, including linking products to devices,
@@ -189,11 +190,7 @@ class ImportService
         // ---- Product to device linking
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionProduct()) {
             CliLogger::getCliStyle()->blue('--all || --product');
-            if (!$this->productDeviceRelationshipService->syncDeviceProductRelationships()) {
-                CliLogger::error('Set products to devices failed!');
-
-                return self::ERROR_CODE_PRODUCT_TO_DEVICE_LINKING_FAILED;
-            }
+            $this->productDeviceRelationshipService->syncDeviceProductRelationships();
         }
 
         // ---- Device media
