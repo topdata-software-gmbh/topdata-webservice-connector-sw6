@@ -13,6 +13,7 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\ProductRelationshipTypeEnum;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Service\ProductImportSettingsService;
+use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
@@ -476,6 +477,7 @@ class ProductProductRelationshipService
      */
     public function linkProducts(array $productId_versionId, $remoteProductData): void
     {
+        UtilProfiling::startTimer();
         $dateTime = date('Y-m-d H:i:s');
         $productId = $productId_versionId['product_id'];
 
@@ -569,6 +571,8 @@ class ProductProductRelationshipService
                 $dateTime
             );
         }
+
+        UtilProfiling::stopTimer();
     }
 
     /**

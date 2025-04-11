@@ -4,6 +4,7 @@ namespace Topdata\TopdataConnectorSW6\Util;
 
 use Exception;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
+use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 
 /**
  * 04/2025 created.
@@ -92,7 +93,7 @@ class UtilProfiling
         foreach (self::getProfiling() as $key => $val) {
             $rows[] = [
                 $key,
-                number_format($val['time'], 2),
+                UtilFormatter::formatDuration($val['time']),
                 $val['count'],
             ];
         }
