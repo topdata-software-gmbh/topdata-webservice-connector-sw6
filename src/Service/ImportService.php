@@ -14,6 +14,7 @@ use Topdata\TopdataConnectorSW6\Service\Import\MappingHelperService;
 use Topdata\TopdataConnectorSW6\Service\Import\ProductMappingService;
 use Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
+use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
@@ -40,7 +41,6 @@ class ImportService
     const ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED  = 7;
     const ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED       = 8;
     const ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED_2     = 9;
-
 
 
     public function __construct(
@@ -97,7 +97,11 @@ class ImportService
         }
 
         // ---- Dump report
-        CliLogger::getCliStyle()->dumpCounters(ImportReport::getCountersSorted(), 'Report');
+        CliLogger::getCliStyle()->dumpCounters(ImportReport::getCountersSorted(), 'Counters Report');
+
+        // ---- Dump profiling
+        UtilProfiling::dumpProfiling();
+
 
         return self::ERROR_CODE_SUCCESS;
     }
@@ -115,7 +119,7 @@ class ImportService
      */
     private function executeImportOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
     {
-        // ---- Mapping
+        // ---- Product Mapping
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionMapping()) {
             CliLogger::getCliStyle()->blue('--all || --mapping');
             CliLogger::section('Mapping Products');
@@ -202,9 +206,7 @@ class ImportService
         }
 
         // ---- Product information
-        if ($result = $this->_handleProductInformation($cliOptionsDto)) {
-            return $result;
-        }
+        $this->_handleProductInformation($cliOptionsDto);
 
         // ---- Device synonyms
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceSynonyms()) {
@@ -256,11 +258,7 @@ class ImportService
         $this->topfeedOptionsHelperService->loadTopdataTopFeedPluginConfig();
 
         // ---- Load product information or update media
-        if (!$this->productInformationService->setProductInformation($cliOptionsDto->getOptionProductMediaOnly())) {
-            CliLogger::error('Load product information failed!');
-
-            return self::ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED;
-        }
+        $this->productInformationService->setProductInformation($cliOptionsDto->getOptionProductMediaOnly());
 
         return null;
     }
@@ -318,4 +316,6 @@ class ImportService
             OptionConstants::ATTRIBUTE_ORDERNUMBER => $pluginConfig['attributeOrdernumber'],
         ]);
     }
+
+
 }

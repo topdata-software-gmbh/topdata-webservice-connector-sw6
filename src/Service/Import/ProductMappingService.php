@@ -10,6 +10,7 @@ use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_D
 use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Distributor;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_ProductNumberAs;
 use Topdata\TopdataConnectorSW6\Service\TopfeedOptionsHelperService;
+use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
@@ -42,6 +43,7 @@ class ProductMappingService
 
     public function mapProducts(): void
     {
+        UtilProfiling::startTimer();
         CliLogger::info('ProductMappingService::mapProducts() - using mapping type: ' . $this->topfeedOptionsHelperService->getOption(OptionConstants::MAPPING_TYPE));
 
         // Clear existing mappings
@@ -52,6 +54,7 @@ class ProductMappingService
 
         // Execute the strategy
         $strategy->map();
+        UtilProfiling::stopTimer();
     }
 
     private function createMappingStrategy(): AbstractMappingStrategy

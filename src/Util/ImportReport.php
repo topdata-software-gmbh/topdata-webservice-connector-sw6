@@ -2,6 +2,8 @@
 
 namespace Topdata\TopdataConnectorSW6\Util;
 
+use Exception;
+
 /**
  * 06/2024 created.
  */
@@ -39,4 +41,5 @@ class ImportReport
     {
         return self::$counters[$key] ?? null; // GlobalConfigConstants::NUM_ROWS__FAILED; // -2 is a magic number
     }
+
 }

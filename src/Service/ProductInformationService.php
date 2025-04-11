@@ -16,6 +16,8 @@ use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Exception\WebserviceResponseException;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Service\Linking\ProductProductRelationshipService;
+use Topdata\TopdataConnectorSW6\Util\ImportReport;
+use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
 use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
@@ -107,11 +109,12 @@ class ProductInformationService
      * It handles both product information and media updates based on the $onlyMedia flag.
      *
      * @param bool $onlyMedia If true, only media information is updated; otherwise, all product information is updated.
-     * @return bool True on success, false otherwise.
      * @throws Exception If there is an error fetching data from the remote server.
      */
-    public function setProductInformation(bool $onlyMedia): bool
+    public function setProductInformation(bool $onlyMedia): void
     {
+        UtilProfiling::startTimer();
+
         if ($onlyMedia) {
             CliLogger::section("\n\nProduct media (--product-media-only)");
         } else {
@@ -263,7 +266,7 @@ class ProductInformationService
 
         CliLogger::writeln("\nProduct information done!");
 
-        return true;
+        UtilProfiling::stopTimer();
     }
 
     /**

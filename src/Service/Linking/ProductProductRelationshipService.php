@@ -465,9 +465,9 @@ class ProductProductRelationshipService
 
 
     /**
-     * Main method to link products with various relationships based on remote product data
-     *
      * ==== MAIN ====
+     *
+     * Main method to link products with various relationships based on remote product data
      *
      * 11/2024 created
      *
