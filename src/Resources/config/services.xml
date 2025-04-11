@@ -105,6 +105,7 @@
         <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\Import\ProductMappingService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService" autowire="true"/>
+        <service id="Topdata\TopdataConnectorSW6\Service\Import\DeviceImportService" autowire="true"/>
         <!-- Mapping Strategies -->
         <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Distributor" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Default" autowire="true"/>

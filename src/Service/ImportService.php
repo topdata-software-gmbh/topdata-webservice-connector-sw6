@@ -9,6 +9,7 @@ use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceSynonymsService;
+use Topdata\TopdataConnectorSW6\Service\Import\DeviceImportService;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingHelperService;
 use Topdata\TopdataConnectorSW6\Service\Import\ProductMappingService;
 use Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipService;
@@ -41,6 +42,7 @@ class ImportService
     const ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED_2     = 9;
 
 
+
     public function __construct(
         private readonly SystemConfigService              $systemConfigService,
         private readonly MappingHelperService             $mappingHelperService,
@@ -51,6 +53,7 @@ class ImportService
         private readonly TopdataDeviceSynonymsService     $deviceSynonymsService,
         private readonly ProductInformationService        $productInformationService,
         private readonly ProductDeviceRelationshipService $productDeviceRelationshipService,
+        private readonly DeviceImportService              $deviceImportService,
     )
     {
     }
@@ -147,9 +150,9 @@ class ImportService
             CliLogger::getCliStyle()->blue('--all || --device');
             if (
                 !$this->mappingHelperService->setBrands()
-                || !$this->mappingHelperService->setSeries()
-                || !$this->mappingHelperService->setDeviceTypes()
-                || !$this->mappingHelperService->setDevices()
+                || !$this->deviceImportService->setSeries()
+                || !$this->deviceImportService->setDeviceTypes()
+                || !$this->deviceImportService->setDevices()
             ) {
                 CliLogger::error('Device import failed!');
 
@@ -158,7 +161,7 @@ class ImportService
         } elseif ($cliOptionsDto->getOptionDeviceOnly()) {
             // ---- Import only devices
             CliLogger::getCliStyle()->blue('--device-only');
-            if (!$this->mappingHelperService->setDevices()) {
+            if (!$this->deviceImportService->setDevices()) {
                 CliLogger::error('Device import failed!');
 
                 return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
@@ -192,7 +195,7 @@ class ImportService
         // ---- Device media
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceMedia()) {
             CliLogger::getCliStyle()->blue('--all || --device-media');
-            if (!$this->mappingHelperService->setDeviceMedia()) {
+            if (!$this->deviceImportService->setDeviceMedia()) {
                 CliLogger::error('Load device media failed!');
                 return self::ERROR_CODE_LOAD_DEVICE_MEDIA_FAILED;
             }
