@@ -1,6 +1,6 @@
 <?php
 
-namespace Topdata\TopdataConnectorSW6\Constants;
+namespace Topdata\TopdataConnectorSW6\Enum;
 
 /**
  * 11/2024 created (extracted from MappingHelperService)

@@ -28,6 +28,7 @@ use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Service\TopfeedOptionsHelperService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
+use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
 use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
 use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
@@ -106,7 +107,6 @@ class MappingHelperService
      */
     private Context $context;
     private string $systemDefaultLocaleCode;
-
 
 
     public function __construct(
@@ -215,117 +215,103 @@ class MappingHelperService
      * This method retrieves brand data from the remote server, processes the data, and updates the local database
      * by creating new entries or updating existing ones. It uses the `TopdataWebserviceClient` to fetch the data and
      * the `EntityRepository` to perform database operations.
-     *
-     * @return bool Returns true if the operation is successful, false otherwise.
      */
-    public function setBrands(): bool
+    public function setBrands(): void
     {
-        try {
-            // Start the section for brands in the CLI output
-            CliLogger::section("\n\nBrands");
+        UtilProfiling::startTimer();
+        CliLogger::section("\n\nBrands");
 
-            // Log the start of the data fetching process
-            CliLogger::writeln('Getting data from remote server...');
-            CliLogger::lap(true);
+        // Log the start of the data fetching process
+        CliLogger::writeln('Getting data from remote server...');
+        CliLogger::lap(true);
 
-            // Fetch the brands from the remote server
-            $brands = $this->topdataWebserviceClient->getBrands();
-            CliLogger::activity('Got ' . count($brands->data) . " brands from remote server\n");
-            ImportReport::setCounter('Fetched Brands', count($brands->data));
+        // Fetch the brands from the remote server
+        $brands = $this->topdataWebserviceClient->getBrands();
+        CliLogger::activity('Got ' . count($brands->data) . " brands from remote server\n");
+        ImportReport::setCounter('Fetched Brands', count($brands->data));
 
-            $duplicates = [];
-            $dataCreate = [];
-            $dataUpdate = [];
-            CliLogger::activity('Processing data');
+        $duplicates = [];
+        $dataCreate = [];
+        $dataUpdate = [];
+        CliLogger::activity('Processing data');
 
-            // Process each brand fetched from the remote server
-            foreach ($brands->data as $b) {
-                if ($b->main == 0) {
-                    continue;
-                }
-
-                $code = UtilStringFormatting::formCode($b->val);
-                if (isset($duplicates[$code])) {
-                    continue;
-                }
-                $duplicates[$code] = true;
-
-                // Search for existing brand in the local database
-                $brand = $this->topdataBrandRepository                    ->search(
-                        (new Criteria())->addFilter(new EqualsFilter('code', $code))->setLimit(1),
-                        $this->context
-                    )
-                    ->getEntities()
-                    ->first();
-
-                // If the brand does not exist, prepare data for creation
-                if (!$brand) {
-                    $dataCreate[] = [
-                        'code'    => $code,
-                        'name'    => $b->val,
-                        'enabled' => false,
-                        'sort'    => (int)$b->top,
-                        'wsId'    => (int)$b->id,
-                    ];
-                    // If the brand exists but has different data, prepare data for update
-                } elseif (
-                    $brand->getName() != $b->val ||
-                    $brand->getSort() != $b->top ||
-                    $brand->getWsId() != $b->id
-                ) {
-                    $dataUpdate[] = [
-                        'id'   => $brand->getId(),
-                        'name' => $b->val,
-                        // 'sort' => (int)$b->top,
-                        'wsId' => (int)$b->id,
-                    ];
-                }
-
-                // Create new brands in batches of 100
-                if (count($dataCreate) > 100) {
-                    $this->topdataBrandRepository->create($dataCreate, $this->context);
-                    $dataCreate = [];
-                    CliLogger::activity();
-                }
-
-                // Update existing brands in batches of 100
-                if (count($dataUpdate) > 100) {
-                    $this->topdataBrandRepository->update($dataUpdate, $this->context);
-                    $dataUpdate = [];
-                    CliLogger::activity();
-                }
+        // Process each brand fetched from the remote server
+        foreach ($brands->data as $b) {
+            if ($b->main == 0) {
+                continue;
             }
 
-            // Create any remaining new brands
-            if (count($dataCreate)) {
+            $code = UtilStringFormatting::formCode($b->val);
+            if (isset($duplicates[$code])) {
+                continue;
+            }
+            $duplicates[$code] = true;
+
+            // Search for existing brand in the local database
+            $brand = $this->topdataBrandRepository->search(
+                (new Criteria())->addFilter(new EqualsFilter('code', $code))->setLimit(1),
+                $this->context
+            )
+                ->getEntities()
+                ->first();
+
+            // If the brand does not exist, prepare data for creation
+            if (!$brand) {
+                $dataCreate[] = [
+                    'code'    => $code,
+                    'name'    => $b->val,
+                    'enabled' => false,
+                    'sort'    => (int)$b->top,
+                    'wsId'    => (int)$b->id,
+                ];
+                // If the brand exists but has different data, prepare data for update
+            } elseif (
+                $brand->getName() != $b->val ||
+                $brand->getSort() != $b->top ||
+                $brand->getWsId() != $b->id
+            ) {
+                $dataUpdate[] = [
+                    'id'   => $brand->getId(),
+                    'name' => $b->val,
+                    // 'sort' => (int)$b->top,
+                    'wsId' => (int)$b->id,
+                ];
+            }
+
+            // Create new brands in batches of 100
+            if (count($dataCreate) > 100) {
                 $this->topdataBrandRepository->create($dataCreate, $this->context);
+                $dataCreate = [];
                 CliLogger::activity();
             }
 
-            // Update any remaining existing brands
-            if (count($dataUpdate)) {
+            // Update existing brands in batches of 100
+            if (count($dataUpdate) > 100) {
                 $this->topdataBrandRepository->update($dataUpdate, $this->context);
+                $dataUpdate = [];
                 CliLogger::activity();
             }
-
-            // Log the completion of the brands process
-            CliLogger::writeln("\nBrands done " . CliLogger::lap() . 'sec');
-            $duplicates = null;
-            $brands = null;
-
-            return true;
-        } catch (Exception $e) {
-            // Log any exceptions that occur
-            $this->logger->error($e->getMessage());
-            CliLogger::writeln('Exception abgefangen: ' . $e->getMessage());
         }
 
-        return false;
+        // Create any remaining new brands
+        if (count($dataCreate)) {
+            $this->topdataBrandRepository->create($dataCreate, $this->context);
+            CliLogger::activity();
+        }
+
+        // Update any remaining existing brands
+        if (count($dataUpdate)) {
+            $this->topdataBrandRepository->update($dataUpdate, $this->context);
+            CliLogger::activity();
+        }
+
+        // Log the completion of the brands process
+        CliLogger::writeln("\nBrands done " . CliLogger::lap() . 'sec');
+        $duplicates = null;
+        $brands = null;
+
+        UtilProfiling::stopTimer();
     }
-
-
-
-
 
 
     private function addToGroup($groups, $ids, $variants): array
@@ -443,8 +429,9 @@ SQL;
         return $return;
     }
 
-    public function setProductColorCapacityVariants(): bool
+    public function setProductColorCapacityVariants(): void
     {
+        UtilProfiling::startTimer();
         CliLogger::writeln("\nBegin generating variated products based on color and capacity information (Import variants with other colors, Import variants with other capacities should be enabled in TopFeed plugin, product information should be already imported)");
         $groups = [];
         CliLogger::lap(true);
@@ -562,8 +549,9 @@ SQL;
         CliLogger::mem();
         CliLogger::writeln('Generating variated products done');
 
-        return true;
+        UtilProfiling::stopTimer();
     }
+
 
     private function createVariatedProduct($group, $parentId = null)
     {

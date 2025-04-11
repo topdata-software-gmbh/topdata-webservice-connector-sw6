@@ -71,13 +71,13 @@
         </service>
         
         <!-- CONSOLE COMMANDS -->
-        <service id="Topdata\TopdataConnectorSW6\Command\TestConnectionCommand" autowire="true">
+        <service id="Topdata\TopdataConnectorSW6\Command\Command_TestConnection" autowire="true">
             <tag name="console.command"/>
         </service>
-        <service id="Topdata\TopdataConnectorSW6\Command\ImportCommand" autowire="true">
+        <service id="Topdata\TopdataConnectorSW6\Command\Command_Import" autowire="true">
             <tag name="console.command"/>
         </service>
-        <service id="Topdata\TopdataConnectorSW6\Command\LastReportCommand" autowire="true">
+        <service id="Topdata\TopdataConnectorSW6\Command\Command_LastReport" autowire="true">
             <tag name="console.command"/>
         </service>
 

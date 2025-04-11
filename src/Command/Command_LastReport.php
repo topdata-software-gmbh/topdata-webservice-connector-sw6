@@ -10,15 +10,11 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Helper\Table;
-use Symfony\Component\Console\Helper\TableSeparator;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
 use Topdata\TopdataFoundationSW6\Core\Content\TopdataReport\TopdataReportEntity;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
-use TopdataSoftwareGmbH\Util\UtilDebug;
 
 /**
  * TODO: move to Foundation plugin
@@ -29,7 +25,7 @@ use TopdataSoftwareGmbH\Util\UtilDebug;
     name: 'topdata:connector:last-report',
     description: 'Display statistics from the last import operation'
 )]
-class LastReportCommand extends AbstractTopdataCommand
+class Command_LastReport extends AbstractTopdataCommand
 {
     public function __construct(
         private readonly EntityRepository $topdataReportRepository

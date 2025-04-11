@@ -7,6 +7,8 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 
 /**
+ * TODO: move to TopdataFoundationSW6
+ *
  * 04/2025 created.
  */
 class UtilProfiling
@@ -15,8 +17,6 @@ class UtilProfiling
     private static array $profiling = [];
 
     /**
-     * TODO: move to TopdataFoundationSW6
-     *
      * 04/2025 created
      */
     public static function startTimer(): void
@@ -26,9 +26,6 @@ class UtilProfiling
     }
 
     /**
-     * TODO: move to TopdataFoundationSW6
-     * TODO: use some DTO
-     *
      * 04/2025 created
      */
     public static function stopTimer(): void
@@ -49,8 +46,6 @@ class UtilProfiling
     }
 
     /**
-     * TODO: move to TopdataFoundationSW6
-     *
      * 04/2025 created
      */
     private static function _getCallerKey(int $skip = 0): string
@@ -63,38 +58,47 @@ class UtilProfiling
     }
 
     /**
-     * TODO: move to TopdataFoundationSW6
-     *
+     * TODO: use some DTO defined in the foundation plugin
+     * *
+     * @return array, format: [
+     *       [
+     *           'method'    => 'Class::method',
+     *           'time' => 8123.123, // in seconds
+     *           'count' => 22,
+     *       ], ...
+     *  ]
      * 04/2025 created
      */
     public static function getProfiling(): array
     {
-        return self::$profiling;
+        $ret = [];
+        foreach (self::$profiling as $key => $val) {
+            $ret[] = [
+                'method'    => $key,
+                'time'      => $val['time'],
+                'count'     => $val['count'],
+            ];
+        }
+
+        // TODO: optional sorting
+
+        return $ret;
     }
 
     /**
-     * TODO: move to Foundation plugin
-     * TODO: use some DTO defined in the foundation plugin
-     * TODO: move the Repo
-     *
      * It prints the profiling data in a table
+     *
      * 04/2025 created
      *
-     * @param array $profiling , format: [
-     *      'Class::method' => [
-     *          'time' => 8123.123, // in seconds
-     *          'count' => 22,
-     *      ]
-     * ]
      */
-    public static function dumpProfiling(): void
+    public static function dumpProfilingToCli(): void
     {
         $rows = [];
-        foreach (self::getProfiling() as $key => $val) {
+        foreach (self::getProfiling() as  $row) {
             $rows[] = [
-                $key,
-                UtilFormatter::formatDuration($val['time']),
-                $val['count'],
+                $row['method'],
+                UtilFormatter::formatDuration($row['time']),
+                number_format($row['count'], 0, ',', '.'),
             ];
         }
 

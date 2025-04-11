@@ -16,7 +16,6 @@ use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 use Topdata\TopdataFoundationSW6\Service\TopConfigRegistry;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use Topdata\TopdataFoundationSW6\Util\Configuration\UtilToml;
-use TopdataSoftwareGmbH\Util\UtilDebug;
 
 /**
  * Test connection to the TopData webservice.
@@ -25,14 +24,8 @@ use TopdataSoftwareGmbH\Util\UtilDebug;
     name: 'topdata:connector:test-connection',
     description: 'Test connection to the TopData webservice',
 )]
-class TestConnectionCommand extends AbstractTopdataCommand
+class Command_TestConnection extends AbstractTopdataCommand
 {
-    const ERROR_CODE_TOPDATA_WEBSERVICE_CONNECTOR_PLUGIN_INACTIVE = 1;
-    const ERROR_CODE_MISSING_CONFIG                               = 2;
-    const ERROR_CODE_CONNECTION_ERROR                             = 3;
-    const ERROR_CODE_EXCEPTION                                    = 4;
-
-
     public function __construct(
         private readonly ConnectionTestService $connectionTestService,
         private readonly SystemConfigService   $systemConfigService, // legacy
@@ -50,6 +43,7 @@ class TestConnectionCommand extends AbstractTopdataCommand
 
     /**
      * ==== MAIN ====
+     *
      * 11/2024 created
      */
     public function execute(InputInterface $input, OutputInterface $output): int
@@ -74,7 +68,7 @@ class TestConnectionCommand extends AbstractTopdataCommand
         if (!$this->pluginHelperService->isWebserviceConnectorPluginAvailable()) {
             CliLogger::error('The TopdataConnectorSW6 plugin is inactive!');
             CliLogger::writeln('Activate the TopdataConnectorSW6 plugin first. Abort.');
-            return self::ERROR_CODE_TOPDATA_WEBSERVICE_CONNECTOR_PLUGIN_INACTIVE;
+            return Command::FAILURE;
         }
 
         CliLogger::writeln('Testing connection...');
@@ -83,7 +77,7 @@ class TestConnectionCommand extends AbstractTopdataCommand
         if (!$result['success']) {
             CliLogger::error($result['message']);
             CliLogger::writeln('Abort.');
-            return self::ERROR_CODE_CONNECTION_ERROR;
+            return Command::FAILURE;
         }
 
         CliLogger::success($result['message']);

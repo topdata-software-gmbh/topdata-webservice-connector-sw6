@@ -8,6 +8,8 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
+use Topdata\TopdataConnectorSW6\Exception\MissingPluginConfigurationException;
+use Topdata\TopdataConnectorSW6\Exception\TopdataConnectorPluginInactiveException;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceSynonymsService;
 use Topdata\TopdataConnectorSW6\Service\Import\DeviceImportService;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingHelperService;
@@ -26,23 +28,6 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
  */
 class ImportService
 {
-
-    /**
-     * TODO create new TopdataImportException with these error codes
-     */
-    // Error codes for various failure scenarios
-    const ERROR_CODE_SUCCESS                          = 0;
-    const ERROR_CODE_PLUGIN_INACTIVE                  = 1;
-    const ERROR_CODE_MISSING_PLUGIN_CONFIGURATION     = 2;
-    const ERROR_CODE_MAPPING_PRODUCTS_FAILED          = 3;
-    const ERROR_CODE_DEVICE_IMPORT_FAILED             = 4;
-    const ERROR_CODE_PRODUCT_TO_DEVICE_LINKING_FAILED = 5;
-    const ERROR_CODE_LOAD_DEVICE_MEDIA_FAILED         = 6;
-    const ERROR_CODE_LOAD_PRODUCT_INFORMATION_FAILED  = 7;
-    const ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED       = 8;
-    const ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED_2     = 9;
-
-
     public function __construct(
         private readonly SystemConfigService              $systemConfigService,
         private readonly MappingHelperService             $mappingHelperService,
@@ -59,6 +44,8 @@ class ImportService
     }
 
     /**
+     * ==== MAIN ====
+     *
      * Executes the import process based on the provided CLI options.
      *
      * This method serves as the main entry point for the import operation.
@@ -67,23 +54,20 @@ class ImportService
      *
      * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
      * @return int The error code indicating the success or failure of the import process.
+     * @throws MissingPluginConfigurationException
      */
-    public function execute(ImportCommandCliOptionsDTO $cliOptionsDto): int
+    public function execute(ImportCommandCliOptionsDTO $cliOptionsDto): void
     {
         CliLogger::writeln('Starting work...');
 
-        // ---- Check if plugin is active
+        // ---- Check if plugin is active (can this ever happen? as this code is part of the plugin .. TODO?: remove this check)
         if (!$this->pluginHelperService->isWebserviceConnectorPluginAvailable()) {
-            CliLogger::error('The TopdataConnectorSW6 plugin is inactive!');
-            return self::ERROR_CODE_PLUGIN_INACTIVE;
+            throw new TopdataConnectorPluginInactiveException("The TopdataConnectorSW6 plugin is inactive!");
         }
 
         // ---- Check if plugin is configured
         if ($this->configCheckerService->isConfigEmpty()) {
-            CliLogger::warning(GlobalPluginConstants::ERROR_MESSAGE_NO_WEBSERVICE_CREDENTIALS);
-            // TODO: print some nice message using UtilMarkdown
-
-            return self::ERROR_CODE_MISSING_PLUGIN_CONFIGURATION;
+            throw new MissingPluginConfigurationException();
         }
 
         CliLogger::getCliStyle()->dumpDict($cliOptionsDto->toDict(), 'CLI Options DTO');
@@ -92,18 +76,13 @@ class ImportService
         $this->_initOptions();
 
         // ---- Execute import operations based on options
-        if ($errorCode = $this->executeImportOperations($cliOptionsDto)) {
-            return $errorCode;
-        }
+        $this->executeImportOperations($cliOptionsDto);
 
         // ---- Dump report
         CliLogger::getCliStyle()->dumpCounters(ImportReport::getCountersSorted(), 'Counters Report');
 
         // ---- Dump profiling
-        UtilProfiling::dumpProfiling();
-
-
-        return self::ERROR_CODE_SUCCESS;
+        UtilProfiling::dumpProfilingToCli();
     }
 
 
@@ -115,9 +94,8 @@ class ImportService
      * helper methods to perform the import operations.
      *
      * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
-     * @return int|null the error code or null if no error occurred.. todo remove the error code thing. just use exceptions
      */
-    private function executeImportOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
+    private function executeImportOperations(ImportCommandCliOptionsDTO $cliOptionsDto): void
     {
         // ---- Product Mapping
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionMapping()) {
@@ -127,16 +105,10 @@ class ImportService
         }
 
         // ---- Device operations
-        if ($result = $this->_handleDeviceOperations($cliOptionsDto)) {
-            return $result;
-        }
+        $this->_handleDeviceOperations($cliOptionsDto);
 
         // ---- Product operations
-        if ($result = $this->_handleProductOperations($cliOptionsDto)) {
-            return $result;
-        }
-
-        return null;
+        $this->_handleProductOperations($cliOptionsDto);
     }
 
     /**
@@ -145,34 +117,21 @@ class ImportService
      * This method imports brands, series, device types and devices.
      *
      * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
-     * @return int|null An error code if the device import fails, or null if successful.
      */
-    private function _handleDeviceOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
+    private function _handleDeviceOperations(ImportCommandCliOptionsDTO $cliOptionsDto): void
     {
         // ---- Import all device related data
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDevice()) {
             CliLogger::getCliStyle()->blue('--all || --device');
-            if (
-                !$this->mappingHelperService->setBrands()
-                || !$this->deviceImportService->setSeries()
-                || !$this->deviceImportService->setDeviceTypes()
-                || !$this->deviceImportService->setDevices()
-            ) {
-                CliLogger::error('Device import failed!');
-
-                return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
-            }
+                $this->mappingHelperService->setBrands();
+                $this->deviceImportService->setSeries();
+                $this->deviceImportService->setDeviceTypes();
+                $this->deviceImportService->setDevices();
         } elseif ($cliOptionsDto->getOptionDeviceOnly()) {
             // ---- Import only devices
             CliLogger::getCliStyle()->blue('--device-only');
-            if (!$this->deviceImportService->setDevices()) {
-                CliLogger::error('Device import failed!');
-
-                return self::ERROR_CODE_DEVICE_IMPORT_FAILED;
-            }
+            $this->deviceImportService->setDevices();
         }
-
-        return null;
     }
 
     /**
@@ -183,9 +142,8 @@ class ImportService
      * loading device media, handling product information, and setting device synonyms.
      *
      * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
-     * @return int|null An error code if any of the product import operations fail, or null if all are successful.
      */
-    private function _handleProductOperations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
+    private function _handleProductOperations(ImportCommandCliOptionsDTO $cliOptionsDto): void
     {
         // ---- Product to device linking
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionProduct()) {
@@ -196,10 +154,7 @@ class ImportService
         // ---- Device media
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceMedia()) {
             CliLogger::getCliStyle()->blue('--all || --device-media');
-            if (!$this->deviceImportService->setDeviceMedia()) {
-                CliLogger::error('Load device media failed!');
-                return self::ERROR_CODE_LOAD_DEVICE_MEDIA_FAILED;
-            }
+            $this->deviceImportService->setDeviceMedia();
         }
 
         // ---- Product information
@@ -208,19 +163,11 @@ class ImportService
         // ---- Device synonyms
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceSynonyms()) {
             CliLogger::getCliStyle()->blue('--all || --device-synonyms');
-            if (!$this->deviceSynonymsService->setDeviceSynonyms()) {
-                CliLogger::error('Set device synonyms failed!');
-
-                return self::ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED;
-            }
+            $this->deviceSynonymsService->setDeviceSynonyms();
         }
 
         // ---- Product variations
-        if ($result = $this->_handleProductVariations($cliOptionsDto)) {
-            return $result;
-        }
-
-        return null;
+        $this->_handleProductVariations($cliOptionsDto);
     }
 
     /**
@@ -267,26 +214,19 @@ class ImportService
      * This method creates product variations based on color and capacity, if the TopFeed plugin is available.
      *
      * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
-     * @return int|null An error code if setting device synonyms fails during product variation creation, or null if successful.
      */
-    private function _handleProductVariations(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
+    private function _handleProductVariations(ImportCommandCliOptionsDTO $cliOptionsDto): void
     {
         // ---- Check if product variations should be created
         if ($cliOptionsDto->getOptionProductVariations()) {
             // ---- Check if TopFeed plugin is available
             if ($this->pluginHelperService->isTopFeedPluginAvailable()) {
                 // ---- Create product variations
-                if (!$this->mappingHelperService->setProductColorCapacityVariants()) {
-                    CliLogger::error('Set device synonyms failed!');
-
-                    return self::ERROR_CODE_SET_DEVICE_SYNONYMS_FAILED_2;
-                }
+                $this->mappingHelperService->setProductColorCapacityVariants();
             } else {
                 CliLogger::warning('You need TopFeed plugin to create variated products!');
             }
         }
-
-        return null;
     }
 
     /**

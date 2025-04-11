@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace Topdata\TopdataConnectorSW6\Command;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
+use Topdata\TopdataConnectorSW6\Exception\MissingPluginConfigurationException;
 use Topdata\TopdataConnectorSW6\Service\ImportService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
+use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
 use Topdata\TopdataFoundationSW6\Constants\TopdataJobTypeConstants;
 use Topdata\TopdataFoundationSW6\Service\TopdataReportService;
@@ -22,7 +26,7 @@ use Topdata\TopdataFoundationSW6\Util\UtilThrowable;
  * It provides various options to control the import process, such as importing all data,
  * mapping products, importing devices, and updating media and product information.
  */
-class ImportCommand extends AbstractTopdataCommand
+class Command_Import extends AbstractTopdataCommand
 {
 
 
@@ -46,6 +50,7 @@ class ImportCommand extends AbstractTopdataCommand
 
         return [
             'counters'  => ImportReport::getCountersSorted(),
+            'profiling' => UtilProfiling::getProfiling(),
             'apiConfig' => [
                 'uid'      => $pluginConfig['apiUid'],
                 'baseUrl'  => $pluginConfig['apiBaseUrl'],
@@ -101,23 +106,18 @@ class ImportCommand extends AbstractTopdataCommand
         try {
             // ---- Create DTO from input
             $cliOptionsDto = new ImportCommandCliOptionsDTO($input);
-
             // ---- Execute the import service
-            $result = $this->importService->execute($cliOptionsDto);
-
-            // ---- Get basic report data
-            $reportData = $this->_getBasicReportData();
-
+            $this->importService->execute($cliOptionsDto);
             // ---- Mark as succeeded or failed based on the result
-            if ($result === 0) {
-                $this->topdataReportService->markAsSucceeded($reportData);
-            } else {
-                $this->topdataReportService->markAsFailed($reportData);
-            }
+            $this->topdataReportService->markAsSucceeded($this->_getBasicReportData());
 
-            return $result;
-        } catch (\Throwable $e) {
-            // ---- Handle exceptions and mark as failed
+            return Command::SUCCESS;
+        }
+        catch (\Throwable $e) {
+            // ---- Handle exception and mark as failed
+            if( $e instanceof MissingPluginConfigurationException) {
+                CliLogger::warning(GlobalPluginConstants::ERROR_MESSAGE_NO_WEBSERVICE_CREDENTIALS);
+            }
             $reportData = $this->_getBasicReportData();
             $reportData['error'] = UtilThrowable::toArray($e);
             $this->topdataReportService->markAsFailed($reportData);

@@ -7,6 +7,7 @@ use Exception;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Constants\WebserviceFilterTypeConstants;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
@@ -30,11 +31,11 @@ class TopdataDeviceSynonymsService
      *
      * Sets device synonyms by fetching data from the Topdata webservice and storing it in the database.
      *
-     * @return bool Returns true if the process was successful.
      * @throws Exception
      */
-    public function setDeviceSynonyms(): bool
+    public function setDeviceSynonyms(): void
     {
+        UtilProfiling::startTimer();
         CliLogger::section("\n\nDevice synonyms");
         $availableDevices = [];
         foreach ($this->topdataDeviceService->_getEnabledDevices() as $pr) {
@@ -111,7 +112,7 @@ class TopdataDeviceSynonymsService
             CliLogger::writeln('');
         }
 
-        return true;
+        UtilProfiling::stopTimer();
     }
 
 }
