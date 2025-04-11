@@ -24,6 +24,8 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
 class DeviceImportService
 {
 
+    const IMAGE_PREFIX = 'td-';
+
     private Context $context;
 
     public function __construct(

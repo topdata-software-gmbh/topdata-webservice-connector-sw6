@@ -89,8 +89,6 @@ class MappingHelperService
         'Color',
     ];
 
-    const IMAGE_PREFIX = 'td-';
-
     /**
      * Array to store mapped products.
      *
