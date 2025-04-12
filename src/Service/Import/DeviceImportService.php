@@ -61,7 +61,7 @@ class DeviceImportService
      */
     public function setDeviceTypes(): void
     {
-        UtilProfiling::getProfiling();
+        UtilProfiling::startTimer();
         CliLogger::section("\n\nDevice type");
 
         // Log the activity of getting data from the remote server
