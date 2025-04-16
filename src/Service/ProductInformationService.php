@@ -80,6 +80,7 @@ class ProductInformationService
         8   => 'Leergut',
         30  => 'Marketingtext',
     ];
+
     const CHUNK_SIZE   = 50;
 
     private Context $context;
@@ -103,6 +104,8 @@ class ProductInformationService
 
 
     /**
+     * 04/2025 TODO: this method is way too slow .. optimize it
+
      * Updates product information and media.
      *
      * Fetches product data from a remote server, processes it, and updates the local database.
@@ -111,7 +114,7 @@ class ProductInformationService
      * @param bool $onlyMedia If true, only media information is updated; otherwise, all product information is updated.
      * @throws Exception If there is an error fetching data from the remote server.
      */
-    public function setProductInformation(bool $onlyMedia): void
+    public function setProductInformationV1Slow(bool $onlyMedia): void
     {
         UtilProfiling::startTimer();
 
@@ -132,15 +135,6 @@ class ProductInformationService
         CliLogger::lap(true);
 
         foreach ($batches as $idxBatch => $batch) {
-//            // ---- Skip chunks based on start and end options
-//            if ($this->topfeedOptionsHelperService->getOption(OptionConstants::START) && ($idxBatch + 1 < $this->topfeedOptionsHelperService->getOption(OptionConstants::START))) {
-//                continue;
-//            }
-//
-//            if ($this->topfeedOptionsHelperService->getOption(OptionConstants::END) && ($idxBatch + 1 > $this->topfeedOptionsHelperService->getOption(OptionConstants::END))) {
-//                break;
-//            }
-
             CliLogger::activity('xxx3 - Getting data from remote server part ' . ($idxBatch + 1) . '/' . count($batches) . ' (' . count($batch) . ' products)...');
 
             // ---- Fetch product data from the webservice
@@ -268,6 +262,157 @@ class ProductInformationService
 
         UtilProfiling::stopTimer();
     }
+
+
+    /**
+     * 04/2025 created, WIP .. this version tries to be faster than V1
+     */
+    public function setProductInformationV2(): void
+    {
+        UtilProfiling::startTimer();
+
+        CliLogger::section("\n\nProduct information V2");
+
+        // ---- Fetch the topid products
+        $topid_products = $this->topdataToProductHelperService->getTopdataProductMappings(true);
+        $productDataUpdate = [];
+        $productDataUpdateCovers = [];
+        $productDataDeleteDuplicateMedia = [];
+
+        // ---- Split the topid products into chunks
+        $batches = array_chunk(array_keys($topid_products), self::CHUNK_SIZE);
+        CliLogger::lap(true);
+
+        foreach ($batches as $idxBatch => $batch) {
+            CliLogger::activity('xxx3 - Getting data from remote server part ' . ($idxBatch + 1) . '/' . count($batches) . ' (' . count($batch) . ' products)...');
+
+            // ---- Fetch product data from the webservice
+            $response = $this->topdataWebserviceClient->myProductList([
+                'products' => implode(',', $batch),
+                'filter'   => WebserviceFilterTypeConstants::all,
+            ]);
+            CliLogger::activity(CliLogger::lap() . "sec\n");
+
+            if (!isset($response->page->available_pages)) {
+                throw new WebserviceResponseException($response->error[0]->error_message . 'webservice response has no pages');
+            }
+            CliLogger::activity('Processing data...');
+
+            $temp = array_slice($topid_products, $idxBatch * self::CHUNK_SIZE, self::CHUNK_SIZE);
+            $currentChunkProductIds = [];
+            foreach ($temp as $p) {
+                $currentChunkProductIds[] = $p[0]['product_id']; // FIXME? isnt this the same as $batch?
+            }
+
+            // ---- Load product import settings for the current chunk of products
+            $this->productImportSettingsService->loadProductImportSettings($currentChunkProductIds);
+
+            // ---- Unlink products, properties, categories and images before re-linking
+            if (!$onlyMedia) {
+                $this->productProductRelationshipService->unlinkProducts($currentChunkProductIds);
+                $this->_unlinkProperties($currentChunkProductIds);
+                $this->_unlinkCategories($currentChunkProductIds);
+            }
+            $this->_unlinkImages($currentChunkProductIds);
+
+            // ---- Process products
+            foreach ($response->products as $product) {
+                if (!isset($topid_products[$product->products_id])) {
+                    continue;
+                }
+
+                // ---- Prepare product data for update
+                $productData = $this->_prepareProduct($topid_products[$product->products_id][0], $product, $onlyMedia);
+                if ($productData) {
+                    $productDataUpdate[] = $productData;
+
+                    if (isset($productData['media'][0]['id'])) {
+                        $productDataUpdateCovers[] = [
+                            'id'      => $productData['id'],
+                            'coverId' => $productData['media'][0]['id'],
+                        ];
+                        foreach ($productData['media'] as $tempMedia) {
+                            $productDataDeleteDuplicateMedia[] = [
+                                'productId' => $productData['id'],
+                                'mediaId'   => $tempMedia['mediaId'],
+                                'id'        => $tempMedia['id'],
+                            ];
+                        }
+                    }
+                }
+
+                // ---- Update product data in chunks
+                if (count($productDataUpdate) > 10) {
+                    $this->productRepository->update($productDataUpdate, $this->context);
+                    $productDataUpdate = [];
+                    CliLogger::activity();
+
+                    if (count($productDataUpdateCovers)) {
+                        $this->productRepository->update($productDataUpdateCovers, $this->context);
+                        CliLogger::activity();
+                        $productDataUpdateCovers = [];
+                    }
+                }
+
+                // ---- Link products
+                if (!$onlyMedia) {
+                    $this->productProductRelationshipService->linkProducts($topid_products[$product->products_id][0], $product);
+                }
+            }
+            CliLogger::mem();
+            CliLogger::activity(' ' . CliLogger::lap() . "sec\n");
+        }
+
+        // ---- Update remaining product data
+        if (count($productDataUpdate)) {
+            CliLogger::activity('Updating last ' . count($productDataUpdate) . ' products...');
+            $this->productRepository->update($productDataUpdate, $this->context);
+            CliLogger::mem();
+            CliLogger::activity(' ' . CliLogger::lap() . "sec\n");
+        }
+
+        // ---- Update remaining product covers
+        if (count($productDataUpdateCovers)) {
+            CliLogger::activity("\nUpdating last product covers...");
+            $this->productRepository->update($productDataUpdateCovers, $this->context);
+            CliLogger::activity(' ' . CliLogger::lap() . "sec\n");
+        }
+
+        // ---- Delete duplicate media
+        if (count($productDataDeleteDuplicateMedia)) {
+            CliLogger::activity("\nDeleting product media duplicates...");
+            $chunks = array_chunk($productDataDeleteDuplicateMedia, 100);
+            foreach ($chunks as $chunk) {
+                $productIds = [];
+                $mediaIds = [];
+                $pmIds = [];
+                foreach ($chunk as $el) {
+                    $productIds[] = $el['productId'];
+                    $mediaIds[] = $el['mediaId'];
+                    $pmIds[] = $el['id'];
+                }
+                $productIds = '0x' . implode(', 0x', $productIds);
+                $mediaIds = '0x' . implode(', 0x', $mediaIds);
+                $pmIds = '0x' . implode(', 0x', $pmIds);
+
+                $this->connection->executeStatement("
+                    DELETE FROM product_media 
+                    WHERE (product_id IN ($productIds)) 
+                        AND (media_id IN ($mediaIds)) 
+                        AND(id NOT IN ($pmIds))
+                ");
+                CliLogger::activity();
+            }
+            CliLogger::mem();
+            CliLogger::activity(' ' . CliLogger::lap() . "sec\n");
+        }
+
+        CliLogger::writeln("\nProduct information done!");
+
+        UtilProfiling::stopTimer();
+    }
+
+
 
     /**
      * Unlinks properties from products.

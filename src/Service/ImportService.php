@@ -178,9 +178,8 @@ class ImportService
      * to set the product information.
      *
      * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
-     * @return int|null An error code if loading product information fails, or null if successful.
      */
-    private function _handleProductInformation(ImportCommandCliOptionsDTO $cliOptionsDto): ?int
+    private function _handleProductInformation(ImportCommandCliOptionsDTO $cliOptionsDto): void
     {
         // ---- Determine if product-related operation should be processed based on CLI options.
         if (
@@ -188,23 +187,25 @@ class ImportService
             !$cliOptionsDto->getOptionProductInformation() &&
             !$cliOptionsDto->getOptionProductMediaOnly()
         ) {
-            return null;
+            return;
         }
 
         // ---- Check if TopFeed plugin is available
         if (!$this->pluginHelperService->isTopFeedPluginAvailable()) {
             CliLogger::writeln('You need TopFeed plugin to update product information!');
 
-            return null;
+            return;
         }
 
         // ---- go
         $this->topfeedOptionsHelperService->loadTopdataTopFeedPluginConfig();
 
         // ---- Load product information or update media
-        $this->productInformationService->setProductInformation($cliOptionsDto->getOptionProductMediaOnly());
-
-        return null;
+        if($cliOptionsDto->getOptionExperimentalV2()) {
+            $this->productInformationService->setProductInformationV2();
+        } else {
+            $this->productInformationService->setProductInformationV1Slow($cliOptionsDto->getOptionProductMediaOnly());
+        }
     }
 
 

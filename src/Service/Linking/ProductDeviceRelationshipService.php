@@ -19,6 +19,8 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
 class ProductDeviceRelationshipService
 {
 
+    const CHUNK_SIZE = 100;
+
     public function __construct(
         private readonly Connection              $connection,
         private readonly TopdataToProductService $topdataToProductHelperService,
@@ -53,7 +55,6 @@ class ProductDeviceRelationshipService
     {
         UtilProfiling::startTimer();
 
-        //        $this->connection->beginTransaction();
         CliLogger::getCliStyle()->yellow('Devices to products linking begin');
         CliLogger::getCliStyle()->yellow('Disabling all devices, brands, series and types, unlinking products, caching products...');
         CliLogger::lap(true);
@@ -104,7 +105,7 @@ class ProductDeviceRelationshipService
         $enabledSeries = [];
         $enabledTypes = [];
 
-        $topidsChunked = array_chunk(array_keys($topidProducts), 100);
+        $topidsChunked = array_chunk(array_keys($topidProducts), self::CHUNK_SIZE);
         foreach ($topidsChunked as $idxChunk => $productIds) {
 
             // ---- fetch products from webservice
@@ -240,9 +241,7 @@ class ProductDeviceRelationshipService
             CliLogger::activity();
         }
         CliLogger::activity(CliLogger::lap() . "sec\n");
-        //            $this->connection->commit();
         CliLogger::writeln('Devices to products linking done.');
-
         UtilProfiling::stopTimer();
     }
 

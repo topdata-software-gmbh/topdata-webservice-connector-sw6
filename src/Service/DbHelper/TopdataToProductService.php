@@ -47,9 +47,9 @@ class TopdataToProductService
             $rows = $this->connection->fetchAllAssociative('
                 SELECT 
                     topdata_to_product.top_data_id, 
-                    LOWER(HEX(topdata_to_product.product_id)) as product_id, 
-                    LOWER(HEX(topdata_to_product.product_version_id)) as product_version_id, 
-                    LOWER(HEX(product.parent_id)) as parent_id 
+                    LOWER(HEX(topdata_to_product.product_id))          AS product_id, 
+                    LOWER(HEX(topdata_to_product.product_version_id))  AS product_version_id, 
+                    LOWER(HEX(product.parent_id))                      AS parent_id 
                 FROM `topdata_to_product`
                 INNER JOIN product ON 
                     topdata_to_product.product_id = product.id AND 

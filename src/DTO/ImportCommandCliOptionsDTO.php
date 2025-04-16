@@ -24,6 +24,7 @@ class ImportCommandCliOptionsDTO
     private bool $optionProductInformation; // --product-information
     private bool $optionProductMediaOnly; // --product-media-only
     private bool $optionProductVariations; // --product-variated
+    private bool $optionExperimentalV2; // --experimental-v2, 04/2025 added
 
     public function __construct(InputInterface $input)
     {
@@ -37,6 +38,7 @@ class ImportCommandCliOptionsDTO
         $this->optionProductInformation = (bool)$input->getOption('product-info'); // update product information from webservice (TopFeed plugin needed)
         $this->optionProductMediaOnly = (bool)$input->getOption('product-media-only'); // update only product media from webservice (TopFeed plugin needed)
         $this->optionProductVariations = (bool)$input->getOption('product-variated'); // Generate variated products based on color and capacity information
+        $this->optionExperimentalV2 = (bool)$input->getOption('v2-experimental');
     }
 
     public function getOptionAll(): bool
@@ -89,6 +91,11 @@ class ImportCommandCliOptionsDTO
         return $this->optionProductVariations;
     }
 
+    public function getOptionExperimentalV2(): bool
+    {
+        return $this->optionExperimentalV2;
+    }
+
     public function toDict(): array
     {
         return [
@@ -102,6 +109,9 @@ class ImportCommandCliOptionsDTO
             'optionProductInformation' => $this->optionProductInformation,
             'optionProductMedia'       => $this->optionProductMediaOnly,
             'optionProductVariations'  => $this->optionProductVariations,
+            'optionExperimentalV2'     => $this->optionExperimentalV2,
         ];
     }
+
+
 }
