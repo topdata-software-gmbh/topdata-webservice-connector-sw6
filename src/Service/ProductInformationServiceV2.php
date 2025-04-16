@@ -29,7 +29,7 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
  * from an external source, integrating them into the Shopware 6 system. It includes
  * functionalities for fetching data, processing images, and linking related products.
  */
-class ProductInformationService
+class ProductInformationServiceV2
 {
     /**
      * List of specifications to ignore during import.
@@ -271,7 +271,7 @@ class ProductInformationService
     {
         UtilProfiling::startTimer();
 
-        CliLogger::section("\n\nProduct information V2");
+        CliLogger::section("\n\nProduct information V2 (Experimental)");
 
         // ---- Fetch the topid products
         $topid_products = $this->topdataToProductHelperService->getTopdataProductMappings(true);
@@ -308,11 +308,9 @@ class ProductInformationService
             $this->productImportSettingsService->loadProductImportSettings($currentChunkProductIds);
 
             // ---- Unlink products, properties, categories and images before re-linking
-            if (!$onlyMedia) {
-                $this->productProductRelationshipService->unlinkProducts($currentChunkProductIds);
-                $this->_unlinkProperties($currentChunkProductIds);
-                $this->_unlinkCategories($currentChunkProductIds);
-            }
+            $this->productProductRelationshipService->unlinkProducts($currentChunkProductIds);
+            $this->_unlinkProperties($currentChunkProductIds);
+            $this->_unlinkCategories($currentChunkProductIds);
             $this->_unlinkImages($currentChunkProductIds);
 
             // ---- Process products
@@ -322,7 +320,7 @@ class ProductInformationService
                 }
 
                 // ---- Prepare product data for update
-                $productData = $this->_prepareProduct($topid_products[$product->products_id][0], $product, $onlyMedia);
+                $productData = $this->_prepareProduct($topid_products[$product->products_id][0], $product, false);
                 if ($productData) {
                     $productDataUpdate[] = $productData;
 
@@ -355,9 +353,7 @@ class ProductInformationService
                 }
 
                 // ---- Link products
-                if (!$onlyMedia) {
-                    $this->productProductRelationshipService->linkProducts($topid_products[$product->products_id][0], $product);
-                }
+                $this->productProductRelationshipService->linkProducts($topid_products[$product->products_id][0], $product);
             }
             CliLogger::mem();
             CliLogger::activity(' ' . CliLogger::lap() . "sec\n");
@@ -502,9 +498,6 @@ class ProductInformationService
                 $productData['description'] = $newDescription;
             }
         }
-
-        //        $this->getOption('productLongDescription') ???
-        //         $productData['description'] = $remoteProductData->short_description;
 
         // ---- Prepare product manufacturer
         if (!$onlyMedia && $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productBrand, $productId) && $remoteProductData->manufacturer != '') {

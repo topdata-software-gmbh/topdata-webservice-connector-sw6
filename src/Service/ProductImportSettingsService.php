@@ -181,7 +181,7 @@ class ProductImportSettingsService
      * @param array $productIds An array of product IDs to filter.
      * @return array An array of product IDs that match the configuration option.
      *
-     * 04/2025 moved from ProductInformationService::_filterIdsByConfig() to ProductImportSettingsService::filterProductIdsByConfig()
+     * 04/2025 moved from ProductInformationServiceV1Slow::_filterIdsByConfig() to ProductImportSettingsService::filterProductIdsByConfig()
      */
     public function filterProductIdsByConfig(string $optionName, array $productIds): array
     {

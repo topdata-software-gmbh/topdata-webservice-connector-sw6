@@ -36,7 +36,8 @@ class ImportService
         private readonly PluginHelperService              $pluginHelperService,
         private readonly ProductMappingService            $productMappingService,
         private readonly TopdataDeviceSynonymsService     $deviceSynonymsService,
-        private readonly ProductInformationService        $productInformationService,
+        private readonly ProductInformationServiceV1Slow  $productInformationServiceV1Slow,
+        private readonly ProductInformationServiceV2  $productInformationServiceV2,
         private readonly ProductDeviceRelationshipService $productDeviceRelationshipService,
         private readonly DeviceImportService              $deviceImportService,
     )
@@ -174,7 +175,7 @@ class ImportService
      * Handles product information import operations.
      *
      * This method imports or updates product information based on the provided CLI options.
-     * It checks if the TopFeed plugin is available and then uses the ProductInformationService
+     * It checks if the TopFeed plugin is available and then uses the ProductInformationServiceV1Slow
      * to set the product information.
      *
      * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
@@ -202,9 +203,9 @@ class ImportService
 
         // ---- Load product information or update media
         if($cliOptionsDto->getOptionExperimentalV2()) {
-            $this->productInformationService->setProductInformationV2();
+            $this->productInformationServiceV2->setProductInformationV2();
         } else {
-            $this->productInformationService->setProductInformationV1Slow($cliOptionsDto->getOptionProductMediaOnly());
+            $this->productInformationServiceV1Slow->setProductInformationV1Slow($cliOptionsDto->getOptionProductMediaOnly());
         }
     }
 
