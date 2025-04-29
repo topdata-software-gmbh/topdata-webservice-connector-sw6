@@ -115,7 +115,7 @@ final class MappingStrategy_Default extends AbstractMappingStrategy
     private function _processEANs(array $eanMap): void
     {
         $dataInsert = [];
-        CliLogger::writeln('fetching EANs from Webservice...');
+        CliLogger::title('fetching EANs from Webservice...');
         $total = 0;
 
         // ---- Iterate through the pages of EAN data from the web service
@@ -152,7 +152,8 @@ final class MappingStrategy_Default extends AbstractMappingStrategy
                     }
                 }
             }
-            CliLogger::writeln('fetched EANs page ' . $i . '/' . $available_pages);
+            // CliLogger::writeln('fetched EANs page ' . $i . '/' . $available_pages);
+            CliLogger::progress($i, $available_pages, 'fetched EANs page');
             if ($i >= $available_pages) {
                 break;
             }
@@ -173,7 +174,7 @@ final class MappingStrategy_Default extends AbstractMappingStrategy
     private function _processOEMs(array $oemMap): void
     {
         $dataInsert = [];
-        CliLogger::writeln('fetching OEMs from Webservice...');
+        CliLogger::title('fetching OEMs from Webservice...');
         $total = 0;
 
         // ---- Iterate through the pages of OEM data from the web service
@@ -210,7 +211,8 @@ final class MappingStrategy_Default extends AbstractMappingStrategy
                     }
                 }
             }
-            CliLogger::writeln('fetched OEMs page ' . $i . '/' . $available_pages);
+            // CliLogger::writeln('fetched OEMs page ' . $i . '/' . $available_pages);
+            CliLogger::progress($i, $available_pages, "fetched OEMs page");
             if ($i >= $available_pages) {
                 break;
             }
