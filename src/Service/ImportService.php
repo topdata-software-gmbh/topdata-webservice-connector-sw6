@@ -40,6 +40,7 @@ class ImportService
         private readonly ProductInformationServiceV2      $productInformationServiceV2,
         private readonly ProductDeviceRelationshipService $productDeviceRelationshipService,
         private readonly DeviceImportService              $deviceImportService,
+        private readonly Import\DeviceMediaImportService  $deviceMediaImportService, // Added for refactoring
     )
     {
     }
@@ -155,7 +156,7 @@ class ImportService
         // ---- Device media
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceMedia()) {
             CliLogger::getCliStyle()->blue('--all || --device-media');
-            $this->deviceImportService->setDeviceMedia();
+            $this->deviceMediaImportService->setDeviceMedia(); // Use the new dedicated service
         }
 
         // ---- Product information
