@@ -37,7 +37,7 @@ class ImportService
         private readonly ProductMappingService            $productMappingService,
         private readonly TopdataDeviceSynonymsService     $deviceSynonymsService,
         private readonly ProductInformationServiceV1Slow  $productInformationServiceV1Slow,
-        private readonly ProductInformationServiceV2  $productInformationServiceV2,
+        private readonly ProductInformationServiceV2      $productInformationServiceV2,
         private readonly ProductDeviceRelationshipService $productDeviceRelationshipService,
         private readonly DeviceImportService              $deviceImportService,
     )
@@ -124,10 +124,10 @@ class ImportService
         // ---- Import all device related data
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDevice()) {
             CliLogger::getCliStyle()->blue('--all || --device');
-                $this->mappingHelperService->setBrands();
-                $this->deviceImportService->setSeries();
-                $this->deviceImportService->setDeviceTypes();
-                $this->deviceImportService->setDevices();
+            $this->mappingHelperService->setBrands();
+            $this->deviceImportService->setSeries();
+            $this->deviceImportService->setDeviceTypes();
+            $this->deviceImportService->setDevices();
         } elseif ($cliOptionsDto->getOptionDeviceOnly()) {
             // ---- Import only devices
             CliLogger::getCliStyle()->blue('--device-only');
@@ -202,7 +202,7 @@ class ImportService
         $this->topfeedOptionsHelperService->loadTopdataTopFeedPluginConfig();
 
         // ---- Load product information or update media
-        if($cliOptionsDto->getOptionExperimentalV2()) {
+        if ($cliOptionsDto->getOptionExperimentalV2()) {
             $this->productInformationServiceV2->setProductInformationV2();
         } else {
             $this->productInformationServiceV1Slow->setProductInformationV1Slow($cliOptionsDto->getOptionProductMediaOnly());
