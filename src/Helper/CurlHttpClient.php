@@ -47,7 +47,7 @@ class CurlHttpClient
     public function get(string $url, $xml_data = null, $attempt = 1)
     {
         // ---- Initialize cURL request
-        CliLogger::writeln("<gray>$url</gray>");
+        CliLogger::debug("$url");
 
         try {
             $ch = curl_init($url);
@@ -87,7 +87,7 @@ class CurlHttpClient
                 throw new WebserviceResponseException($ret->error[0]->error_message . ' @topdataconnector webservice error');
             }
 
-            CliLogger::writeln('<gray>' . substr($output, 0, 180) . '...</gray>');
+            CliLogger::debug(substr($output, 0, 180) . '...');
 
             return $ret;
         } catch (Exception $e) {

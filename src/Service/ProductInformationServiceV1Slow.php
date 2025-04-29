@@ -11,6 +11,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\DescriptionImportTypeConstant;
+use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
 use Topdata\TopdataConnectorSW6\Constants\WebserviceFilterTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Exception\WebserviceResponseException;
@@ -415,7 +416,7 @@ class ProductInformationServiceV1Slow
             && isset($remoteProductData->specifications)
             && count($remoteProductData->specifications)
         ) {
-            $ignoreSpecs = \Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants::IGNORE_SPECS;
+            $ignoreSpecs = GlobalPluginConstants::IGNORE_SPECS;
             foreach ($remoteProductData->specifications as $spec) {
                 if (isset($ignoreSpecs[$spec->specification_id])) {
                     continue;

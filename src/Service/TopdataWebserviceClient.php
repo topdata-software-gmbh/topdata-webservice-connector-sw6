@@ -9,7 +9,6 @@ namespace Topdata\TopdataConnectorSW6\Service;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Topdata\TopdataConnectorSW6\Helper\CurlHttpClient;
-use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
  * A simple http client for the topdata webservice with a retry mechanism (exponential backoff).

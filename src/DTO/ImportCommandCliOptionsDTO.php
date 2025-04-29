@@ -38,7 +38,7 @@ class ImportCommandCliOptionsDTO
         $this->optionProductInformation = (bool)$input->getOption('product-info'); // update product information from webservice (TopFeed plugin needed)
         $this->optionProductMediaOnly = (bool)$input->getOption('product-media-only'); // update only product media from webservice (TopFeed plugin needed)
         $this->optionProductVariations = (bool)$input->getOption('product-variated'); // Generate variated products based on color and capacity information
-        $this->optionExperimentalV2 = (bool)$input->getOption('v2-experimental');
+        $this->optionExperimentalV2 = (bool)$input->getOption('experimental-v2');
     }
 
     public function getOptionAll(): bool
