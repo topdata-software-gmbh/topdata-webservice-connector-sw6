@@ -9,6 +9,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataBrandService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceTypeService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataSeriesService;
@@ -40,13 +41,12 @@ class DeviceImportService
         private readonly TopdataDeviceService     $topdataDeviceService,
         private readonly TopdataWebserviceClient  $topdataWebserviceClient,
         private readonly TopdataSeriesService     $topdataSeriesService,
-        private readonly TopdataDeviceTypeService $topdataDeviceTypeService
+        private readonly TopdataDeviceTypeService $topdataDeviceTypeService,
+        private readonly TopdataBrandService      $topdataBrandService
     )
     {
         $this->context = Context::createDefaultContext();
     }
-
-    private ?array $brandWsArray = null; // aka mapWsIdToBrand
 
 
     /**
@@ -89,7 +89,7 @@ class DeviceImportService
         foreach ($types->data as $s) {
             foreach ($s->brandIds as $brandWsId) {
                 // Get the brand by its web service ID
-                $brand = $this->_getBrandByWsIdArray($brandWsId);
+                $brand = $this->topdataBrandService->getBrandByWsId($brandWsId);
                 if (!$brand) {
                     continue;
                 }
@@ -188,7 +188,7 @@ class DeviceImportService
         $allSeries = $this->topdataSeriesService->getSeriesArray(true);
         foreach ($series->data as $s) {
             foreach ($s->brandIds as $brandWsId) {
-                $brand = $this->_getBrandByWsIdArray((int)$brandWsId);
+                $brand = $this->topdataBrandService->getBrandByWsId((int)$brandWsId);
                 if (!$brand) {
                     continue;
                 }
@@ -301,6 +301,7 @@ class DeviceImportService
 //                    break;
 //                }
             CliLogger::activity("\nGetting device chunk $chunkNumber from remote server...");
+
             ImportReport::incCounter('Device Chunks');
             $response = $this->topdataWebserviceClient->getModels($limit, $start);
             CliLogger::activity(CliLogger::lap() . "sec\n");
@@ -317,7 +318,7 @@ class DeviceImportService
                     CliLogger::activity();
                 }
 
-                $brandArr = $this->_getBrandByWsIdArray((int)$s->bId);
+                $brandArr = $this->topdataBrandService->getBrandByWsId((int)$s->bId);
 
                 if (!$brandArr) {
                     continue;
@@ -515,10 +516,6 @@ class DeviceImportService
      * the `EntityRepository` to perform database operations.
      *
      * @throws Exception
-     * @todo: add start/end chunk support, display chunk number, packet reading and packet writing for devices!
-     *        display memory usage
-     *
-     * chunk 6 finished
      *
      * 04/2025 moved from MappingHelperService::setDeviceMedia() to DeviceImportService::setDeviceMedia()
      */
@@ -526,8 +523,6 @@ class DeviceImportService
     {
         UtilProfiling::startTimer();
         CliLogger::writeln('Devices Media start');
-        $this->brandWsArray = null;
-        $topdataDeviceRepository = $this->topdataDeviceRepository; // TODO: remove this
 
         // Fetch enabled devices
         $available_Printers = [];
@@ -568,20 +563,19 @@ class DeviceImportService
                     CliLogger::activity();
                 }
 
-                $brand = $this->_getBrandByWsIdArray($s->bId);
+                $brand = $this->topdataBrandService->getBrandByWsId((int)$s->bId);
                 if (!$brand) {
                     continue;
                 }
 
                 $code = $brand['code'] . '_' . UtilStringFormatting::formCode($s->val);
-                $device = $topdataDeviceRepository
-                    ->search(
-                        (new Criteria())
-                            ->addFilter(new EqualsFilter('code', $code))
-                            ->addAssociation('media')
-                            ->setLimit(1),
-                        $this->context
-                    )
+                $device = $this->topdataDeviceRepository->search(
+                    (new Criteria())
+                        ->addFilter(new EqualsFilter('code', $code))
+                        ->addAssociation('media')
+                        ->setLimit(1),
+                    $this->context
+                )
                     ->getEntities()
                     ->first();
                 if (!$device) {
@@ -592,7 +586,7 @@ class DeviceImportService
 
                 // Delete media if the image is null
                 if (is_null($s->img) && $currentMedia) {
-                    $topdataDeviceRepository->update([
+                    $this->topdataDeviceRepository->update([
                         [
                             'id'      => $device->getId(),
                             'mediaId' => null,
@@ -621,7 +615,7 @@ class DeviceImportService
                 try {
                     $mediaId = $this->mediaHelperService->getMediaId($s->img, $imageDate, self::IMAGE_PREFIX);
                     if ($mediaId) {
-                        $topdataDeviceRepository->update([
+                        $this->topdataDeviceRepository->update([
                             [
                                 'id'      => $device->getId(),
                                 'mediaId' => $mediaId,
@@ -647,28 +641,6 @@ class DeviceImportService
         UtilProfiling::stopTimer();
     }
 
-
-    /**
-     * 04/2025 moved from MappingHelperService::getBrandByWsIdArray() to DeviceImportService::getBrandByWsIdArray()
-     */
-    private function _getBrandByWsIdArray(int $brandWsId): array
-    {
-        if ($this->brandWsArray === null) {
-            $this->brandWsArray = [];
-            $query = $this->connection->createQueryBuilder();
-            $rez = $query
-                ->select(['id', 'code', 'label', 'ws_id'])
-                ->from('topdata_brand')
-                ->execute()
-                ->fetchAllAssociative();
-            foreach ($rez as $brand) {
-                $brand['id'] = bin2hex($brand['id']);
-                $this->brandWsArray[$brand['ws_id']] = $brand;
-            }
-        }
-
-        return isset($this->brandWsArray[$brandWsId]) ? $this->brandWsArray[$brandWsId] : [];
-    }
 
     /**
      * 04/2025 moved from MappingHelperService::formSearchKeywords() to DeviceImportService::formSearchKeywords()

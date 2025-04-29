@@ -17,6 +17,8 @@ class TopdataBrandService
     ) {
     }
 
+    private ?array $brandsByWsIdCache = null;
+
     /**
      * Retrieves enabled brands from the database.
      *
@@ -91,5 +93,40 @@ class TopdataBrandService
         }
 
         return true;
+    }
+    /**
+     * Loads all brands from the database and populates the internal cache, keyed by ws_id.
+     */
+    private function _loadBrandsByWsId(): void
+    {
+        $brands = $this->connection->createQueryBuilder()
+            ->select('LOWER(HEX(id)) as id, ws_id, label, is_enabled, sort')
+            ->from('topdata_brand')
+            ->where('ws_id IS NOT NULL') // Ensure we only get brands with a ws_id
+            ->execute()
+            ->fetchAllAssociative();
+
+        $this->brandsByWsIdCache = [];
+        foreach ($brands as $brand) {
+            // Ensure ws_id is treated as an integer key
+            $wsId = (int) $brand['ws_id'];
+            $this->brandsByWsIdCache[$wsId] = $brand;
+        }
+    }
+
+    /**
+     * Retrieves a specific brand by its Webservice ID (ws_id).
+     * Uses an internal cache for efficiency.
+     *
+     * @param int $brandWsId The Webservice ID of the brand to retrieve.
+     * @return array The brand data as an associative array, or an empty array if not found.
+     */
+    public function getBrandByWsId(int $brandWsId): array
+    {
+        if ($this->brandsByWsIdCache === null) {
+            $this->_loadBrandsByWsId();
+        }
+
+        return $this->brandsByWsIdCache[$brandWsId] ?? [];
     }
 }

@@ -269,7 +269,8 @@ final class MappingStrategy_Default extends AbstractMappingStrategy
                     }
                 }
             }
-            CliLogger::writeln('fetched PCDs page ' . $i . '/' . $available_pages);
+            // CliLogger::writeln('fetched PCDs page ' . $i . '/' . $available_pages);
+            CliLogger::progress($i, $available_pages, 'fetched PCDs page');
             if ($i >= $available_pages) {
                 break;
             }
