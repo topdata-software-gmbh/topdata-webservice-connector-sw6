@@ -200,7 +200,7 @@ class DeviceImportService
                         break;
                     }
                 }
-
+dump($brand);
                 $code = $brand['code'] . '_' . $s->id . '_' . UtilStringFormatting::formCode($s->val);
 
                 if (!$serie) {

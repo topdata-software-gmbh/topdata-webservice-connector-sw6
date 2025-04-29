@@ -100,7 +100,7 @@ class TopdataBrandService
     private function _loadBrandsByWsId(): void
     {
         $brands = $this->connection->createQueryBuilder()
-            ->select('LOWER(HEX(id)) as id, ws_id, label, is_enabled, sort')
+            ->select('LOWER(HEX(id)) as id, ws_id, code, label, is_enabled, sort')
             ->from('topdata_brand')
             ->where('ws_id IS NOT NULL') // Ensure we only get brands with a ws_id
             ->execute()
@@ -129,4 +129,6 @@ class TopdataBrandService
 
         return $this->brandsByWsIdCache[$brandWsId] ?? [];
     }
+
+
 }
