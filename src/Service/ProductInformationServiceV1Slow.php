@@ -13,7 +13,7 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\DescriptionImportTypeConstant;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
 use Topdata\TopdataConnectorSW6\Constants\WebserviceFilterTypeConstants;
-use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
+use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;
 use Topdata\TopdataConnectorSW6\Exception\WebserviceResponseException;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Service\Linking\ProductProductRelationshipService;
@@ -38,7 +38,7 @@ class ProductInformationServiceV1Slow
 
     public function __construct(
         private readonly TopdataToProductService           $topdataToProductHelperService,
-        private readonly MergedPluginConfigHelperService   $topfeedOptionsHelperService,
+        private readonly MergedPluginConfigHelperService   $mergedPluginConfigHelperService,
         private readonly ProductProductRelationshipService $productProductRelationshipService,
         private readonly EntityRepository                  $productRepository,
         private readonly TopdataWebserviceClient           $topdataWebserviceClient,
@@ -267,8 +267,8 @@ class ProductInformationServiceV1Slow
     private function _unlinkCategories(array $productIds): void
     {
         if (!count($productIds)
-            || !$this->topfeedOptionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS)
-            || !$this->topfeedOptionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS_DELETE)) {
+            || !$this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::PRODUCT_WAREGROUPS)
+            || !$this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::PRODUCT_WAREGROUPS_DELETE)) {
             return;
         }
 
@@ -442,12 +442,12 @@ class ProductInformationServiceV1Slow
         // ---- Prepare product waregroups (categories)
         if (
             !$onlyMedia
-            && $this->topfeedOptionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS)
+            && $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::PRODUCT_WAREGROUPS)
             && isset($remoteProductData->waregroups)
         ) {
             foreach ($remoteProductData->waregroups as $waregroupObject) {
                 $categoriesChain = json_decode(json_encode($waregroupObject->waregroup_tree), true);
-                $categoryId = $this->entitiesHelperService->getCategoryId($categoriesChain, (string)$this->topfeedOptionsHelperService->getOption(OptionConstants::PRODUCT_WAREGROUPS_PARENT));
+                $categoryId = $this->entitiesHelperService->getCategoryId($categoriesChain, (string)$this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::PRODUCT_WAREGROUPS_PARENT));
                 if (!$categoryId) {
                     break;
                 }

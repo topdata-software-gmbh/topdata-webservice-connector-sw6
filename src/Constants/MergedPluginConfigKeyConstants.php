@@ -8,8 +8,9 @@ namespace Topdata\TopdataConnectorSW6\Constants;
  * Constants for option names.
  *
  * 10/2024 created (extracted from MappingHelperService)
+ * 04/2025 renamed from OptionConstants to MergedPluginConfigKeyConstants
  */
-class OptionConstants
+class MergedPluginConfigKeyConstants
 {
     // ---- keys from the connector plugin config ... they are mapping options how to map the webservice data to the shopware data
     const MAPPING_TYPE              = 'mappingType'; // aka MappingStrategy ("default" [EAN, OEM], "distributor", "product number")

@@ -5,7 +5,7 @@ namespace Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy;
 use Exception;
 use Override;
 use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
-use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
+use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;
 use Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
@@ -27,7 +27,7 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
     private array $setted;
 
     public function __construct(
-        private readonly MergedPluginConfigHelperService $optionsHelperService,
+        private readonly MergedPluginConfigHelperService $mergedPluginConfigHelperService,
         private readonly TopdataToProductService         $topdataToProductHelperService,
         private readonly TopdataWebserviceClient         $topdataWebserviceClient,
         private readonly ShopwareProductService          $shopwareProductService,
@@ -53,23 +53,23 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
         $eans = [];
 
         // ---- Fetch product data based on mapping type configuration
-        if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::CUSTOM) {
-            if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
+        if ($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::MAPPING_TYPE) == MappingTypeConstants::CUSTOM) {
+            if ($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_OEM) != '') {
                 $oems = UtilMappingHelper::_fixArrayBinaryIds(
-                    $this->shopwareProductService->getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number')
+                    $this->shopwareProductService->getKeysByOptionValue($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_OEM), 'manufacturer_number')
                 );
             }
-            if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN) != '') {
+            if ($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_EAN) != '') {
                 $eans = UtilMappingHelper::_fixArrayBinaryIds(
-                    $this->shopwareProductService->getKeysByOptionValue($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean')
+                    $this->shopwareProductService->getKeysByOptionValue($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_EAN), 'ean')
                 );
             }
-        } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::CUSTOM_FIELD) {
-            if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM) != '') {
-                $oems = $this->shopwareProductService->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_OEM), 'manufacturer_number');
+        } elseif ($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::MAPPING_TYPE) == MappingTypeConstants::CUSTOM_FIELD) {
+            if ($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_OEM) != '') {
+                $oems = $this->shopwareProductService->getKeysByCustomFieldUnique($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_OEM), 'manufacturer_number');
             }
-            if ($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN) != '') {
-                $eans = $this->shopwareProductService->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_EAN), 'ean');
+            if ($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_EAN) != '') {
+                $eans = $this->shopwareProductService->getKeysByCustomFieldUnique($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_EAN), 'ean');
             }
         } else {
             $oems = UtilMappingHelper::_fixArrayBinaryIds($this->shopwareProductService->getKeysByMpn());

@@ -3,7 +3,7 @@
 namespace Topdata\TopdataConnectorSW6\Service;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
-use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
+use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
@@ -78,8 +78,8 @@ class MergedPluginConfigHelperService
     {
         $topfeedPluginConfig = $this->systemConfigService->get('TopdataTopFeedSW6.config');
         $this->_setOptions($topfeedPluginConfig);
-        $this->_setOption(OptionConstants::PRODUCT_COLOR_VARIANT, $topfeedPluginConfig['productVariantColor']); // FIXME? 'productColorVariant' != 'productVariantColor'
-        $this->_setOption(OptionConstants::PRODUCT_CAPACITY_VARIANT, $topfeedPluginConfig['productVariantCapacity']); // FIXME? 'productCapacityVariant' != 'productVariantCapacity'
+        $this->_setOption(MergedPluginConfigKeyConstants::PRODUCT_COLOR_VARIANT, $topfeedPluginConfig['productVariantColor']); // FIXME? 'productColorVariant' != 'productVariantColor'
+        $this->_setOption(MergedPluginConfigKeyConstants::PRODUCT_CAPACITY_VARIANT, $topfeedPluginConfig['productVariantCapacity']); // FIXME? 'productCapacityVariant' != 'productVariantCapacity'
     }
 
     /**
@@ -95,10 +95,10 @@ class MergedPluginConfigHelperService
         $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
 
         $this->_setOptions([
-            OptionConstants::MAPPING_TYPE          => $pluginConfig['mappingType'] ,
-            OptionConstants::ATTRIBUTE_OEM         => $pluginConfig['attributeOem'] ?? '',
-            OptionConstants::ATTRIBUTE_EAN         => $pluginConfig['attributeEan'] ?? '',
-            OptionConstants::ATTRIBUTE_ORDERNUMBER => $pluginConfig['attributeOrdernumber'] ?? '',   // fixme: this is not an ordernumber, but a product number
+            MergedPluginConfigKeyConstants::MAPPING_TYPE          => $pluginConfig['mappingType'] ,
+            MergedPluginConfigKeyConstants::ATTRIBUTE_OEM         => $pluginConfig['attributeOem'] ?? '',
+            MergedPluginConfigKeyConstants::ATTRIBUTE_EAN         => $pluginConfig['attributeEan'] ?? '',
+            MergedPluginConfigKeyConstants::ATTRIBUTE_ORDERNUMBER => $pluginConfig['attributeOrdernumber'] ?? '',   // fixme: this is not an ordernumber, but a product number
         ]);
     }
 

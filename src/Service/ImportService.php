@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\Service;
 
-use Shopware\Core\System\SystemConfig\SystemConfigService;
-use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
-use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportConfig;
 use Topdata\TopdataConnectorSW6\Exception\MissingPluginConfigurationException;
 use Topdata\TopdataConnectorSW6\Exception\TopdataConnectorPluginInactiveException;

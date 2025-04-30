@@ -6,7 +6,7 @@ namespace Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy;
 use Exception;
 use Override;
 use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
-use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
+use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;
 use Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
@@ -24,7 +24,7 @@ final class MappingStrategy_Distributor extends AbstractMappingStrategy
     const BATCH_SIZE = 500;
 
     public function __construct(
-        private readonly MergedPluginConfigHelperService $optionsHelperService,
+        private readonly MergedPluginConfigHelperService $mergedPluginConfigHelperService,
         private readonly TopdataToProductService         $topdataToProductService,
         private readonly TopdataWebserviceClient         $topdataWebserviceClient,
         private readonly ShopwareProductService          $shopwareProductService,
@@ -51,10 +51,10 @@ final class MappingStrategy_Distributor extends AbstractMappingStrategy
         $dataInsert = [];
 
         // ---- Determine the source of product numbers based on the mapping type
-        if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::DISTRIBUTOR_CUSTOM && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
-            $artnos = UtilMappingHelper::convertMultiArrayBinaryIdsToHex($this->shopwareProductService->getKeysByOptionValueUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER)));
-        } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
-            $artnos = $this->shopwareProductService->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER));
+        if ($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::MAPPING_TYPE) == MappingTypeConstants::DISTRIBUTOR_CUSTOM && $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_ORDERNUMBER) != '') {
+            $artnos = UtilMappingHelper::convertMultiArrayBinaryIdsToHex($this->shopwareProductService->getKeysByOptionValueUnique($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_ORDERNUMBER)));
+        } elseif ($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::MAPPING_TYPE) == MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD && $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_ORDERNUMBER) != '') {
+            $artnos = $this->shopwareProductService->getKeysByCustomFieldUnique($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_ORDERNUMBER));
         } else {
             $artnos = UtilMappingHelper::convertMultiArrayBinaryIdsToHex($this->shopwareProductService->getKeysByProductNumber());
         }

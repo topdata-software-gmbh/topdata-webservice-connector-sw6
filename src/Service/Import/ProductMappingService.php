@@ -4,7 +4,7 @@ namespace Topdata\TopdataConnectorSW6\Service\Import;
 
 use Doctrine\DBAL\Connection;
 use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
-use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
+use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\AbstractMappingStrategy;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_EanOem;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Distributor;
@@ -32,7 +32,7 @@ class ProductMappingService
 
     public function __construct(
         private readonly Connection                      $connection,
-        private readonly MergedPluginConfigHelperService $topfeedOptionsHelperService,
+        private readonly MergedPluginConfigHelperService $mergedPluginConfigHelperService,
 //        private readonly TopdataToProductService        $topdataToProductHelperService,
 //        private readonly TopdataWebserviceClient        $topdataWebserviceClient,
 //        private readonly ShopwareProductService         $shopwareProductService,
@@ -44,6 +44,8 @@ class ProductMappingService
     }
 
     /**
+     * TODO: remove the "TRUNCATE TABLE topdata_to_product" ... find a better way
+     *
      * Maps products from Topdata to Shopware 6 based on the configured mapping type.
      * This method truncates the `topdata_to_product` table and then executes the appropriate
      * mapping strategy.
@@ -51,7 +53,7 @@ class ProductMappingService
     public function mapProducts(): void
     {
         UtilProfiling::startTimer();
-        CliLogger::info('ProductMappingService::mapProducts() - using mapping type: ' . $this->topfeedOptionsHelperService->getOption(OptionConstants::MAPPING_TYPE));
+        CliLogger::info('ProductMappingService::mapProducts() - using mapping type: ' . $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::MAPPING_TYPE));
 
         // ---- Clear existing mappings
         $this->connection->executeStatement('TRUNCATE TABLE topdata_to_product');
@@ -72,8 +74,9 @@ class ProductMappingService
      */
     private function _createMappingStrategy(): AbstractMappingStrategy
     {
-        $mappingType = $this->topfeedOptionsHelperService->getOption(OptionConstants::MAPPING_TYPE);
+        $mappingType = $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::MAPPING_TYPE);
 
+        // FIXME? 7 Mapping Types but only 3 Mapping Strategies..
         return match ($mappingType) {
 
             // ---- Product Number Mapping Strategy
