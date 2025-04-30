@@ -33,6 +33,7 @@ use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
 use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
 use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
+use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 
 /**
  * MappingHelperService class.
@@ -227,7 +228,7 @@ class MappingHelperService
 
         // Fetch the brands from the remote server
         $brands = $this->topdataWebserviceClient->getBrands();
-        CliLogger::activity('Got ' . count($brands->data) . " brands from remote server\n");
+        CliLogger::activity('Got ' . UtilFormatter::formatInteger(count($brands->data)) . " brands from remote server\n");
         ImportReport::setCounter('Fetched Brands', count($brands->data));
 
         $duplicates = [];

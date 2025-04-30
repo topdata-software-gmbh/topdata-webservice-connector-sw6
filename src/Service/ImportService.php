@@ -150,8 +150,8 @@ class ImportService
     private function _handleProductOperations(ImportCommandCliOptionsDTO $cliOptionsDto): void
     {
         // ---- Product to device linking
-        if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionProduct()) {
-            CliLogger::getCliStyle()->blue('--all || --product');
+        if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionProductDevice()) {
+            CliLogger::getCliStyle()->blue('--all || --product-device');
             if ($cliOptionsDto->getOptionExperimentalV2()) {
                 CliLogger::getCliStyle()->caution('Using experimental V2 device linking logic!');
                 $this->productDeviceRelationshipServiceV2->syncDeviceProductRelationshipsV2();
