@@ -15,6 +15,7 @@ use Topdata\TopdataConnectorSW6\Service\Import\DeviceImportService;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingHelperService;
 use Topdata\TopdataConnectorSW6\Service\Import\ProductMappingService;
 use Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipService;
+use Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipServiceV2;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
@@ -29,18 +30,19 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
 class ImportService
 {
     public function __construct(
-        private readonly SystemConfigService              $systemConfigService,
-        private readonly MappingHelperService             $mappingHelperService,
-        private readonly ConfigCheckerService             $configCheckerService,
-        private readonly TopfeedOptionsHelperService      $topfeedOptionsHelperService,
-        private readonly PluginHelperService              $pluginHelperService,
-        private readonly ProductMappingService            $productMappingService,
-        private readonly TopdataDeviceSynonymsService     $deviceSynonymsService,
-        private readonly ProductInformationServiceV1Slow  $productInformationServiceV1Slow,
-        private readonly ProductInformationServiceV2      $productInformationServiceV2,
-        private readonly ProductDeviceRelationshipService $productDeviceRelationshipService,
-        private readonly DeviceImportService              $deviceImportService,
-        private readonly Import\DeviceMediaImportService  $deviceMediaImportService, // Added for refactoring
+        private readonly SystemConfigService                $systemConfigService,
+        private readonly MappingHelperService               $mappingHelperService,
+        private readonly ConfigCheckerService               $configCheckerService,
+        private readonly TopfeedOptionsHelperService        $topfeedOptionsHelperService,
+        private readonly PluginHelperService                $pluginHelperService,
+        private readonly ProductMappingService              $productMappingService,
+        private readonly TopdataDeviceSynonymsService       $deviceSynonymsService,
+        private readonly ProductInformationServiceV1Slow    $productInformationServiceV1Slow,
+        private readonly ProductInformationServiceV2        $productInformationServiceV2,
+        private readonly ProductDeviceRelationshipService   $productDeviceRelationshipServiceV1,
+        private readonly ProductDeviceRelationshipServiceV2 $productDeviceRelationshipServiceV2,
+        private readonly DeviceImportService                $deviceImportService,
+        private readonly Import\DeviceMediaImportService    $deviceMediaImportService, // Added for refactoring
     )
     {
     }
@@ -150,7 +152,13 @@ class ImportService
         // ---- Product to device linking
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionProduct()) {
             CliLogger::getCliStyle()->blue('--all || --product');
-            $this->productDeviceRelationshipService->syncDeviceProductRelationships();
+            if ($cliOptionsDto->getOptionExperimentalV2()) {
+                CliLogger::getCliStyle()->caution('Using experimental V2 device linking logic!');
+                $this->productDeviceRelationshipServiceV2->syncDeviceProductRelationshipsV2();
+            } else {
+                // Keep the original call as the default
+                $this->productDeviceRelationshipServiceV1->syncDeviceProductRelationshipsV1();
+            }
         }
 
         // ---- Device media

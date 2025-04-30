@@ -51,7 +51,7 @@ class ProductDeviceRelationshipService
      *
      * 04/2025 moved from MappingHelperService::setProducts() to ProductDeviceRelationshipService::syncDeviceProductRelationships()
      */
-    public function syncDeviceProductRelationships(): void
+    public function syncDeviceProductRelationshipsV1(): void
     {
         UtilProfiling::startTimer();
 

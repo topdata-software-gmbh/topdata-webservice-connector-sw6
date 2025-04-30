@@ -92,6 +92,7 @@
         <service id="Topdata\TopdataConnectorSW6\Service\MediaHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\Linking\ProductProductRelationshipService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipServiceV2" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\ProductImportSettingsService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\ProductInformationServiceV1Slow" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\ProductInformationServiceV2" autowire="true" />
