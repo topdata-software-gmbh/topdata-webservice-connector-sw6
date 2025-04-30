@@ -16,7 +16,7 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
 /**
  * 04/2025 created (extracted from MappingHelperService)
  */
-class ProductDeviceRelationshipService
+class ProductDeviceRelationshipServiceV1
 {
 
     const CHUNK_SIZE = 100;

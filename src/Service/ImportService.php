@@ -14,7 +14,7 @@ use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceSynonymsService;
 use Topdata\TopdataConnectorSW6\Service\Import\DeviceImportService;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingHelperService;
 use Topdata\TopdataConnectorSW6\Service\Import\ProductMappingService;
-use Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipService;
+use Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipServiceV1;
 use Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipServiceV2;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
@@ -39,7 +39,7 @@ class ImportService
         private readonly TopdataDeviceSynonymsService       $deviceSynonymsService,
         private readonly ProductInformationServiceV1Slow    $productInformationServiceV1Slow,
         private readonly ProductInformationServiceV2        $productInformationServiceV2,
-        private readonly ProductDeviceRelationshipService   $productDeviceRelationshipServiceV1,
+        private readonly ProductDeviceRelationshipServiceV1 $productDeviceRelationshipServiceV1,
         private readonly ProductDeviceRelationshipServiceV2 $productDeviceRelationshipServiceV2,
         private readonly DeviceImportService                $deviceImportService,
         private readonly Import\DeviceMediaImportService    $deviceMediaImportService, // Added for refactoring

@@ -91,11 +91,7 @@
         <service id="Topdata\TopdataConnectorSW6\Service\ProgressLoggingService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\MediaHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\Linking\ProductProductRelationshipService" autowire="true" />
-        <service id="Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipService" autowire="true" />
-        <service id="Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipServiceV2" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\ProductImportSettingsService" autowire="true" />
-        <service id="Topdata\TopdataConnectorSW6\Service\ProductInformationServiceV1Slow" autowire="true" />
-        <service id="Topdata\TopdataConnectorSW6\Service\ProductInformationServiceV2" autowire="true" />
         <!-- DB Helper Services -->
         <service id="Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceSynonymsService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataBrandService" autowire="true" />
@@ -113,6 +109,11 @@
         <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Distributor" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Default" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_ProductNumberAs" autowire="true"/>
+        <!-- WIP: experimental faster and more reliable syncing -->
+        <service id="Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipServiceV1" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipServiceV2" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\ProductInformationServiceV1Slow" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\ProductInformationServiceV2" autowire="true" />
 
         <!-- Controllers -->
         <service id="Topdata\TopdataConnectorSW6\Controller\Admin\TopdataWebserviceConnectorAdminApiController" public="true" autowire="true">
