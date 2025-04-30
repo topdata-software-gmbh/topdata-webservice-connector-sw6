@@ -10,7 +10,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
-use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
+use Topdata\TopdataConnectorSW6\DTO\ImportConfig;
 use Topdata\TopdataConnectorSW6\Exception\MissingPluginConfigurationException;
 use Topdata\TopdataConnectorSW6\Service\ImportService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
@@ -105,7 +105,7 @@ class Command_Import extends AbstractTopdataCommand
 
         try {
             // ---- Create DTO from input
-            $cliOptionsDto = new ImportCommandCliOptionsDTO($input);
+            $cliOptionsDto = ImportConfig::createFromCliInput($input);
             // ---- Execute the import service
             $this->importService->execute($cliOptionsDto);
             // ---- Mark as succeeded or failed based on the result

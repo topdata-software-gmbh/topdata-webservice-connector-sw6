@@ -7,7 +7,7 @@ namespace Topdata\TopdataConnectorSW6\Service;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
-use Topdata\TopdataConnectorSW6\DTO\ImportCommandCliOptionsDTO;
+use Topdata\TopdataConnectorSW6\DTO\ImportConfig;
 use Topdata\TopdataConnectorSW6\Exception\MissingPluginConfigurationException;
 use Topdata\TopdataConnectorSW6\Exception\TopdataConnectorPluginInactiveException;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceSynonymsService;
@@ -56,11 +56,11 @@ class ImportService
      * It checks plugin status, configuration, and then dispatches to specific
      * import operations based on the provided CLI options.
      *
-     * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
+     * @param ImportConfig $cliOptionsDto The DTO containing the CLI options.
      * @return int The error code indicating the success or failure of the import process.
      * @throws MissingPluginConfigurationException
      */
-    public function execute(ImportCommandCliOptionsDTO $cliOptionsDto): void
+    public function execute(ImportConfig $cliOptionsDto): void
     {
         CliLogger::writeln('Starting work...');
 
@@ -97,9 +97,9 @@ class ImportService
      * options provided in the ImportCommandCliOptionsDTO. It calls the relevant
      * helper methods to perform the import operations.
      *
-     * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
+     * @param ImportConfig $cliOptionsDto The DTO containing the CLI options.
      */
-    private function executeImportOperations(ImportCommandCliOptionsDTO $cliOptionsDto): void
+    private function executeImportOperations(ImportConfig $cliOptionsDto): void
     {
         // ---- Product Mapping
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionMapping()) {
@@ -120,9 +120,9 @@ class ImportService
      *
      * This method imports brands, series, device types and devices.
      *
-     * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
+     * @param ImportConfig $cliOptionsDto The DTO containing the CLI options.
      */
-    private function _handleDeviceOperations(ImportCommandCliOptionsDTO $cliOptionsDto): void
+    private function _handleDeviceOperations(ImportConfig $cliOptionsDto): void
     {
         // ---- Import all device related data
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDevice()) {
@@ -145,9 +145,9 @@ class ImportService
      * This method manages the import of product-related data, including linking products to devices,
      * loading device media, handling product information, and setting device synonyms.
      *
-     * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
+     * @param ImportConfig $cliOptionsDto The DTO containing the CLI options.
      */
-    private function _handleProductOperations(ImportCommandCliOptionsDTO $cliOptionsDto): void
+    private function _handleProductOperations(ImportConfig $cliOptionsDto): void
     {
         // ---- Product to device linking
         if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionProductDevice()) {
@@ -187,9 +187,9 @@ class ImportService
      * It checks if the TopFeed plugin is available and then uses the ProductInformationServiceV1Slow
      * to set the product information.
      *
-     * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
+     * @param ImportConfig $cliOptionsDto The DTO containing the CLI options.
      */
-    private function _handleProductInformation(ImportCommandCliOptionsDTO $cliOptionsDto): void
+    private function _handleProductInformation(ImportConfig $cliOptionsDto): void
     {
         // ---- Determine if product-related operation should be processed based on CLI options.
         if (
@@ -224,9 +224,9 @@ class ImportService
      *
      * This method creates product variations based on color and capacity, if the TopFeed plugin is available.
      *
-     * @param ImportCommandCliOptionsDTO $cliOptionsDto The DTO containing the CLI options.
+     * @param ImportConfig $cliOptionsDto The DTO containing the CLI options.
      */
-    private function _handleProductVariations(ImportCommandCliOptionsDTO $cliOptionsDto): void
+    private function _handleProductVariations(ImportConfig $cliOptionsDto): void
     {
         // ---- Check if product variations should be created
         if ($cliOptionsDto->getOptionProductVariations()) {
