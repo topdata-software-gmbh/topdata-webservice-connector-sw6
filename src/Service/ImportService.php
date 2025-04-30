@@ -132,7 +132,7 @@ class ImportService
             $this->deviceImportService->setDeviceTypes();
             $this->deviceImportService->setDevices();
         } elseif ($cliOptionsDto->getOptionDeviceOnly()) {
-            // ---- Import only devices
+            // ---- Import only devices (TODO: remove this option)
             CliLogger::getCliStyle()->blue('--device-only');
             $this->deviceImportService->setDevices();
         }
