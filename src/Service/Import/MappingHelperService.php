@@ -26,7 +26,7 @@ use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceTypeService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataSeriesService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
-use Topdata\TopdataConnectorSW6\Service\TopfeedOptionsHelperService;
+use Topdata\TopdataConnectorSW6\Service\MergedPluginConfigHelperService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
@@ -111,22 +111,22 @@ class MappingHelperService
 
 
     public function __construct(
-        private readonly LoggerInterface             $logger,
-        private readonly Connection                  $connection,
-        private readonly EntityRepository            $topdataBrandRepository,
-        private readonly EntityRepository            $topdataDeviceRepository,
-        private readonly EntityRepository            $topdataSeriesRepository,
-        private readonly EntityRepository            $topdataDeviceTypeRepository,
-        private readonly EntityRepository            $productRepository,
-        private readonly ProductMappingService       $productMappingService,
-        private readonly TopfeedOptionsHelperService $optionsHelperService,
-        private readonly LocaleHelperService         $localeHelperService,
-        private readonly TopdataToProductService     $topdataToProductHelperService,
-        private readonly MediaHelperService          $mediaHelperService,
-        private readonly TopdataDeviceService        $topdataDeviceService,
-        private readonly TopdataWebserviceClient     $topdataWebserviceClient,
-        private readonly TopdataSeriesService        $topdataSeriesService,
-        private readonly TopdataDeviceTypeService    $topdataDeviceTypeService
+        private readonly LoggerInterface                 $logger,
+        private readonly Connection                      $connection,
+        private readonly EntityRepository                $topdataBrandRepository,
+        private readonly EntityRepository                $topdataDeviceRepository,
+        private readonly EntityRepository                $topdataSeriesRepository,
+        private readonly EntityRepository                $topdataDeviceTypeRepository,
+        private readonly EntityRepository                $productRepository,
+        private readonly ProductMappingService           $productMappingService,
+        private readonly MergedPluginConfigHelperService $optionsHelperService,
+        private readonly LocaleHelperService             $localeHelperService,
+        private readonly TopdataToProductService         $topdataToProductHelperService,
+        private readonly MediaHelperService              $mediaHelperService,
+        private readonly TopdataDeviceService            $topdataDeviceService,
+        private readonly TopdataWebserviceClient         $topdataWebserviceClient,
+        private readonly TopdataSeriesService            $topdataSeriesService,
+        private readonly TopdataDeviceTypeService        $topdataDeviceTypeService
     )
     {
         $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();

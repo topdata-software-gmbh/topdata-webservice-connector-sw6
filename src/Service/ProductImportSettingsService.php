@@ -44,8 +44,8 @@ class ProductImportSettingsService
     private array $productImportSettings = [];
 
     public function __construct(
-        private readonly TopfeedOptionsHelperService $optionsHelperService,
-        private readonly Connection                  $connection,
+        private readonly MergedPluginConfigHelperService $optionsHelperService,
+        private readonly Connection                      $connection,
     )
     {
     }

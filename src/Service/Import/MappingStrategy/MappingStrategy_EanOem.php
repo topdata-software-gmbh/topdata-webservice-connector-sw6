@@ -9,25 +9,28 @@ use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
-use Topdata\TopdataConnectorSW6\Service\TopfeedOptionsHelperService;
+use Topdata\TopdataConnectorSW6\Service\MergedPluginConfigHelperService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilMappingHelper;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 
 /**
+ * Implements the default mapping strategy for products, using OEM and EAN numbers.
  * 03/2025 created (extracted from ProductMappingService)
+ * 04/2025 renamed from MappingStrategy_Default to MappingStrategy_EanOem
  */
-final class MappingStrategy_Default extends AbstractMappingStrategy
+final class MappingStrategy_EanOem extends AbstractMappingStrategy
 {
     const BATCH_SIZE = 500;
+
     private array $setted;
 
     public function __construct(
-        private readonly TopFeedOptionsHelperService $optionsHelperService,
-        private readonly TopdataToProductService     $topdataToProductHelperService,
-        private readonly TopdataWebserviceClient     $topdataWebserviceClient,
-        private readonly ShopwareProductService      $shopwareProductService,
+        private readonly MergedPluginConfigHelperService $optionsHelperService,
+        private readonly TopdataToProductService         $topdataToProductHelperService,
+        private readonly TopdataWebserviceClient         $topdataWebserviceClient,
+        private readonly ShopwareProductService          $shopwareProductService,
     )
     {
     }
@@ -107,8 +110,6 @@ final class MappingStrategy_Default extends AbstractMappingStrategy
      * Processes EANs (European Article Numbers) by fetching data from the web service and mapping them to products.
      *
      * @param array $eanMap an associative array mapping EANs to product data
-     * @param array &$this->setted A reference to an array that keeps track of already processed products
-     * @param array &$dataInsert A reference to an array that accumulates data to be inserted into the repository
      *
      * @throws Exception if the web service does not return the expected number of pages
      */
@@ -167,7 +168,6 @@ final class MappingStrategy_Default extends AbstractMappingStrategy
      * Processes OEMs (Original Equipment Manufacturer numbers) by fetching data from the web service and mapping them to products.
      *
      * @param array $oemMap an associative array mapping OEMs to product data
-     * @param array &$this->setted A reference to an array that keeps track of already processed products
      *
      * @throws Exception if the web service does not return the expected number of pages
      */
@@ -226,7 +226,6 @@ final class MappingStrategy_Default extends AbstractMappingStrategy
      * Processes PCDs (Product Category Descriptions) by fetching data from the web service and mapping them to products.
      *
      * @param array $oemMap an associative array mapping OEMs to product data
-     * @param array &$this->setted A reference to an array that keeps track of already processed products
      *
      * @throws Exception if the web service does not return the expected number of pages
      */
@@ -297,6 +296,14 @@ final class MappingStrategy_Default extends AbstractMappingStrategy
      */
     // private function _mapDefault(): void
     #[Override]
+    /**
+     * Executes the default mapping strategy to link Topdata products to Shopware products.
+     *
+     * This method orchestrates the process of building maps for OEM and EAN numbers,
+     * then processes these maps to establish the links between Topdata and Shopware products.
+     *
+     * @throws Exception if any error occurs during the mapping process.
+     */
     public function map(): void
     {
         CliLogger::section('ProductMappingService::mapDefault()');

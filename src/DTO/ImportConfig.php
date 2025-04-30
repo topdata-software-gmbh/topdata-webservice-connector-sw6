@@ -11,19 +11,19 @@ use Symfony\Component\Console\Input\InputInterface;
  * we use a dto for easy access to the cli options and easier code navigation
  *
  * 10/2024 created.
- * 05/2025 renamed from ImportCommandCliOptionsDTO to ImportConfig
+ * 05/2025 renamed from ImportCommandImportConfig to ImportConfig
  */
 class ImportConfig
 {
     private bool $optionAll; // --all
     private bool $optionMapping; // --mapping
     private bool $optionDevice; // --device
-    private bool $optionDeviceOnly; // --device-only
+    private bool $optionDeviceOnly; // --device-only // todo: remove
     private bool $optionDeviceMedia; // --device-media
     private bool $optionDeviceSynonyms; // --device-synonyms
     private bool $optionProduct; // --product
     private bool $optionProductInformation; // --product-information
-    private bool $optionProductMediaOnly; // --product-media-only
+    private bool $optionProductMediaOnly; // --product-media-only // todo: remove
     private bool $optionProductVariations; // --product-variated
     private bool $optionExperimentalV2; // --experimental-v2, 04/2025 added
     private bool $optionProductDevice; // --product-device, 04/2025 added

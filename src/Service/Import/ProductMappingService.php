@@ -6,15 +6,17 @@ use Doctrine\DBAL\Connection;
 use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\AbstractMappingStrategy;
-use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Default;
+use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_EanOem;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Distributor;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_ProductNumberAs;
-use Topdata\TopdataConnectorSW6\Service\TopfeedOptionsHelperService;
+use Topdata\TopdataConnectorSW6\Service\MergedPluginConfigHelperService;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
  * Service class for mapping products between Topdata and Shopware 6.
+ * This service handles the process of mapping products from Topdata to Shopware 6,
+ * utilizing different mapping strategies based on the configured mapping type.
  * 07/2024 created (extracted from MappingHelperService).
  */
 class ProductMappingService
@@ -30,34 +32,45 @@ class ProductMappingService
 
     public function __construct(
         private readonly Connection                      $connection,
-        private readonly TopfeedOptionsHelperService     $topfeedOptionsHelperService,
+        private readonly MergedPluginConfigHelperService $topfeedOptionsHelperService,
 //        private readonly TopdataToProductService        $topdataToProductHelperService,
 //        private readonly TopdataWebserviceClient        $topdataWebserviceClient,
 //        private readonly ShopwareProductService         $shopwareProductService,
         private readonly MappingStrategy_ProductNumberAs $mappingStrategy_ProductNumberAs,
         private readonly MappingStrategy_Distributor     $mappingStrategy_Distributor,
-        private readonly MappingStrategy_Default         $mappingStrategy_Default,
+        private readonly MappingStrategy_EanOem          $mappingStrategy_Default,
     )
     {
     }
 
+    /**
+     * Maps products from Topdata to Shopware 6 based on the configured mapping type.
+     * This method truncates the `topdata_to_product` table and then executes the appropriate
+     * mapping strategy.
+     */
     public function mapProducts(): void
     {
         UtilProfiling::startTimer();
         CliLogger::info('ProductMappingService::mapProducts() - using mapping type: ' . $this->topfeedOptionsHelperService->getOption(OptionConstants::MAPPING_TYPE));
 
-        // Clear existing mappings
+        // ---- Clear existing mappings
         $this->connection->executeStatement('TRUNCATE TABLE topdata_to_product');
 
-        // Create the appropriate strategy based on mapping type
-        $strategy = $this->createMappingStrategy();
+        // ---- Create the appropriate strategy based on mapping type
+        $strategy = $this->_createMappingStrategy();
 
-        // Execute the strategy
+        // ---- Execute the strategy
         $strategy->map();
         UtilProfiling::stopTimer();
     }
 
-    private function createMappingStrategy(): AbstractMappingStrategy
+    /**
+     * Creates the appropriate mapping strategy based on the configured mapping type.
+     *
+     * @return AbstractMappingStrategy The mapping strategy to use.
+     * @throws \Exception If an unknown mapping type is encountered.
+     */
+    private function _createMappingStrategy(): AbstractMappingStrategy
     {
         $mappingType = $this->topfeedOptionsHelperService->getOption(OptionConstants::MAPPING_TYPE);
 

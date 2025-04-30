@@ -12,6 +12,7 @@ use Topdata\TopdataConnectorSW6\Exception\MissingPluginConfigurationException;
 use Topdata\TopdataConnectorSW6\Exception\TopdataConnectorPluginInactiveException;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceSynonymsService;
 use Topdata\TopdataConnectorSW6\Service\Import\DeviceImportService;
+use Topdata\TopdataConnectorSW6\Service\Import\DeviceMediaImportService;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingHelperService;
 use Topdata\TopdataConnectorSW6\Service\Import\ProductMappingService;
 use Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipServiceV1;
@@ -30,10 +31,9 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
 class ImportService
 {
     public function __construct(
-        private readonly SystemConfigService                $systemConfigService,
         private readonly MappingHelperService               $mappingHelperService,
         private readonly ConfigCheckerService               $configCheckerService,
-        private readonly TopfeedOptionsHelperService        $topfeedOptionsHelperService,
+        private readonly MergedPluginConfigHelperService    $mergedPluginConfigHelperService,
         private readonly PluginHelperService                $pluginHelperService,
         private readonly ProductMappingService              $productMappingService,
         private readonly TopdataDeviceSynonymsService       $deviceSynonymsService,
@@ -42,7 +42,7 @@ class ImportService
         private readonly ProductDeviceRelationshipServiceV1 $productDeviceRelationshipServiceV1,
         private readonly ProductDeviceRelationshipServiceV2 $productDeviceRelationshipServiceV2,
         private readonly DeviceImportService                $deviceImportService,
-        private readonly Import\DeviceMediaImportService    $deviceMediaImportService, // Added for refactoring
+        private readonly DeviceMediaImportService           $deviceMediaImportService, // Added for refactoring
     )
     {
     }
@@ -56,11 +56,11 @@ class ImportService
      * It checks plugin status, configuration, and then dispatches to specific
      * import operations based on the provided CLI options.
      *
-     * @param ImportConfig $cliOptionsDto The DTO containing the CLI options.
+     * @param ImportConfig $importConfig The DTO containing the CLI options.
      * @return int The error code indicating the success or failure of the import process.
      * @throws MissingPluginConfigurationException
      */
-    public function execute(ImportConfig $cliOptionsDto): void
+    public function execute(ImportConfig $importConfig): void
     {
         CliLogger::writeln('Starting work...');
 
@@ -74,13 +74,13 @@ class ImportService
             throw new MissingPluginConfigurationException();
         }
 
-        CliLogger::getCliStyle()->dumpDict($cliOptionsDto->toDict(), 'CLI Options DTO');
+        CliLogger::getCliStyle()->dumpDict($importConfig->toDict(), 'ImportConfig');
 
         // ---- Init webservice client
-        $this->_initOptions();
+        $this->mergedPluginConfigHelperService->init();
 
         // ---- Execute import operations based on options
-        $this->executeImportOperations($cliOptionsDto);
+        $this->executeImportOperations($importConfig);
 
         // ---- Dump report
         CliLogger::getCliStyle()->dumpCounters(ImportReport::getCountersSorted(), 'Counters Report');
@@ -94,25 +94,25 @@ class ImportService
      * Executes the import operations based on the provided CLI options.
      *
      * This method determines which import operations to execute based on the
-     * options provided in the ImportCommandCliOptionsDTO. It calls the relevant
+     * options provided in the ImportCommandImportConfig. It calls the relevant
      * helper methods to perform the import operations.
      *
-     * @param ImportConfig $cliOptionsDto The DTO containing the CLI options.
+     * @param ImportConfig $importConfig The DTO containing the CLI options.
      */
-    private function executeImportOperations(ImportConfig $cliOptionsDto): void
+    private function executeImportOperations(ImportConfig $importConfig): void
     {
         // ---- Product Mapping
-        if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionMapping()) {
+        if ($importConfig->getOptionAll() || $importConfig->getOptionMapping()) {
             CliLogger::getCliStyle()->blue('--all || --mapping');
             CliLogger::section('Mapping Products');
             $this->productMappingService->mapProducts();
         }
 
         // ---- Device operations
-        $this->_handleDeviceOperations($cliOptionsDto);
+        $this->_handleDeviceOperations($importConfig);
 
         // ---- Product operations
-        $this->_handleProductOperations($cliOptionsDto);
+        $this->_handleProductOperations($importConfig);
     }
 
     /**
@@ -120,18 +120,18 @@ class ImportService
      *
      * This method imports brands, series, device types and devices.
      *
-     * @param ImportConfig $cliOptionsDto The DTO containing the CLI options.
+     * @param ImportConfig $importConfig The DTO containing the CLI options.
      */
-    private function _handleDeviceOperations(ImportConfig $cliOptionsDto): void
+    private function _handleDeviceOperations(ImportConfig $importConfig): void
     {
         // ---- Import all device related data
-        if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDevice()) {
+        if ($importConfig->getOptionAll() || $importConfig->getOptionDevice()) {
             CliLogger::getCliStyle()->blue('--all || --device');
             $this->mappingHelperService->setBrands();
             $this->deviceImportService->setSeries();
             $this->deviceImportService->setDeviceTypes();
             $this->deviceImportService->setDevices();
-        } elseif ($cliOptionsDto->getOptionDeviceOnly()) {
+        } elseif ($importConfig->getOptionDeviceOnly()) {
             // ---- Import only devices (TODO: remove this option)
             CliLogger::getCliStyle()->blue('--device-only');
             $this->deviceImportService->setDevices();
@@ -145,14 +145,14 @@ class ImportService
      * This method manages the import of product-related data, including linking products to devices,
      * loading device media, handling product information, and setting device synonyms.
      *
-     * @param ImportConfig $cliOptionsDto The DTO containing the CLI options.
+     * @param ImportConfig $importConfig The DTO containing the CLI options.
      */
-    private function _handleProductOperations(ImportConfig $cliOptionsDto): void
+    private function _handleProductOperations(ImportConfig $importConfig): void
     {
         // ---- Product to device linking
-        if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionProductDevice()) {
+        if ($importConfig->getOptionAll() || $importConfig->getOptionProductDevice()) {
             CliLogger::getCliStyle()->blue('--all || --product-device');
-            if ($cliOptionsDto->getOptionExperimentalV2()) {
+            if ($importConfig->getOptionExperimentalV2()) {
                 CliLogger::getCliStyle()->caution('Using experimental V2 device linking logic!');
                 $this->productDeviceRelationshipServiceV2->syncDeviceProductRelationshipsV2();
             } else {
@@ -162,22 +162,22 @@ class ImportService
         }
 
         // ---- Device media
-        if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceMedia()) {
+        if ($importConfig->getOptionAll() || $importConfig->getOptionDeviceMedia()) {
             CliLogger::getCliStyle()->blue('--all || --device-media');
             $this->deviceMediaImportService->setDeviceMedia(); // Use the new dedicated service
         }
 
         // ---- Product information
-        $this->_handleProductInformation($cliOptionsDto);
+        $this->_handleProductInformation($importConfig);
 
         // ---- Device synonyms
-        if ($cliOptionsDto->getOptionAll() || $cliOptionsDto->getOptionDeviceSynonyms()) {
+        if ($importConfig->getOptionAll() || $importConfig->getOptionDeviceSynonyms()) {
             CliLogger::getCliStyle()->blue('--all || --device-synonyms');
             $this->deviceSynonymsService->setDeviceSynonyms();
         }
 
         // ---- Product variations
-        $this->_handleProductVariations($cliOptionsDto);
+        $this->_handleProductVariations($importConfig);
     }
 
     /**
@@ -187,15 +187,15 @@ class ImportService
      * It checks if the TopFeed plugin is available and then uses the ProductInformationServiceV1Slow
      * to set the product information.
      *
-     * @param ImportConfig $cliOptionsDto The DTO containing the CLI options.
+     * @param ImportConfig $importConfig The DTO containing the CLI options.
      */
-    private function _handleProductInformation(ImportConfig $cliOptionsDto): void
+    private function _handleProductInformation(ImportConfig $importConfig): void
     {
         // ---- Determine if product-related operation should be processed based on CLI options.
         if (
-            !$cliOptionsDto->getOptionAll() &&
-            !$cliOptionsDto->getOptionProductInformation() &&
-            !$cliOptionsDto->getOptionProductMediaOnly()
+            !$importConfig->getOptionAll() &&
+            !$importConfig->getOptionProductInformation() &&
+            !$importConfig->getOptionProductMediaOnly()
         ) {
             return;
         }
@@ -207,14 +207,11 @@ class ImportService
             return;
         }
 
-        // ---- go
-        $this->topfeedOptionsHelperService->loadTopdataTopFeedPluginConfig();
-
         // ---- Load product information or update media
-        if ($cliOptionsDto->getOptionExperimentalV2()) {
+        if ($importConfig->getOptionExperimentalV2()) {
             $this->productInformationServiceV2->setProductInformationV2();
         } else {
-            $this->productInformationServiceV1Slow->setProductInformationV1Slow($cliOptionsDto->getOptionProductMediaOnly());
+            $this->productInformationServiceV1Slow->setProductInformationV1Slow($importConfig->getOptionProductMediaOnly());
         }
     }
 
@@ -224,12 +221,12 @@ class ImportService
      *
      * This method creates product variations based on color and capacity, if the TopFeed plugin is available.
      *
-     * @param ImportConfig $cliOptionsDto The DTO containing the CLI options.
+     * @param ImportConfig $importConfig The DTO containing the CLI options.
      */
-    private function _handleProductVariations(ImportConfig $cliOptionsDto): void
+    private function _handleProductVariations(ImportConfig $importConfig): void
     {
         // ---- Check if product variations should be created
-        if ($cliOptionsDto->getOptionProductVariations()) {
+        if ($importConfig->getOptionProductVariations()) {
             // ---- Check if TopFeed plugin is available
             if ($this->pluginHelperService->isTopFeedPluginAvailable()) {
                 // ---- Create product variations
@@ -238,31 +235,6 @@ class ImportService
                 CliLogger::warning('You need TopFeed plugin to create variated products!');
             }
         }
-    }
-
-    /**
-     * Initializes the options for the import process.
-     *
-     * This method retrieves configuration settings from the system configuration
-     * and sets the corresponding options in the OptionsHelperService.
-     */
-    public function _initOptions(): void
-    {
-        $configDefaults = [
-            'attributeOem'         => '',
-            'attributeEan'         => '',
-            'attributeOrdernumber' => '',  // fixme: this is not an ordernumber, but a product number
-        ];
-
-        $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
-        $pluginConfig = array_merge($configDefaults, $pluginConfig);
-
-        $this->topfeedOptionsHelperService->setOptions([
-            OptionConstants::MAPPING_TYPE          => $pluginConfig['mappingType'],
-            OptionConstants::ATTRIBUTE_OEM         => $pluginConfig['attributeOem'],
-            OptionConstants::ATTRIBUTE_EAN         => $pluginConfig['attributeEan'],
-            OptionConstants::ATTRIBUTE_ORDERNUMBER => $pluginConfig['attributeOrdernumber'],
-        ]);
     }
 
 

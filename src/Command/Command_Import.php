@@ -104,10 +104,10 @@ class Command_Import extends AbstractTopdataCommand
 
 
         try {
-            // ---- Create DTO from input
-            $cliOptionsDto = ImportConfig::createFromCliInput($input);
+            // ---- Create Input Config DTO from cli options
+            $importConfig = ImportConfig::createFromCliInput($input);
             // ---- Execute the import service
-            $this->importService->execute($cliOptionsDto);
+            $this->importService->execute($importConfig);
             // ---- Mark as succeeded or failed based on the result
             $this->topdataReportService->markAsSucceeded($this->_getBasicReportData());
 

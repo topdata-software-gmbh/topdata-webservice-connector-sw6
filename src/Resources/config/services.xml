@@ -106,8 +106,8 @@
         <service id="Topdata\TopdataConnectorSW6\Service\Import\DeviceImportService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Import\DeviceMediaImportService" autowire="true"/>
         <!-- Mapping Strategies -->
+        <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_EanOem" autowire="true"/><!-- default -->
         <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Distributor" autowire="true"/>
-        <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Default" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_ProductNumberAs" autowire="true"/>
         <!-- WIP: experimental faster and more reliable syncing -->
         <service id="Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipServiceV1" autowire="true" />

@@ -57,9 +57,9 @@
 2.  **Conditional Logic in `ImportService`:**
     *   Modify the `_handleProductOperations` method in `ImportService.php`.
     *   Locate the call: `$this->productDeviceRelationshipService->syncDeviceProductRelationships();`
-    *   Replace it with conditional logic to check the `--experimental-v2` flag (retrieved from the `ImportCommandCliOptionsDTO`):
+    *   Replace it with conditional logic to check the `--experimental-v2` flag (retrieved from the `ImportCommandImportConfig`):
         ```php
-        if ($cliOptionsDto->getOptionExperimentalV2()) {
+        if ($importConfig->getOptionExperimentalV2()) {
             CliLogger::getCliStyle()->caution('Using experimental V2 device linking logic!');
             $this->productDeviceRelationshipServiceV2->syncDeviceProductRelationshipsV2();
         } else {

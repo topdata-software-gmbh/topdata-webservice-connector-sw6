@@ -38,7 +38,7 @@ class ProductInformationServiceV1Slow
 
     public function __construct(
         private readonly TopdataToProductService           $topdataToProductHelperService,
-        private readonly TopfeedOptionsHelperService       $topfeedOptionsHelperService,
+        private readonly MergedPluginConfigHelperService   $topfeedOptionsHelperService,
         private readonly ProductProductRelationshipService $productProductRelationshipService,
         private readonly EntityRepository                  $productRepository,
         private readonly TopdataWebserviceClient           $topdataWebserviceClient,

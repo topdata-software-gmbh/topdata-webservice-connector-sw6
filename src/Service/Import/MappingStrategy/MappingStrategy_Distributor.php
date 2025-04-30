@@ -10,7 +10,7 @@ use Topdata\TopdataConnectorSW6\Constants\OptionConstants;
 use Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
-use Topdata\TopdataConnectorSW6\Service\TopfeedOptionsHelperService;
+use Topdata\TopdataConnectorSW6\Service\MergedPluginConfigHelperService;
 use Topdata\TopdataConnectorSW6\Util\UtilMappingHelper;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
@@ -24,10 +24,10 @@ final class MappingStrategy_Distributor extends AbstractMappingStrategy
     const BATCH_SIZE = 500;
 
     public function __construct(
-        private readonly TopFeedOptionsHelperService $optionsHelperService,
-        private readonly TopdataToProductService     $topdataToProductService,
-        private readonly TopdataWebserviceClient     $topdataWebserviceClient,
-        private readonly ShopwareProductService      $shopwareProductService,
+        private readonly MergedPluginConfigHelperService $optionsHelperService,
+        private readonly TopdataToProductService         $topdataToProductService,
+        private readonly TopdataWebserviceClient         $topdataWebserviceClient,
+        private readonly ShopwareProductService          $shopwareProductService,
     )
     {
     }
