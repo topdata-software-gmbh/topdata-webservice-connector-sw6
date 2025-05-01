@@ -86,14 +86,13 @@ class ProductInformationServiceV1Slow
         CliLogger::lap(true);
 
         foreach ($batches as $idxBatch => $batch) {
-            CliLogger::activity('xxx3 - Getting data from remote server part ' . ($idxBatch + 1) . '/' . count($batches) . ' (' . count($batch) . ' products)...');
+            CliLogger::progress( ($idxBatch + 1), count($batches), 'Getting data from remote server xxx3');
 
             // ---- Fetch product data from the webservice
             $response = $this->topdataWebserviceClient->myProductList([
                 'products' => implode(',', $batch),
                 'filter'   => WebserviceFilterTypeConstants::all,
             ]);
-            CliLogger::activity(CliLogger::lap() . "sec\n");
 
             if (!isset($response->page->available_pages)) {
                 throw new WebserviceResponseException($response->error[0]->error_message . 'webservice response has no pages');

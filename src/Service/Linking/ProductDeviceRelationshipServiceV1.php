@@ -109,7 +109,8 @@ class ProductDeviceRelationshipServiceV1
         foreach ($topidsChunked as $idxChunk => $productIds) {
 
             // ---- fetch products from webservice
-            CliLogger::writeln("Getting data from remote server part " . ($idxChunk + 1) . '/' . count($topidsChunked) . '...');
+//            CliLogger::writeln("Getting data from remote server part " . ($idxChunk + 1) . '/' . count($topidsChunked) . '...');
+            CliLogger::progress( ($idxChunk + 1), count($topidsChunked), 'Getting data from remote server xxx2');
             $response = $this->topdataWebserviceClient->myProductList([
                 'products' => implode(',', $productIds),
                 'filter'   => WebserviceFilterTypeConstants::product_application_in,

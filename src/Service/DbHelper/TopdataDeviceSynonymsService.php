@@ -55,7 +55,8 @@ class TopdataDeviceSynonymsService
 //                break;
 //            }
 
-            CliLogger::activity('xxx1 - Getting data from remote server part ' . ($idxChunk + 1) . '/' . count($chunks) . '...');
+//            CliLogger::activity('xxx1 - Getting data from remote server part ' . ($idxChunk + 1) . '/' . count($chunks) . '...');
+            CliLogger::progress( ($idxChunk + 1), count($chunks), 'Getting data from remote server xxx1');
             $response = $this->topdataWebserviceClient->myProductList([
                 'products' => implode(',', array_keys($chunk)),
                 'filter'   => WebserviceFilterTypeConstants::all,

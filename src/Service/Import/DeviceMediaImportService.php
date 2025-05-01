@@ -72,7 +72,7 @@ class DeviceMediaImportService
         CliLogger::lap(true);
         while (true) {
             $chunkNumber++;
-            CliLogger::activity("\nGetting media chunk $chunkNumber from remote server...");
+            CliLogger::activity("\nFetching media chunk $chunkNumber from remote server...");
             ImportReport::incCounter('Device Media Chunks');
             $models = $this->topdataWebserviceClient->getModels($chunkSize, $start);
             CliLogger::activity(CliLogger::lap() . 'sec. ');
