@@ -212,10 +212,23 @@ class ProductDeviceRelationshipServiceV2
                 $totalInserted = 0;
                 
                 foreach ($insertDataChunks as $insertChunk) {
-                    $insertCount = $this->connection->executeStatement('
-                        INSERT INTO topdata_device_to_product (device_id, product_id, product_version_id, created_at)
-                        VALUES ' . implode(',', $insertChunk)
-                    );
+//                    $insertCount = $this->connection->executeStatement('
+//                        INSERT INTO topdata_device_to_product (device_id, product_id, product_version_id, created_at)
+//                        VALUES ' . implode(',', $insertChunk)
+//                    );
+
+                    // crash workaround with "ON DUPLICATE KEY UPDATE"
+                    $sql = '
+                        INSERT INTO topdata_device_to_product 
+                            (device_id, product_id, product_version_id, created_at) 
+                        VALUES ' . implode(',', $insertChunk) . '
+                        ON DUPLICATE KEY UPDATE 
+                            product_id = VALUES(product_id), 
+                            product_version_id = VALUES(product_version_id)
+                            -- updated_at = NOW() 
+                    ';
+                    $insertCount = $this->connection->executeStatement($sql);
+
                     $totalInserted += $insertCount;
                 }
                 

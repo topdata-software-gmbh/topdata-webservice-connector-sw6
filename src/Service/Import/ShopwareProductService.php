@@ -155,14 +155,14 @@ class ShopwareProductService
     public function getKeysByCustomFieldUnique(string $technicalName, ?string $fieldName = null)
     {
         //$technicalName = $this->getCustomFieldTechnicalName($optionName);
-        $rez = $this->connection
-            ->prepare('SELECT '
-                . ' custom_fields, '
-                . ' LOWER(HEX(product_id)) as `id`, '
-                . ' LOWER(HEX(product_version_id)) as version_id'
-                . ' FROM product_translation ');
-        $rez->execute();
-        $results = $rez->fetchAllAssociative();
+        $rez = $this->connection->prepare('SELECT 
+                 custom_fields, 
+                 LOWER(HEX(product_id)) as `id`, 
+                 LOWER(HEX(product_version_id)) as version_id
+                 FROM product_translation 
+        ');
+
+        $results = $rez->execute()->fetchAllAssociative();
         $returnArray = [];
 
         // ---- Iterate through the results and extract custom field values

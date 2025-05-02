@@ -123,7 +123,7 @@ class TopdataWebserviceClient
         return $this->httpGet('/match/ean', $params);
     }
 
-    public function matchMyDistributer(array $params = []): mixed
+    public function matchMyDistributor(array $params = []): mixed
     {
         return $this->httpGet('/match/distributor', $params);
     }

@@ -49,26 +49,14 @@ final class MappingStrategy_Distributor extends AbstractMappingStrategy
     public function map(): void
     {
         $dataInsert = [];
-
-        // ---- Determine the source of product numbers based on the mapping type
-        if ($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::MAPPING_TYPE) == MappingTypeConstants::DISTRIBUTOR_CUSTOM && $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_ORDERNUMBER) != '') {
-            $artnos = UtilMappingHelper::convertMultiArrayBinaryIdsToHex($this->shopwareProductService->getKeysByOptionValueUnique($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_ORDERNUMBER)));
-        } elseif ($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::MAPPING_TYPE) == MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD && $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_ORDERNUMBER) != '') {
-            $artnos = $this->shopwareProductService->getKeysByCustomFieldUnique($this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_ORDERNUMBER));
-        } else {
-            $artnos = UtilMappingHelper::convertMultiArrayBinaryIdsToHex($this->shopwareProductService->getKeysByProductNumber());
-        }
-
-        if (count($artnos) == 0) {
-            throw new Exception('distributor mapping 0 products found');
-        }
+        $artnos = $this->_getArticleNumbers();
 
         $stored = 0;
         CliLogger::info(UtilFormatter::formatInteger(count($artnos)) . ' products to check ...');
 
         // ---- Iterate through the pages of distributor data from the web service
-        for ($i = 1; ; $i++) {
-            $all_artnr = $this->topdataWebserviceClient->matchMyDistributer(['page' => $i]);
+        for ($page = 1; ; $page++) {
+            $all_artnr = $this->topdataWebserviceClient->matchMyDistributor(['page' => $page]);
             if (!isset($all_artnr->page->available_pages)) {
                 throw new Exception('distributor webservice no pages');
             }
@@ -102,11 +90,11 @@ final class MappingStrategy_Distributor extends AbstractMappingStrategy
                 }
             }
 
-            CliLogger::activity("\ndistributor $i/$available_pages");
-            CliLogger::mem();
-            CliLogger::writeln('');
-
-            if ($i >= $available_pages) {
+//            CliLogger::activity("\ndistributor $i/$available_pages");
+//            CliLogger::mem();
+//            CliLogger::writeln('');
+            CliLogger::progress( $page , count($available_pages), 'fetch distributor data');
+            if ($page >= $available_pages) {
                 break;
             }
         }
@@ -115,6 +103,30 @@ final class MappingStrategy_Distributor extends AbstractMappingStrategy
         }
         CliLogger::writeln("\n" . UtilFormatter::formatInteger($stored) . ' - stored topdata products');
         unset($artnos);
+    }
+
+    /**
+     * 05/2025 created (extracted from MappingStrategy_Distributor::map())
+     */
+    public function _getArticleNumbers(): array
+    {
+        // ---- Determine the source of product numbers based on the mapping type
+        $mappingType = $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::MAPPING_TYPE);
+        $attributeOrderNumber = $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_ORDERNUMBER); // FIXME: it is not the order number, but product number
+
+        if ($mappingType == MappingTypeConstants::DISTRIBUTOR_CUSTOM && $attributeOrderNumber != '') {
+            $artnos = UtilMappingHelper::convertMultiArrayBinaryIdsToHex($this->shopwareProductService->getKeysByOptionValueUnique($attributeOrderNumber));
+        } elseif ($mappingType == MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD && $attributeOrderNumber != '') {
+            $artnos = $this->shopwareProductService->getKeysByCustomFieldUnique($attributeOrderNumber);
+        } else {
+            $artnos = UtilMappingHelper::convertMultiArrayBinaryIdsToHex($this->shopwareProductService->getKeysByProductNumber());
+        }
+
+        if (count($artnos) == 0) {
+            throw new Exception('distributor mapping 0 products found');
+        }
+
+        return $artnos;
     }
 
 }
