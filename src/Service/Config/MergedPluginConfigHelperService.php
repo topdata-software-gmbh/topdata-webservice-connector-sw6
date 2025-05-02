@@ -1,6 +1,6 @@
 <?php
 
-namespace Topdata\TopdataConnectorSW6\Service;
+namespace Topdata\TopdataConnectorSW6\Service\Config;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;

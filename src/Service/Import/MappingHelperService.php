@@ -8,7 +8,6 @@
 namespace Topdata\TopdataConnectorSW6\Service\Import;
 
 use Doctrine\DBAL\Connection;
-use Exception;
 use PDO;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Content\Product\ProductEntity;
@@ -18,20 +17,17 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
-use Topdata\TopdataConnectorSW6\Constants\WebserviceFilterTypeConstants;
-use Topdata\TopdataConnectorSW6\Service\MediaHelperService;
+use Topdata\TopdataConnectorSW6\Service\Config\MergedPluginConfigHelperService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceTypeService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataSeriesService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
+use Topdata\TopdataConnectorSW6\Service\MediaHelperService;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
-use Topdata\TopdataConnectorSW6\Service\MergedPluginConfigHelperService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
 use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
-use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Topdata\TopdataConnectorSW6\Service;
+namespace Topdata\TopdataConnectorSW6\Service\Config;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Uuid\Uuid;

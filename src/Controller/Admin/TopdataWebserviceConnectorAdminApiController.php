@@ -13,9 +13,9 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
-use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
-use Topdata\TopdataConnectorSW6\Service\ConfigCheckerService;
+use Topdata\TopdataConnectorSW6\Service\Checks\ConfigCheckerService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataBrandService;
+use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
 
 /**
  * 10/2024 renamed TopdataConnectorController --> TopdataWebserviceConnectorAdminApiController

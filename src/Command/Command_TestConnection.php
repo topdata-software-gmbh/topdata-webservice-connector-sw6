@@ -10,7 +10,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Topdata\TopdataConnectorSW6\Service\ConnectionTestService;
+use Topdata\TopdataConnectorSW6\Service\Checks\ConnectionTestService;
 use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
 use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 use Topdata\TopdataFoundationSW6\Service\TopConfigRegistry;

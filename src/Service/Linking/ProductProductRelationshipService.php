@@ -11,8 +11,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Enum\ProductRelationshipTypeEnum;
+use Topdata\TopdataConnectorSW6\Service\Config\ProductImportSettingsService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
-use Topdata\TopdataConnectorSW6\Service\ProductImportSettingsService;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 

@@ -83,15 +83,20 @@
 
         <!-- SERVICES -->
         <service id="Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient" autowire="true"/>
-        <service id="Topdata\TopdataConnectorSW6\Service\ConnectionTestService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ImportService" autowire="true"/>
-        <service id="Topdata\TopdataConnectorSW6\Service\ConfigCheckerService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\EntitiesHelperService" autowire="true" />
-        <service id="Topdata\TopdataConnectorSW6\Service\MergedPluginConfigHelperService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ProgressLoggingService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\MediaHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\Linking\ProductProductRelationshipService" autowire="true" />
-        <service id="Topdata\TopdataConnectorSW6\Service\ProductImportSettingsService" autowire="true" />
+
+        <!-- Config Services -->
+        <service id="Topdata\TopdataConnectorSW6\Service\Config\ProductImportSettingsService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\Config\MergedPluginConfigHelperService" autowire="true"/>
+
+        <!-- Checks Services -->
+        <service id="Topdata\TopdataConnectorSW6\Service\Checks\ConfigCheckerService" autowire="true"/>
+        <service id="Topdata\TopdataConnectorSW6\Service\Checks\ConnectionTestService" autowire="true"/>
+
         <!-- DB Helper Services -->
         <service id="Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceSynonymsService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataBrandService" autowire="true" />

@@ -1,9 +1,8 @@
 <?php
 
-namespace Topdata\TopdataConnectorSW6\Service;
+namespace Topdata\TopdataConnectorSW6\Service\Checks;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
-use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
  * a service which checks if the plugin configuration is valid.

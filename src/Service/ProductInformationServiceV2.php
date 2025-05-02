@@ -6,6 +6,8 @@ use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Topdata\TopdataConnectorSW6\Service\Config\MergedPluginConfigHelperService;
+use Topdata\TopdataConnectorSW6\Service\Config\ProductImportSettingsService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Service\Linking\ProductProductRelationshipService;
 use Topdata\TopdataFoundationSW6\Service\ManufacturerService;

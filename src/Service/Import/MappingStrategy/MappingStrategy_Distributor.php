@@ -7,10 +7,10 @@ use Exception;
 use Override;
 use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;
-use Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService;
+use Topdata\TopdataConnectorSW6\Service\Config\MergedPluginConfigHelperService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
+use Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
-use Topdata\TopdataConnectorSW6\Service\MergedPluginConfigHelperService;
 use Topdata\TopdataConnectorSW6\Util\UtilMappingHelper;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
@@ -64,7 +64,7 @@ final class MappingStrategy_Distributor extends AbstractMappingStrategy
         }
 
         $stored = 0;
-        CliLogger::info(count($artnos) . ' products to check ...');
+        CliLogger::info(UtilFormatter::formatInteger(count($artnos)) . ' products to check ...');
 
         // ---- Iterate through the pages of distributor data from the web service
         for ($i = 1; ; $i++) {

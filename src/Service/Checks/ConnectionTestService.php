@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Topdata\TopdataConnectorSW6\Service;
+namespace Topdata\TopdataConnectorSW6\Service\Checks;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
+use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
 
 /**
  * 11/2024 created (extracted from TestConnectionCommand)
