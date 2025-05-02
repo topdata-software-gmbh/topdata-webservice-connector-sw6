@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Topdata\TopdataConnectorSW6\Command;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\LockInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -30,10 +32,13 @@ class Command_Import extends AbstractTopdataCommand
 {
 
 
+    private ?LockInterface $lock = null;
+
     public function __construct(
         private readonly ImportService        $importService,
         private readonly TopdataReportService $topdataReportService,
         private readonly SystemConfigService  $systemConfigService,
+        private readonly LockFactory          $lockFactory,
     )
     {
         parent::__construct();
@@ -92,37 +97,55 @@ class Command_Import extends AbstractTopdataCommand
      */
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        // ---- Get the command line (for the report)
-        $commandLine = $_SERVER['argv'] ? implode(' ', $_SERVER['argv']) : 'topdata:connector:import';
+        // ---- Create lock
+        $this->lock = $this->lockFactory->createLock('topdata-connector-import', 3600); // 1 hour TTL
 
-        // ---- Start the import report
-        $this->topdataReportService->newJobReport(TopdataJobTypeConstants::WEBSERVICE_IMPORT, $commandLine);
+        // ---- Attempt to acquire the lock
+        if (!$this->lock->acquire()) {
+            CliLogger::warning('The command topdata:connector:import is already running.');
 
-        // ---- print used credentials (TODO: a nice horizontal table and redact credentials)
-        $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
-        CliLogger::dump($config);
-
+            return Command::SUCCESS; // Exit gracefully
+        }
 
         try {
-            // ---- Create Input Config DTO from cli options
-            $importConfig = ImportConfig::createFromCliInput($input);
-            // ---- Execute the import service
-            $this->importService->execute($importConfig);
-            // ---- Mark as succeeded or failed based on the result
-            $this->topdataReportService->markAsSucceeded($this->_getBasicReportData());
+            // ---- Get the command line (for the report)
+            $commandLine = $_SERVER['argv'] ? implode(' ', $_SERVER['argv']) : 'topdata:connector:import';
 
-            return Command::SUCCESS;
-        }
-        catch (\Throwable $e) {
-            // ---- Handle exception and mark as failed
-            if( $e instanceof MissingPluginConfigurationException) {
-                CliLogger::warning(GlobalPluginConstants::ERROR_MESSAGE_NO_WEBSERVICE_CREDENTIALS);
+            // ---- Start the import report
+            $this->topdataReportService->newJobReport(TopdataJobTypeConstants::WEBSERVICE_IMPORT, $commandLine);
+
+            // ---- print used credentials (TODO: a nice horizontal table and redact credentials)
+            $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
+            CliLogger::dump($config);
+
+
+            try {
+                // ---- Create Input Config DTO from cli options
+                $importConfig = ImportConfig::createFromCliInput($input);
+                // ---- Execute the import service
+                $this->importService->execute($importConfig);
+                // ---- Mark as succeeded or failed based on the result
+                $this->topdataReportService->markAsSucceeded($this->_getBasicReportData());
+
+                return Command::SUCCESS;
             }
-            $reportData = $this->_getBasicReportData();
-            $reportData['error'] = UtilThrowable::toArray($e);
-            $this->topdataReportService->markAsFailed($reportData);
+            catch (\Throwable $e) {
+                // ---- Handle exception and mark as failed
+                if( $e instanceof MissingPluginConfigurationException) {
+                    CliLogger::warning(GlobalPluginConstants::ERROR_MESSAGE_NO_WEBSERVICE_CREDENTIALS);
+                }
+                $reportData = $this->_getBasicReportData();
+                $reportData['error'] = UtilThrowable::toArray($e);
+                $this->topdataReportService->markAsFailed($reportData);
 
-            throw $e;
+                throw $e;
+            }
+        } finally {
+            // ---- Release the lock
+            if ($this->lock) {
+                $this->lock->release();
+                $this->lock = null;
+            }
         }
     }
 
