@@ -115,7 +115,7 @@ class ProductInformationServiceV1Slow
                 $this->_unlinkProperties($currentChunkProductIds);
                 $this->_unlinkCategories($currentChunkProductIds);
             }
-            $this->_unlinkImages($currentChunkProductIds);
+            $this->mediaHelperService->unlinkImages($currentChunkProductIds);
 
             // ---- Process products
             foreach ($response->products as $product) {
@@ -183,28 +183,7 @@ class ProductInformationServiceV1Slow
         // ---- Delete duplicate media
         if (count($productDataDeleteDuplicateMedia)) {
             CliLogger::activity("\nDeleting product media duplicates...");
-            $chunks = array_chunk($productDataDeleteDuplicateMedia, 100);
-            foreach ($chunks as $chunk) {
-                $productIds = [];
-                $mediaIds = [];
-                $pmIds = [];
-                foreach ($chunk as $el) {
-                    $productIds[] = $el['productId'];
-                    $mediaIds[] = $el['mediaId'];
-                    $pmIds[] = $el['id'];
-                }
-                $productIds = '0x' . implode(', 0x', $productIds);
-                $mediaIds = '0x' . implode(', 0x', $mediaIds);
-                $pmIds = '0x' . implode(', 0x', $pmIds);
-
-                $this->connection->executeStatement("
-                    DELETE FROM product_media 
-                    WHERE (product_id IN ($productIds)) 
-                        AND (media_id IN ($mediaIds)) 
-                        AND(id NOT IN ($pmIds))
-                ");
-                CliLogger::activity();
-            }
+            $this->mediaHelperService->deleteDuplicateMedia($productDataDeleteDuplicateMedia);
             CliLogger::mem();
             CliLogger::activity(' ' . CliLogger::lap() . "sec\n");
         }
@@ -236,28 +215,6 @@ class ProductInformationServiceV1Slow
     }
 
 
-    /**
-     * Unlinks images from products.
-     *
-     * @param array $productIds Array of product IDs to unlink images from.
-     */
-    private function _unlinkImages(array $productIds): void
-    {
-        if (!count($productIds)) {
-            return;
-        }
-
-        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productImages', $productIds);
-        if (!count($ids)) {
-            return;
-        }
-        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productImagesDelete', $ids);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("UPDATE product SET product_media_id = NULL, product_media_version_id = NULL WHERE id IN ($ids)");
-            $this->connection->executeStatement("DELETE FROM product_media WHERE product_id IN ($ids)");
-        }
-    }
 
     /**
      * Unlinks categories from products.
@@ -514,4 +471,5 @@ class ProductInformationServiceV1Slow
 
         return $descriptionFromWebservice;
     }
+
 }

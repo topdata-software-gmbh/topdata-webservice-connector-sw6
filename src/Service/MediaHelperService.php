@@ -2,12 +2,16 @@
 
 namespace Topdata\TopdataConnectorSW6\Service;
 
+use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Media\MediaService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Topdata\TopdataConnectorSW6\Service\Config\ProductImportSettingsService;
+use Topdata\TopdataConnectorSW6\Util\ImportReport;
+use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
  * 11/2024 created (extracted from EntitiesHelperService)
@@ -21,10 +25,13 @@ class MediaHelperService
     private Context $context;
     private ?string $uploadFolderId = null;
 
+
     public function __construct(
-        private readonly EntityRepository $mediaRepository,
-        private readonly EntityRepository $mediaFolderRepository,
-        private readonly MediaService     $mediaService,
+        private readonly EntityRepository             $mediaRepository,
+        private readonly EntityRepository             $mediaFolderRepository,
+        private readonly MediaService                 $mediaService,
+        private readonly ProductImportSettingsService $productImportSettingsService,
+        private readonly Connection                   $connection,
     )
     {
         $this->context = Context::createDefaultContext();
@@ -184,5 +191,64 @@ class MediaHelperService
             $this->context
         );
     }
+
+
+    /**
+     * Unlinks images from products.
+     * 05/2025 moved from ProductInformationServiceV1Slow::_unlinkImages() to MediaHelperService::unlinkImages()
+     *
+     * @param array $productIds Array of product IDs to unlink images from.
+     */
+    public function unlinkImages(array $productIds): void
+    {
+        if (!count($productIds)) {
+            return;
+        }
+
+        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productImages', $productIds);
+        if (!count($ids)) {
+            return;
+        }
+        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productImagesDelete', $ids);
+        if (count($ids)) {
+            $ids = '0x' . implode(',0x', $ids);
+            $this->connection->executeStatement("UPDATE product SET product_media_id = NULL, product_media_version_id = NULL WHERE id IN ($ids)");
+            $this->connection->executeStatement("DELETE FROM product_media WHERE product_id IN ($ids)");
+        }
+    }
+
+
+    /**
+     * 05/2025 extracted from ProductInformationServiceV1Slow::setProductInformationV1Slow()
+     */
+    public function deleteDuplicateMedia(array $productDataDeleteDuplicateMedia): void
+    {
+        $chunks = array_chunk($productDataDeleteDuplicateMedia, 100);
+        foreach ($chunks as $chunk) {
+            $productIds = [];
+            $mediaIds = [];
+            $pmIds = [];
+            foreach ($chunk as $el) {
+                $productIds[] = $el['productId'];
+                $mediaIds[] = $el['mediaId'];
+                $pmIds[] = $el['id'];
+            }
+            $productIds = '0x' . implode(', 0x', $productIds);
+            $mediaIds = '0x' . implode(', 0x', $mediaIds);
+            $pmIds = '0x' . implode(', 0x', $pmIds);
+
+            $numDeleted = $this->connection->executeStatement("
+                    DELETE FROM product_media 
+                    WHERE (product_id IN ($productIds)) 
+                        AND (media_id IN ($mediaIds)) 
+                        AND(id NOT IN ($pmIds))
+            ");
+
+            ImportReport::incCounter('Deleted Duplicate Media', $numDeleted);
+
+            CliLogger::activity();
+        }
+    }
+
 
 }
