@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
+use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 
 /**
  * Service class for managing the mapping between Topdata IDs and Shopware product IDs.
@@ -58,7 +59,7 @@ class TopdataToProductService
             ');
 
             // ---- log to console
-            CliLogger::info('getTopdataProductMappings - fetched ' . count($rows) . ' mappings from database');
+            CliLogger::info('getTopdataProductMappings - fetched ' . UtilFormatter::formatInteger(count($rows)) . ' mappings from database');
             if (empty($rows)) {
                 CliLogger::warning('No mapped products found in database. Did you set the correct mapping in plugin config?');
             }

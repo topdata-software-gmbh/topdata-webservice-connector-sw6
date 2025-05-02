@@ -194,9 +194,24 @@ class ProductDeviceRelationshipServiceV1
             $insertDataChunks = array_chunk($insertData, 30);
 
             foreach ($insertDataChunks as $chunk) {
-                $this->connection->executeStatement('
-                        INSERT INTO topdata_device_to_product (device_id, product_id, product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
-                    ');
+                // fixme: here it crashes: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '\x01\x95`o\xDEkq\xC6\x9D\xAA(\xA3\xB1\xEE\xE6\xF4-\x85i\x85[F...' for key 'PRIMARY'
+//                $this->connection->executeStatement('
+//                        INSERT INTO topdata_device_to_product (device_id, product_id, product_version_id, created_at) VALUES ' . implode(',', $chunk) . '
+//                    ');
+
+                // crash workaround with "ON DUPLICATE KEY UPDATE"
+                $sql = '
+                    INSERT INTO topdata_device_to_product 
+                        (device_id, product_id, product_version_id, created_at) 
+                    VALUES ' . implode(',', $chunk) . '
+                    ON DUPLICATE KEY UPDATE 
+                        product_id = VALUES(product_id), 
+                        product_version_id = VALUES(product_version_id)
+                        -- updated_at = NOW() 
+                ';
+                $this->connection->executeStatement($sql);
+
+
                 CliLogger::activity();
             }
 
