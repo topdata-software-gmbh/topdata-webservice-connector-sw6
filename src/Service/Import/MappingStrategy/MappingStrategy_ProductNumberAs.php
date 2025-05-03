@@ -9,6 +9,9 @@ use Topdata\TopdataConnectorSW6\Util\UtilMappingHelper;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
+ * This strategy does NOT fetch any mappings from the webservice, 
+ * it simply uses the product number in the shop as the web service ID.
+ *
  * 03/2025 created (extracted from ProductMappingService)
  */
 final class MappingStrategy_ProductNumberAs extends AbstractMappingStrategy
