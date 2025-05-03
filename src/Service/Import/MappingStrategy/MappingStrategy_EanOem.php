@@ -404,7 +404,7 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
         CliLogger::section('Product Mapping Strategy: EAN/OEM/PCD');
 
         // 1. Check config
-        $useExperimentalCacheV2 = (bool)$importConfig->getOptionExperimentalV2();
+        $useExperimentalCacheV2 = TRUE; // (bool)$importConfig->getOptionExperimentalV2();
         CliLogger::info('Experimental V2 Cache Enabled: ' . ($useExperimentalCacheV2 ? 'Yes' : 'No'));
 
         // 2. Attempt to load from V2 cache (if enabled)
