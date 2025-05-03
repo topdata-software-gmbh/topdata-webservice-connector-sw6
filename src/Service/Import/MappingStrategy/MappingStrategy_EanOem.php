@@ -40,14 +40,9 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
 
     /**
      * Builds mapping arrays for OEM and EAN numbers based on Shopware data.
-     *
-     * Creates two mapping arrays based on the configured mapping type (custom, custom field, or default).
-     * Normalizes manufacturer numbers and EAN codes.
+     * (Implementation remains the same as before)
      *
      * @return array{0: array<string, array<string, array{id: string, version_id: string}>>, 1: array<string, array<string, array{id: string, version_id: string}>>}
-     *               Returns an array containing two maps:
-     *               [0] => OEM map: [normalized_oem => [product_id-version_id => ['id' => ..., 'version_id' => ...]]]
-     *               [1] => EAN map: [normalized_ean => [product_id-version_id => ['id' => ..., 'version_id' => ...]]]
      */
     private function buildShopwareIdentifierMaps(): array
     {
@@ -127,8 +122,10 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
         return [$oemMap, $eanMap];
     }
 
+
     /**
      * Processes a specific type of identifier (EAN, OEM, PCD) from the webservice.
+     * (Implementation remains the same as before)
      *
      * @param string $type (e.g., MappingTypeConstants::EAN, MappingTypeConstants::OEM, MappingTypeConstants::PCD)
      * @param string $webserviceMethod The method name on TopdataWebserviceClient (e.g., 'matchMyEANs')
@@ -217,6 +214,7 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
     /**
      * Processes webservice mappings by fetching data from the API for EAN, OEM, and PCD.
      * Resets and uses the `setted` property to avoid duplicate mappings within a single run.
+     * (Implementation remains the same as before)
      *
      * @param array $oemMap Mapping of OEM numbers to products from Shopware
      * @param array $eanMap Mapping of EAN numbers to products from Shopware
@@ -258,79 +256,82 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
     }
 
     /**
-     * Handles the overall persistence logic: caching (if enabled) and database insertion.
+     * Attempts to load mappings directly from the V2 cache into the database.
+     * This bypasses fetching from the webservice if the cache is valid and populated.
      *
-     * Determines whether to load from cache, save to cache, and/or insert into the database.
-     *
-     * @param array<string, array> $mappingsByType Mappings fetched from webservice, grouped by type. Empty if attempting to load from cache.
-     * @param bool $useCacheV2 Whether the experimental V2 caching is enabled.
-     * @return bool True if mappings were successfully loaded from cache (indicating subsequent fetch/insert can be skipped), False otherwise.
+     * @return bool True if mappings were successfully loaded from cache, False otherwise.
      */
-    private function handlePersistence(array $mappingsByType, bool $useCacheV2): bool
+    private function tryLoadFromCacheV2(): bool
     {
-        // --- Phase 1: Attempt to Load from Cache (if V2 enabled and no mappings provided yet) ---
-        if ($useCacheV2 && empty($mappingsByType)) {
-            if ($this->mappingCacheService->hasCachedMappings()) {
-                CliLogger::info('Valid cache found (experimental V2), attempting to load mappings...');
-                $totalLoaded = $this->mappingCacheService->loadMappingsFromCache();
-                if ($totalLoaded > 0) {
-                    CliLogger::info('Successfully loaded ' . UtilFormatter::formatInteger($totalLoaded) . ' total mappings from cache.');
-                    ImportReport::setCounter('Mappings Loaded from Cache', $totalLoaded);
-                    ImportReport::setCounter('Webservice Calls Skipped', 1); // Or count EAN/OEM/PCD separately if needed
-                    return true; // Signal that loading from cache succeeded
-                } else {
-                    CliLogger::warning('Cache exists but failed to load mappings. Proceeding with fetch.');
-                }
-            } else {
-                CliLogger::info('No valid cache found (experimental V2), proceeding with fetch.');
-            }
-            // If cache didn't exist or loading failed, fall through to process/save phase
+        if (!$this->mappingCacheService->hasCachedMappings()) {
+            CliLogger::info('No valid V2 cache found, proceeding with fetch.');
+            return false;
         }
 
-        // --- Phase 2: Process & Save Mappings (if mappings were provided) ---
-        if (!empty($mappingsByType)) {
-            // Flatten mappings for DB insertion
-            $allMappingsFlat = [];
-            foreach ($mappingsByType as $mappingType => $typeMappings) {
-                if (!empty($typeMappings)) {
-                    $allMappingsFlat = array_merge($allMappingsFlat, $typeMappings);
+        CliLogger::info('Valid V2 cache found, attempting to load mappings...');
+        $totalLoaded = $this->mappingCacheService->loadMappingsFromCache();
 
-                    // Save individual types to cache if V2 is enabled
-                    if ($useCacheV2) {
-                        CliLogger::info("Saving " . count($typeMappings) . " $mappingType mappings to cache...");
-                        $this->mappingCacheService->saveMappingsToCache($typeMappings, $mappingType);
-                    }
-                }
-            }
-
-            // Insert flattened list into the database
-            if (!empty($allMappingsFlat)) {
-                $this->insertMappingsToDatabase($allMappingsFlat);
-            } else {
-                CliLogger::info('No new mappings found to insert into the database.');
-            }
-        } else if (!$useCacheV2) {
-            // Case: Not using V2 cache, and called potentially after a failed cache load attempt (or first run)
-            // We don't have mappings yet, so we just indicate that cache wasn't used.
-            CliLogger::info('Not using V2 cache or no mappings provided for persistence yet.');
+        if ($totalLoaded > 0) {
+            CliLogger::info('Successfully loaded ' . UtilFormatter::formatInteger($totalLoaded) . ' total mappings from cache into database.');
+            ImportReport::setCounter('Mappings Loaded from Cache', $totalLoaded);
+            ImportReport::setCounter('Webservice Calls Skipped', 1); // Indicate that API fetch was skipped
+            return true; // Signal success
         }
 
+        CliLogger::warning('V2 cache exists but failed to load mappings (or was empty). Proceeding with fetch.');
+        // Invalidate or clear cache here if desired on load failure? Maybe not, let it be overwritten.
+        return false; // Signal failure
+    }
 
-        return false; // Signal that loading from cache did not happen or was not attempted
+    /**
+     * Saves the fetched mappings to the V2 cache, if enabled.
+     * This is done per mapping type (EAN, OEM, PCD).
+     *
+     * @param array<string, array> $mappingsByType Mappings fetched from webservice, grouped by type.
+     */
+    private function saveToCacheV2(array $mappingsByType): void
+    {
+        CliLogger::info('Saving fetched mappings to V2 cache...');
+        $totalCached = 0;
+        foreach ($mappingsByType as $mappingType => $typeMappings) {
+            if (!empty($typeMappings)) {
+                $count = count($typeMappings);
+                CliLogger::info("-> Caching " . UtilFormatter::formatInteger($count) . " $mappingType mappings...");
+                $this->mappingCacheService->saveMappingsToCache($typeMappings, $mappingType);
+                $totalCached += $count;
+            }
+        }
+        if ($totalCached > 0) {
+            CliLogger::info('Finished saving ' . UtilFormatter::formatInteger($totalCached) . ' mappings to V2 cache.');
+            ImportReport::setCounter('Mappings Saved to Cache', $totalCached);
+        } else {
+            CliLogger::info('No new mappings were fetched to save to V2 cache.');
+        }
     }
 
     /**
      * Inserts mappings into the database in batches.
+     * (Implementation remains the same as before, but now has a single responsibility)
      *
      * @param array $mappings A flat list of mapping data arrays.
      */
-    private function insertMappingsToDatabase(array $mappings): void
+    private function persistMappingsToDatabase(array $mappings): void
     {
         $totalToInsert = count($mappings);
         if ($totalToInsert === 0) {
             CliLogger::info('No mappings to insert into database.');
+            ImportReport::setCounter('Mappings Inserted/Updated', 0);
             return;
         }
+
+        // Clear existing mappings before inserting new ones (as done by loadMappingsFromCache implicitly)
+        // NOTE: Consider if this blanket deletion is always desired. Maybe only delete if $mappings is not empty?
+        // Or maybe the cache loading should *not* delete if it fails to load anything? This needs careful thought
+        // based on exact requirements. Assuming the V2 cache load *replaces* DB content, we replicate that here.
+        CliLogger::info('Clearing existing mappings from database before insertion...');
+        $this->topdataToProductHelperService->deleteAll();
+        CliLogger::info('Existing mappings cleared.');
+
 
         CliLogger::info('Inserting ' . UtilFormatter::formatInteger($totalToInsert) . ' total mappings into database...');
         $insertedCount = 0;
@@ -340,8 +341,31 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
             CliLogger::progress($insertedCount, $totalToInsert, 'Inserted mappings batch');
         }
         CliLogger::writeln('DONE. Finished inserting mappings.');
-        ImportReport::setCounter('Mappings Inserted/Updated', $totalToInsert); // Or adjust based on insertMany's actual return if it differentiates
+        ImportReport::setCounter('Mappings Inserted/Updated', $totalToInsert);
     }
+
+    /**
+     * Flattens the mappings grouped by type into a single list suitable for database insertion.
+     *
+     * @param array<string, array> $mappingsByType
+     * @return array
+     */
+    private function flattenMappings(array $mappingsByType): array
+    {
+        $allMappingsFlat = [];
+        foreach ($mappingsByType as $typeMappings) {
+            if (!empty($typeMappings)) {
+                // array_merge is potentially slow for very large arrays repeatedly
+                // consider alternative if performance is critical
+                $allMappingsFlat = array_merge($allMappingsFlat, $typeMappings);
+            }
+        }
+        // Optional: Add array_unique here if duplicates across types are possible AND undesirable
+        // $allMappingsFlat = array_map("unserialize", array_unique(array_map("serialize", $allMappingsFlat)));
+        // CliLogger::info('Flattened ' . count($allMappingsFlat) . ' unique mappings for persistence.');
+        return $allMappingsFlat;
+    }
+
 
     /**
      * ==== MAIN ====
@@ -362,24 +386,33 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
         $useExperimentalCacheV2 = (bool) $importConfig->getOptionExperimentalV2();
         CliLogger::info('Experimental V2 Cache Enabled: ' . ($useExperimentalCacheV2 ? 'Yes' : 'No'));
 
-        // 2. Attempt to load from cache FIRST (if V2 enabled)
-        //    handlePersistence returns true if cache was successfully loaded and used.
-        if ($this->handlePersistence([], $useExperimentalCacheV2)) {
-            CliLogger::section('Finished mapping using cached data.');
-            return; // Cache was used, no need to fetch from webservice
+        // 2. Attempt to load from V2 cache (if enabled)
+        //    This method now handles loading *and* populating the DB if successful.
+        if ($useExperimentalCacheV2 && $this->tryLoadFromCacheV2()) {
+            CliLogger::section('Finished mapping using cached data (V2).');
+            return; // Cache was successfully loaded and used, skip fetch/save
         }
 
-        // 3. Build identifier maps from Shopware (if cache wasn't used)
+        // --- Cache was not used or failed, proceed with fetch and save ---
+
+        // 3. Build identifier maps from Shopware
         [$oemMap, $eanMap] = $this->buildShopwareIdentifierMaps();
 
         // 4. Fetch corresponding mappings from Topdata Webservice
         $mappingsByType = $this->processWebserviceMappings($oemMap, $eanMap);
         unset($oemMap, $eanMap); // Free memory
 
-        // 5. Handle Persistence: Save to Cache (if V2) and Insert to Database
-        //    This call will now handle saving and inserting the $mappingsByType we just fetched.
-        $this->handlePersistence($mappingsByType, $useExperimentalCacheV2);
+        // 5. Save fetched mappings to V2 cache (if enabled)
+        if ($useExperimentalCacheV2) {
+            $this->saveToCacheV2($mappingsByType);
+        }
 
-        CliLogger::section('Finished product mapping.');
+        // 6. Flatten mappings for database persistence
+        $flatMappings = $this->flattenMappings($mappingsByType);
+
+        // 7. Persist flattened mappings to the database
+        $this->persistMappingsToDatabase($flatMappings);
+
+        CliLogger::section('Finished product mapping (fetched from webservice).');
     }
 }

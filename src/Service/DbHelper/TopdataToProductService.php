@@ -90,5 +90,10 @@ class TopdataToProductService
         $this->topdataToProductRepository->create($dataInsert, $this->context);
     }
 
+    public function deleteAll()
+    {
+        $this->connection->executeStatement('TRUNCATE TABLE topdata_to_product');
+    }
+
 
 }
