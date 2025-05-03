@@ -76,8 +76,8 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
             $eans = UtilMappingHelper::_fixArrayBinaryIds($this->shopwareProductService->getKeysByEan());
         }
 
-        CliLogger::info(count($oems) . ' OEMs found');
-        CliLogger::info(count($eans) . ' EANs found');
+        CliLogger::info(UtilFormatter::formatInteger(count($oems)) . ' OEMs found');
+        CliLogger::info(UtilFormatter::formatInteger(count($eans)) . ' EANs found');
 
         // ---- Build OEM number mapping
         $oemMap = [];

@@ -175,7 +175,7 @@ class DeviceImportService
         CliLogger::writeln('Getting data from remote server...');
         CliLogger::lap(true);
         $series = $this->topdataWebserviceClient->getModelSeriesByBrandId();
-        CliLogger::activity('Got ' . count($series->data) . " records from remote server\n");
+        CliLogger::activity('Got ' . UtilFormatter::formatInteger(count($series->data)) . " series records from remote server\n");
         ImportReport::setCounter('Fetched Series', count($series->data));
         $topdataSeriesRepository = $this->topdataSeriesRepository;
         $dataCreate = [];

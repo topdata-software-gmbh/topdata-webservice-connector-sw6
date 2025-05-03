@@ -12,6 +12,7 @@ use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
+use Topdata\TopdataConnectorSW6\Util\ImportReport;
 
 /**
  * Implements a differential update approach for device-product relationships
@@ -63,12 +64,16 @@ class ProductDeviceRelationshipServiceV2
             }
         }
         $shopwareProductDbIds = array_unique($shopwareProductDbIds);
-        CliLogger::getCliStyle()->info(sprintf('Found %d unique Shopware product IDs to process', count($shopwareProductDbIds)));
+        $productCount = count($shopwareProductDbIds);
+        CliLogger::getCliStyle()->info(sprintf('Found %d unique Shopware product IDs to process', $productCount));
+        ImportReport::setCounter('linking_v2.products.found', $productCount);
 
         // Chunk the product IDs for processing
         $chunkSize = BatchSizeConstants::ENABLE_DEVICES;
         $productIdChunks = array_chunk($shopwareProductDbIds, $chunkSize);
-        CliLogger::getCliStyle()->info(sprintf('Split into %d chunks of max %d products each', count($productIdChunks), $chunkSize));
+        $chunkCount = count($productIdChunks);
+        CliLogger::getCliStyle()->info(sprintf('Split into %d chunks of max %d products each', $chunkCount, $chunkSize));
+        ImportReport::setCounter('linking_v2.products.chunks', $chunkCount);
 
         // Initialize active sets to store the database IDs of entities that should remain active
         $activeDeviceDbIds = [];
@@ -79,6 +84,7 @@ class ProductDeviceRelationshipServiceV2
         // Process each chunk
         foreach ($productIdChunks as $chunkIndex => $productIdsChunk) {
             CliLogger::getCliStyle()->info(sprintf('Processing chunk %d of %d...', $chunkIndex + 1, count($productIdChunks)));
+            ImportReport::incCounter('linking_v2.chunks.processed');
             
             // Map back to webservice IDs for this chunk
             $wsProductIdsForChunk = [];
@@ -92,6 +98,7 @@ class ProductDeviceRelationshipServiceV2
             $wsProductIdsForChunk = array_unique($wsProductIdsForChunk);
             
             // Fetch webservice links for the current chunk
+            ImportReport::incCounter('linking_v2.webservice.calls');
             $response = $this->topdataWebserviceClient->myProductList([
                 'products' => implode(',', $wsProductIdsForChunk),
                 'filter'   => WebserviceFilterTypeConstants::product_application_in,
@@ -116,6 +123,7 @@ class ProductDeviceRelationshipServiceV2
                 }
             }
             $deviceWsIds = array_unique($deviceWsIds);
+            ImportReport::incCounter('linking_v2.webservice.device_ids_fetched', count($deviceWsIds));
             
             if (empty($deviceWsIds)) {
                 CliLogger::getCliStyle()->info('No device links found for this chunk. Continuing...');
@@ -136,6 +144,9 @@ class ProductDeviceRelationshipServiceV2
             
             // Fetch local device details based on the webservice IDs
             $devices = $this->topdataDeviceService->getDeviceArrayByWsIdArray($deviceWsIds);
+            
+            $deviceCount = count($devices);
+            ImportReport::incCounter('linking_v2.database.devices_found', $deviceCount);
             
             if (empty($devices)) {
                 CliLogger::getCliStyle()->info('No matching devices found in database for this chunk. Continuing...');
@@ -175,6 +186,7 @@ class ProductDeviceRelationshipServiceV2
                 "DELETE FROM topdata_device_to_product WHERE product_id IN ($placeholders)",
                 $hexProductIds
             );
+            ImportReport::incCounter('linking_v2.links.deleted', $deleteCount);
             CliLogger::getCliStyle()->info(sprintf('Deleted %d existing device-product links for this chunk', $deleteCount));
             
             // Prepare data for inserting new links
@@ -232,6 +244,7 @@ class ProductDeviceRelationshipServiceV2
                     $totalInserted += $insertCount;
                 }
                 
+                ImportReport::incCounter('linking_v2.links.inserted', $totalInserted);
                 CliLogger::getCliStyle()->info(sprintf('Inserted %d new device-product links for this chunk', $totalInserted));
             } else {
                 CliLogger::getCliStyle()->info('No new device-product links to insert for this chunk');
@@ -256,6 +269,7 @@ class ProductDeviceRelationshipServiceV2
                     "UPDATE topdata_device SET is_enabled = 1 WHERE id IN ($placeholders)",
                     $hexIds
                 );
+                ImportReport::setCounter('linking_v2.status.devices.enabled', $enableCount);
                 CliLogger::getCliStyle()->info(sprintf('Enabled %d devices', $enableCount));
             }
             
@@ -266,6 +280,8 @@ class ProductDeviceRelationshipServiceV2
                     return hex2bin($id);
                 }, array_values($activeDeviceDbIds))
             );
+            ImportReport::setCounter('linking_v2.status.devices.disabled', $disableCount);
+            ImportReport::setCounter('linking_v2.active.devices', count($activeDeviceDbIds));
             CliLogger::getCliStyle()->info(sprintf('Disabled %d devices', $disableCount));
         } else {
             // If no active devices, disable all
@@ -288,6 +304,7 @@ class ProductDeviceRelationshipServiceV2
                     "UPDATE topdata_brand SET is_enabled = 1 WHERE id IN ($placeholders)",
                     $hexIds
                 );
+                ImportReport::setCounter('linking_v2.status.brands.enabled', $enableCount);
                 CliLogger::getCliStyle()->info(sprintf('Enabled %d brands', $enableCount));
             }
             
@@ -298,6 +315,8 @@ class ProductDeviceRelationshipServiceV2
                     return hex2bin($id);
                 }, array_values($activeBrandDbIds))
             );
+            ImportReport::setCounter('linking_v2.status.brands.disabled', $disableCount);
+            ImportReport::setCounter('linking_v2.active.brands', count($activeBrandDbIds));
             CliLogger::getCliStyle()->info(sprintf('Disabled %d brands', $disableCount));
         } else {
             // If no active brands, disable all
@@ -320,6 +339,7 @@ class ProductDeviceRelationshipServiceV2
                     "UPDATE topdata_series SET is_enabled = 1 WHERE id IN ($placeholders)",
                     $hexIds
                 );
+                ImportReport::setCounter('linking_v2.status.series.enabled', $enableCount);
                 CliLogger::getCliStyle()->info(sprintf('Enabled %d series', $enableCount));
             }
             
@@ -330,6 +350,8 @@ class ProductDeviceRelationshipServiceV2
                     return hex2bin($id);
                 }, array_values($activeSeriesDbIds))
             );
+            ImportReport::setCounter('linking_v2.status.series.disabled', $disableCount);
+            ImportReport::setCounter('linking_v2.active.series', count($activeSeriesDbIds));
             CliLogger::getCliStyle()->info(sprintf('Disabled %d series', $disableCount));
         } else {
             // If no active series, disable all
@@ -352,6 +374,7 @@ class ProductDeviceRelationshipServiceV2
                     "UPDATE topdata_device_type SET is_enabled = 1 WHERE id IN ($placeholders)",
                     $hexIds
                 );
+                ImportReport::setCounter('linking_v2.status.types.enabled', $enableCount);
                 CliLogger::getCliStyle()->info(sprintf('Enabled %d device types', $enableCount));
             }
             
@@ -362,6 +385,8 @@ class ProductDeviceRelationshipServiceV2
                     return hex2bin($id);
                 }, array_values($activeTypeDbIds))
             );
+            ImportReport::setCounter('linking_v2.status.types.disabled', $disableCount);
+            ImportReport::setCounter('linking_v2.active.types', count($activeTypeDbIds));
             CliLogger::getCliStyle()->info(sprintf('Disabled %d device types', $disableCount));
         } else {
             // If no active device types, disable all
@@ -372,12 +397,6 @@ class ProductDeviceRelationshipServiceV2
         }
         
         CliLogger::getCliStyle()->success('Devices to products linking completed (V2 differential approach)');
-        CliLogger::getCliStyle()->dumpDict([
-            'Active devices' => count($activeDeviceDbIds),
-            'Active brands' => count($activeBrandDbIds),
-            'Active series' => count($activeSeriesDbIds),
-            'Active device types' => count($activeTypeDbIds),
-        ]);
         
         UtilProfiling::stopTimer();
     }
