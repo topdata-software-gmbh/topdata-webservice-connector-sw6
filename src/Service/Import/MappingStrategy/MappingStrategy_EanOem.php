@@ -129,13 +129,13 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
 
     /**
      * Processes a specific type of identifier (EAN, OEM, PCD) from the webservice.
-     * (Implementation remains the same as before)
+     * Modified to store original webservice values alongside product mappings.
      *
      * @param string $type (e.g., MappingTypeConstants::EAN, MappingTypeConstants::OEM, MappingTypeConstants::PCD)
      * @param string $webserviceMethod The method name on TopdataWebserviceClient (e.g., 'matchMyEANs')
      * @param array $identifierMap The map built from Shopware data (e.g., $eanMap or $oemMap)
      * @param string $logLabel A label for logging (e.g., 'EANs', 'OEMs', 'PCDs')
-     * @return array Raw mappings data [{'topDataId': ..., 'productId': ..., 'productVersionId': ...}]
+     * @return array Raw mappings data [{'topDataId': ..., 'productId': ..., 'productVersionId': ..., 'value': ...}]
      * @throws Exception If the webservice response is invalid
      */
     private function fetchAndMapIdentifiersFromWebservice(string $type, string $webserviceMethod, array $identifierMap, string $logLabel): array
@@ -166,8 +166,11 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
                 foreach ($response->match as $productData) {
                     $topDataId = $productData->products_id;
                     foreach ($productData->values as $identifier) {
+                        // Store the original identifier value from the webservice
+                        $originalIdentifier = (string)$identifier;
+                        
                         // Normalize identifier from webservice similarly to how Shopware data was normalized
-                        $normalizedIdentifier = (string)$identifier;
+                        $normalizedIdentifier = $originalIdentifier;
                         if ($type === MappingTypeConstants::EAN) {
                             $normalizedIdentifier = ltrim(trim(preg_replace('/[^0-9]/', '', $normalizedIdentifier)), '0');
                         } else { // OEM, PCD
@@ -185,6 +188,7 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
                                         'topDataId'        => $topDataId,
                                         'productId'        => $shopwareProductData['id'],
                                         'productVersionId' => $shopwareProductData['version_id'],
+                                        'value'            => $originalIdentifier, // Store original value for caching
                                     ];
                                     $this->setted[$shopwareProductKey] = true; // Mark as mapped for this run
                                     $matchedCount++;
@@ -290,6 +294,7 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
     /**
      * Saves the fetched mappings to the V2 cache, if enabled.
      * This is done per mapping type (EAN, OEM, PCD).
+     * Modified to extract only topDataId and value for caching.
      *
      * @param array<string, array> $mappingsByType Mappings fetched from webservice, grouped by type.
      */
@@ -301,11 +306,22 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
             if (!empty($typeMappings)) {
                 $count = count($typeMappings);
                 CliLogger::info("-> Caching " . UtilFormatter::formatInteger($count) . " $mappingType mappings...");
-                $this->mappingCacheService->saveMappingsToCache($typeMappings, $mappingType);
+                
+                // Extract only the necessary fields for caching (topDataId and value)
+                // This makes the cache independent of Shopware product IDs
+                $cacheMappings = array_map(function($mapping) {
+                    return [
+                        'topDataId' => $mapping['topDataId'],
+                        'value'     => $mapping['value']
+                    ];
+                }, $typeMappings);
+                
+                $this->mappingCacheService->saveMappingsToCache($cacheMappings, $mappingType);
                 $totalCached += $count;
             }
         }
-// Display cache statistics after saving
+        
+        // Display cache statistics after saving
         $cacheStats = $this->mappingCacheService->getCacheStats();
         CliLogger::info('--- Cache Statistics ---');
         CliLogger::info('Total cached mappings: ' . UtilFormatter::formatInteger($cacheStats['total']));
@@ -367,6 +383,7 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
 
     /**
      * Flattens the mappings grouped by type into a single list suitable for database insertion.
+     * Removes the 'value' field which is only needed for caching.
      *
      * @param array<string, array> $mappingsByType
      * @return array
@@ -376,9 +393,18 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
         $allMappingsFlat = [];
         foreach ($mappingsByType as $typeMappings) {
             if (!empty($typeMappings)) {
+                // Extract only the fields needed for database insertion (exclude 'value')
+                $dbMappings = array_map(function($mapping) {
+                    return [
+                        'topDataId'        => $mapping['topDataId'],
+                        'productId'        => $mapping['productId'],
+                        'productVersionId' => $mapping['productVersionId']
+                    ];
+                }, $typeMappings);
+                
                 // array_merge is potentially slow for very large arrays repeatedly
                 // consider alternative if performance is critical
-                $allMappingsFlat = array_merge($allMappingsFlat, $typeMappings);
+                $allMappingsFlat = array_merge($allMappingsFlat, $dbMappings);
             }
         }
         // Optional: Add array_unique here if duplicates across types are possible AND undesirable

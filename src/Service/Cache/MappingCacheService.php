@@ -7,6 +7,7 @@ use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
+use Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
@@ -16,9 +17,12 @@ use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
  * Service for caching mapping data to improve import performance.
  *
  * This service handles caching of EAN, OEM, and PCD mappings to reduce API calls
- * to the TopData webservice during imports.
+ * to the TopData webservice during imports. The cache stores the actual mapping values
+ * from the webservice rather than Shopware product IDs, making it more flexible and
+ * reusable across different Shopware instances or after product data changes.
  *
  * 05/2025 created
+ * 05/2025 refactored to store webservice values instead of product IDs
  */
 class MappingCacheService
 {
@@ -35,6 +39,7 @@ class MappingCacheService
     public function __construct(
         private readonly Connection              $connection,
         private readonly TopdataToProductService $topdataToProductService,
+        private readonly ShopwareProductService  $shopwareProductService,
     )
     {
     }
@@ -86,13 +91,13 @@ class MappingCacheService
         $batchInsert = [];
 
         foreach ($mappings as $mapping) {
+            // Store the actual mapping value from the webservice instead of product IDs
             $batchInsert[] = [
-                'id'                 => Uuid::randomBytes(),
-                'mapping_type'       => $mappingType,
-                'top_data_id'        => $mapping['topDataId'],
-                'product_id'         => hex2bin($mapping['productId']),
-                'product_version_id' => hex2bin($mapping['productVersionId']),
-                'created_at'         => $currentDateTime,
+                'id'            => Uuid::randomBytes(),
+                'mapping_type'  => $mappingType,
+                'top_data_id'   => $mapping['topDataId'],
+                'mapping_value' => $mapping['value'], // Store the actual identifier value
+                'created_at'    => $currentDateTime,
             ];
 
             // Insert in batches to avoid memory issues
@@ -127,10 +132,10 @@ class MappingCacheService
     {
         $placeholders = [];
         for ($i = 0; $i < $batchSize; $i++) {
-            $placeholders[] = '(:id' . $i . ', :mapping_type' . $i . ', :top_data_id' . $i . ', :product_id' . $i . ', :product_version_id' . $i . ', :created_at' . $i . ')';
+            $placeholders[] = '(:id' . $i . ', :mapping_type' . $i . ', :top_data_id' . $i . ', :mapping_value' . $i . ', :created_at' . $i . ')';
         }
 
-        return 'INSERT INTO topdata_mapping_cache (id, mapping_type, top_data_id, product_id, product_version_id, created_at) VALUES ' . implode(', ', $placeholders);
+        return 'INSERT INTO topdata_mapping_cache (id, mapping_type, top_data_id, mapping_value, created_at) VALUES ' . implode(', ', $placeholders);
     }
 
     /**
@@ -152,6 +157,7 @@ class MappingCacheService
 
     /**
      * Loads mappings from the cache and inserts them into the topdata_to_product table.
+     * Dynamically finds matching Shopware products based on the cached mapping values.
      * 
      * @param string|null $mappingType Optional mapping type to load specific cache
      * @return int Number of mappings loaded
@@ -162,7 +168,7 @@ class MappingCacheService
         CliLogger::info('Loading mappings from cache...');
 
         // Build the query based on whether a specific mapping type was requested
-        $query = 'SELECT top_data_id, product_id, product_version_id FROM topdata_mapping_cache';
+        $query = 'SELECT mapping_type, top_data_id, mapping_value FROM topdata_mapping_cache';
         $params = [];
         
         if ($mappingType !== null) {
@@ -179,35 +185,157 @@ class MappingCacheService
             return 0;
         }
 
-        $batchInsert = [];
-        $total = 0;
-
+        // Clear existing mappings before inserting new ones
+        $this->topdataToProductService->deleteAll();
+        
+        // Group mappings by type for efficient processing
+        $mappingsByType = [];
         foreach ($cachedMappings as $mapping) {
-            $batchInsert[] = [
-                'topDataId'        => (int)$mapping['top_data_id'],
-                'productId'        => bin2hex($mapping['product_id']),
-                'productVersionId' => bin2hex($mapping['product_version_id']),
-            ];
-
-            $total++;
-
-            if (count($batchInsert) >= self::BATCH_SIZE) {
-                $this->topdataToProductService->insertMany($batchInsert);
-                $batchInsert = [];
+            $type = $mapping['mapping_type'];
+            if (!isset($mappingsByType[$type])) {
+                $mappingsByType[$type] = [];
             }
+            $mappingsByType[$type][] = [
+                'topDataId' => (int)$mapping['top_data_id'],
+                'value' => $mapping['mapping_value']
+            ];
+        }
+        
+        // Process each mapping type
+        $total = 0;
+        foreach ($mappingsByType as $type => $typeMappings) {
+            CliLogger::info('Processing ' . count($typeMappings) . ' ' . $type . ' mappings...');
+            
+            // Get the appropriate product map based on mapping type
+            $productMap = $this->getProductMapByType($type);
+            if (empty($productMap)) {
+                CliLogger::warning('No product matches found for ' . $type . ' mappings.');
+                continue;
+            }
+            
+            $batchInsert = [];
+            $matchCount = 0;
+            
+            foreach ($typeMappings as $mapping) {
+                $value = $mapping['value'];
+                $topDataId = $mapping['topDataId'];
+                
+                // Find matching products for this mapping value
+                if (isset($productMap[$value])) {
+                    foreach ($productMap[$value] as $productData) {
+                        $batchInsert[] = [
+                            'topDataId' => $topDataId,
+                            'productId' => $productData['id'],
+                            'productVersionId' => $productData['version_id'],
+                        ];
+                        
+                        $matchCount++;
+                        
+                        // Insert in batches to avoid memory issues
+                        if (count($batchInsert) >= self::BATCH_SIZE) {
+                            $this->topdataToProductService->insertMany($batchInsert);
+                            $batchInsert = [];
+                        }
+                    }
+                }
+            }
+            
+            // Insert any remaining mappings
+            if (!empty($batchInsert)) {
+                $this->topdataToProductService->insertMany($batchInsert);
+            }
+            
+            $total += $matchCount;
+            CliLogger::info('Matched ' . UtilFormatter::formatInteger($matchCount) . ' products for ' . $type . ' mappings.');
+            ImportReport::setCounter('Matched ' . $type . ' mappings', $matchCount);
         }
 
-        // Insert any remaining mappings
-        if (!empty($batchInsert)) {
-            $this->topdataToProductService->insertMany($batchInsert);
-        }
-
-        CliLogger::info('Loaded ' . UtilFormatter::formatInteger($total) . ' mappings from cache' . 
+        CliLogger::info('Loaded ' . UtilFormatter::formatInteger($total) . ' total mappings from cache' . 
             ($mappingType ? ' for type ' . $mappingType : '') . '.');
         ImportReport::setCounter('Loaded mappings from cache' . ($mappingType ? ' (' . $mappingType . ')' : ''), $total);
         
         UtilProfiling::stopTimer();
         return $total;
+    }
+    
+    /**
+     * Gets the appropriate product map based on mapping type.
+     * 
+     * @param string $mappingType The type of mapping (EAN, OEM, PCD)
+     * @return array Map of normalized values to product data
+     */
+    private function getProductMapByType(string $mappingType): array
+    {
+        switch ($mappingType) {
+            case MappingTypeConstants::EAN:
+                return $this->getEanMap();
+            case MappingTypeConstants::OEM:
+            case MappingTypeConstants::PCD: // PCD uses same format as OEM
+                return $this->getOemPcdMap();
+            default:
+                CliLogger::warning('Unknown mapping type: ' . $mappingType);
+                return [];
+        }
+    }
+    
+    /**
+     * Gets a map of EAN numbers to Shopware products.
+     * 
+     * @return array Map of normalized EAN values to product data
+     */
+    private function getEanMap(): array
+    {
+        $eans = $this->shopwareProductService->getKeysByEan();
+        $eanMap = [];
+        
+        foreach ($eans as $eanData) {
+            if (empty($eanData['ean'])) continue;
+            // Normalize: remove non-digits, trim, remove leading zeros
+            $normalizedEan = ltrim(trim(preg_replace('/[^0-9]/', '', (string)$eanData['ean'])), '0');
+            if (empty($normalizedEan)) continue;
+            
+            if (!isset($eanMap[$normalizedEan])) {
+                $eanMap[$normalizedEan] = [];
+            }
+            
+            $eanMap[$normalizedEan][] = [
+                'id' => $eanData['id'],
+                'version_id' => $eanData['version_id'],
+            ];
+        }
+        
+        CliLogger::info('Found ' . count($eanMap) . ' unique EANs in Shopware products.');
+        return $eanMap;
+    }
+    
+    /**
+     * Gets a map of OEM/PCD numbers to Shopware products.
+     * 
+     * @return array Map of normalized OEM/PCD values to product data
+     */
+    private function getOemPcdMap(): array
+    {
+        $oems = $this->shopwareProductService->getKeysByMpn();
+        $oemMap = [];
+        
+        foreach ($oems as $oemData) {
+            if (empty($oemData['manufacturer_number'])) continue;
+            // Normalize: lowercase, trim, remove leading zeros
+            $normalizedOem = strtolower(ltrim(trim((string)$oemData['manufacturer_number']), '0'));
+            if (empty($normalizedOem)) continue;
+            
+            if (!isset($oemMap[$normalizedOem])) {
+                $oemMap[$normalizedOem] = [];
+            }
+            
+            $oemMap[$normalizedOem][] = [
+                'id' => $oemData['id'],
+                'version_id' => $oemData['version_id'],
+            ];
+        }
+        
+        CliLogger::info('Found ' . count($oemMap) . ' unique OEMs in Shopware products.');
+        return $oemMap;
     }
 
     /**
