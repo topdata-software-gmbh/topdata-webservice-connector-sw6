@@ -39,7 +39,7 @@ class ProductMappingService
 //        private readonly ShopwareProductService         $shopwareProductService,
         private readonly MappingStrategy_ProductNumberAs $mappingStrategy_ProductNumberAs,
         private readonly MappingStrategy_Distributor     $mappingStrategy_Distributor,
-        private readonly MappingStrategy_EanOem          $mappingStrategy_Default,
+        private readonly MappingStrategy_EanOem          $mappingStrategy_EanOem,
     )
     {
     }
@@ -81,17 +81,18 @@ class ProductMappingService
         return match ($mappingType) {
 
             // ---- Product Number Mapping Strategy
+            // --> the sw6 product number is the topId
             MappingTypeConstants::PRODUCT_NUMBER_AS_WS_ID  => $this->mappingStrategy_ProductNumberAs,
 
             // ---- Distributor Mapping Strategy
-            MappingTypeConstants::DISTRIBUTOR_DEFAULT,
-            MappingTypeConstants::DISTRIBUTOR_CUSTOM,
-            MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD => $this->mappingStrategy_Distributor,
+            MappingTypeConstants::DISTRIBUTOR_DEFAULT, // the sw6 product number is the distributor's SKU
+            MappingTypeConstants::DISTRIBUTOR_CUSTOM, // distributor's SKU is a product property
+            MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD => $this->mappingStrategy_Distributor, //
 
             // ---- Default Mapping Strategy
             MappingTypeConstants::DEFAULT,
             MappingTypeConstants::CUSTOM,
-            MappingTypeConstants::CUSTOM_FIELD             => $this->mappingStrategy_Default,
+            MappingTypeConstants::CUSTOM_FIELD             => $this->mappingStrategy_EanOem,
 
             // ---- unknown mapping type --> throw exception
             default                                        => throw new \Exception('Unknown mapping type: ' . $mappingType),
@@ -205,7 +206,7 @@ class ProductMappingService
 //
 //        // ---- Determine the source of product numbers based on the mapping type
 //        if ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::DISTRIBUTOR_CUSTOM && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
-//            $artnos = UtilMappingHelper::convertMultiArrayBinaryIdsToHex($this->shopwareProductService->getKeysByOptionValueUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER)));
+//            $artnos = UtilMappingHelper::convertMultiArrayBinaryIdsToHex($this->shopwareProductPropertyService->getKeysByOptionValueUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER)));
 //        } elseif ($this->optionsHelperService->getOption(OptionConstants::MAPPING_TYPE) == MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD && $this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER) != '') {
 //            $artnos = $this->shopwareProductService->getKeysByCustomFieldUnique($this->optionsHelperService->getOption(OptionConstants::ATTRIBUTE_ORDERNUMBER));
 //        } else {

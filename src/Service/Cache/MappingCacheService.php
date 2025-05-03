@@ -253,7 +253,7 @@ class MappingCacheService
         
         // Get counts by mapping type
         $typeStats = $this->connection->fetchAllAssociative(
-            'SELECT mapping_type, COUNT(*) as count FROM topdata_mapping_cache GROUP BY mapping_type'
+            'SELECT mapping_type, COUNT(*) as count FROM topdata_mapping_cache GROUP BY mapping_type ORDER BY count DESC'
         );
         
         foreach ($typeStats as $typeStat) {

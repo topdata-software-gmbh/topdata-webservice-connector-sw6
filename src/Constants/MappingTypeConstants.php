@@ -16,7 +16,7 @@ class MappingTypeConstants
     const DISTRIBUTOR_CUSTOM       = 'distributorCustom';
     const DISTRIBUTOR_CUSTOM_FIELD = 'distributorCustomField';
     const DEFAULT                  = 'default';
-    const CUSTOM                   = 'custom';
+    const CUSTOM                   = 'custom'; // get ean and eom from product property
     const CUSTOM_FIELD             = 'customField';
     
     // Cache mapping types

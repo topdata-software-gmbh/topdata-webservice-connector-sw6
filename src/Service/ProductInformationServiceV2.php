@@ -21,29 +21,6 @@ use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
  */
 class ProductInformationServiceV2
 {
-    const CHUNK_SIZE   = 50;
-
-    private Context $context;
-
-    public function __construct(
-        private readonly TopdataToProductService           $topdataToProductHelperService,
-        private readonly MergedPluginConfigHelperService   $topfeedOptionsHelperService,
-        private readonly ProductProductRelationshipService $productProductRelationshipService,
-        private readonly EntityRepository                  $productRepository,
-        private readonly TopdataWebserviceClient           $topdataWebserviceClient,
-        private readonly ProductImportSettingsService      $productImportSettingsService,
-        private readonly EntitiesHelperService             $entitiesHelperService,
-        private readonly MediaHelperService                $mediaHelperService,
-        private readonly LoggerInterface                   $logger,
-        private readonly ManufacturerService               $manufacturerService,
-        private readonly Connection                        $connection,
-    )
-    {
-        $this->context = Context::createDefaultContext();
-    }
-
-
-
     /**
      * 04/2025 created, WIP .. this version tries to be faster than V1
      */

@@ -10,6 +10,7 @@ use Topdata\TopdataConnectorSW6\DTO\ImportConfig;
 use Topdata\TopdataConnectorSW6\Service\Cache\MappingCacheService;
 use Topdata\TopdataConnectorSW6\Service\Config\MergedPluginConfigHelperService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
+use Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductPropertyService;
 use Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
@@ -29,13 +30,16 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
 
     private array $setted = []; // Tracks product IDs already mapped in a single run to avoid duplicates
 
+
     public function __construct(
         private readonly MergedPluginConfigHelperService $mergedPluginConfigHelperService,
         private readonly TopdataToProductService         $topdataToProductHelperService,
         private readonly TopdataWebserviceClient         $topdataWebserviceClient,
         private readonly ShopwareProductService          $shopwareProductService,
         private readonly MappingCacheService             $mappingCacheService,
-    ) {
+        private readonly ShopwareProductPropertyService  $shopwareProductPropertyService,
+    )
+    {
     }
 
     /**
@@ -58,12 +62,12 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
             case MappingTypeConstants::CUSTOM:
                 if ($oemAttribute) {
                     $oems = UtilMappingHelper::_fixArrayBinaryIds(
-                        $this->shopwareProductService->getKeysByOptionValue($oemAttribute, 'manufacturer_number')
+                        $this->shopwareProductPropertyService->getKeysByOptionValue($oemAttribute, 'manufacturer_number') // FIXME: hardcoded name
                     );
                 }
                 if ($eanAttribute) {
                     $eans = UtilMappingHelper::_fixArrayBinaryIds(
-                        $this->shopwareProductService->getKeysByOptionValue($eanAttribute, 'ean')
+                        $this->shopwareProductPropertyService->getKeysByOptionValue($eanAttribute, 'ean')
                     );
                 }
                 break;
@@ -129,7 +133,7 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
      *
      * @param string $type (e.g., MappingTypeConstants::EAN, MappingTypeConstants::OEM, MappingTypeConstants::PCD)
      * @param string $webserviceMethod The method name on TopdataWebserviceClient (e.g., 'matchMyEANs')
-     * @param array  $identifierMap The map built from Shopware data (e.g., $eanMap or $oemMap)
+     * @param array $identifierMap The map built from Shopware data (e.g., $eanMap or $oemMap)
      * @param string $logLabel A label for logging (e.g., 'EANs', 'OEMs', 'PCDs')
      * @return array Raw mappings data [{'topDataId': ..., 'productId': ..., 'productVersionId': ...}]
      * @throws Exception If the webservice response is invalid
@@ -301,6 +305,23 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
                 $totalCached += $count;
             }
         }
+// Display cache statistics after saving
+        $cacheStats = $this->mappingCacheService->getCacheStats();
+        CliLogger::info('--- Cache Statistics ---');
+        CliLogger::info('Total cached mappings: ' . UtilFormatter::formatInteger($cacheStats['total']));
+        if (isset($cacheStats['by_type'])) {
+            CliLogger::info('Mappings by type:');
+            foreach ($cacheStats['by_type'] as $type => $count) {
+                CliLogger::info("  - {$type}: " . UtilFormatter::formatInteger($count));
+            }
+        }
+        if (isset($cacheStats['oldest'])) {
+            CliLogger::info('Oldest entry: ' . $cacheStats['oldest']);
+        }
+        if (isset($cacheStats['newest'])) {
+            CliLogger::info('Newest entry: ' . $cacheStats['newest']);
+        }
+        CliLogger::info('------------------------');
         if ($totalCached > 0) {
             CliLogger::info('Finished saving ' . UtilFormatter::formatInteger($totalCached) . ' mappings to V2 cache.');
             ImportReport::setCounter('Mappings Saved to Cache', $totalCached);
@@ -383,7 +404,7 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
         CliLogger::section('Product Mapping Strategy: EAN/OEM/PCD');
 
         // 1. Check config
-        $useExperimentalCacheV2 = (bool) $importConfig->getOptionExperimentalV2();
+        $useExperimentalCacheV2 = (bool)$importConfig->getOptionExperimentalV2();
         CliLogger::info('Experimental V2 Cache Enabled: ' . ($useExperimentalCacheV2 ? 'Yes' : 'No'));
 
         // 2. Attempt to load from V2 cache (if enabled)

@@ -10,6 +10,7 @@ use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportConfig;
 use Topdata\TopdataConnectorSW6\Service\Config\MergedPluginConfigHelperService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
+use Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductPropertyService;
 use Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\UtilMappingHelper;
@@ -29,6 +30,7 @@ final class MappingStrategy_Distributor extends AbstractMappingStrategy
         private readonly TopdataToProductService         $topdataToProductService,
         private readonly TopdataWebserviceClient         $topdataWebserviceClient,
         private readonly ShopwareProductService          $shopwareProductService,
+        private readonly ShopwareProductPropertyService  $shopwareProductPropertyService,
     )
     {
     }
@@ -113,13 +115,16 @@ final class MappingStrategy_Distributor extends AbstractMappingStrategy
     {
         // ---- Determine the source of product numbers based on the mapping type
         $mappingType = $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::MAPPING_TYPE);
-        $attributeOrderNumber = $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_ORDERNUMBER); // FIXME: it is not the order number, but product number
+        $attributeArticleNumber = $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::ATTRIBUTE_ORDERNUMBER); // FIXME: it is not the order number, but product number
 
-        if ($mappingType == MappingTypeConstants::DISTRIBUTOR_CUSTOM && $attributeOrderNumber != '') {
-            $artnos = UtilMappingHelper::convertMultiArrayBinaryIdsToHex($this->shopwareProductService->getKeysByOptionValueUnique($attributeOrderNumber));
-        } elseif ($mappingType == MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD && $attributeOrderNumber != '') {
-            $artnos = $this->shopwareProductService->getKeysByCustomFieldUnique($attributeOrderNumber);
+        if ($mappingType == MappingTypeConstants::DISTRIBUTOR_CUSTOM && $attributeArticleNumber != '') {
+            // the distributor's SKU is a product property
+            $artnos = UtilMappingHelper::convertMultiArrayBinaryIdsToHex($this->shopwareProductPropertyService->getKeysByOptionValueUnique($attributeArticleNumber));
+        } elseif ($mappingType == MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD && $attributeArticleNumber != '') {
+            // the distributor's SKU is a product custom field
+            $artnos = $this->shopwareProductService->getKeysByCustomFieldUnique($attributeArticleNumber);
         } else {
+            // the distributor's SKU is the product number
             $artnos = UtilMappingHelper::convertMultiArrayBinaryIdsToHex($this->shopwareProductService->getKeysByProductNumber());
         }
 
