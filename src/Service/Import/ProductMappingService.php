@@ -5,6 +5,7 @@ namespace Topdata\TopdataConnectorSW6\Service\Import;
 use Doctrine\DBAL\Connection;
 use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;
+use Topdata\TopdataConnectorSW6\DTO\ImportConfig;
 use Topdata\TopdataConnectorSW6\Service\Config\MergedPluginConfigHelperService;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\AbstractMappingStrategy;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Distributor;
@@ -50,7 +51,7 @@ class ProductMappingService
      * This method truncates the `topdata_to_product` table and then executes the appropriate
      * mapping strategy.
      */
-    public function mapProducts(): void
+    public function mapProducts(ImportConfig $importConfig): void
     {
         UtilProfiling::startTimer();
         CliLogger::info('ProductMappingService::mapProducts() - using mapping type: ' . $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::MAPPING_TYPE));
@@ -62,7 +63,7 @@ class ProductMappingService
         $strategy = $this->_createMappingStrategy();
 
         // ---- Execute the strategy
-        $strategy->map();
+        $strategy->map($importConfig);
         UtilProfiling::stopTimer();
     }
 

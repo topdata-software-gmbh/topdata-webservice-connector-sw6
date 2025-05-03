@@ -19,6 +19,7 @@ use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
+use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 
 /**
  * 04/2025 created (extracted from MappingHelperService)

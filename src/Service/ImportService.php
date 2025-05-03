@@ -7,6 +7,7 @@ namespace Topdata\TopdataConnectorSW6\Service;
 use Topdata\TopdataConnectorSW6\DTO\ImportConfig;
 use Topdata\TopdataConnectorSW6\Exception\MissingPluginConfigurationException;
 use Topdata\TopdataConnectorSW6\Exception\TopdataConnectorPluginInactiveException;
+use Topdata\TopdataConnectorSW6\Service\Cache\MappingCacheService;
 use Topdata\TopdataConnectorSW6\Service\Checks\ConfigCheckerService;
 use Topdata\TopdataConnectorSW6\Service\Config\MergedPluginConfigHelperService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceSynonymsService;
@@ -43,6 +44,7 @@ class ImportService
         private readonly ProductDeviceRelationshipServiceV2 $productDeviceRelationshipServiceV2,
         private readonly DeviceImportService                $deviceImportService,
         private readonly DeviceMediaImportService           $deviceMediaImportService, // Added for refactoring
+        private readonly MappingCacheService                $mappingCacheService, // Added for cache integration
     )
     {
     }
@@ -102,6 +104,9 @@ class ImportService
         // ---- Init webservice client
         $this->mergedPluginConfigHelperService->init();
 
+        // ---- Handle cache purging if requested
+        $this->handleCachePurging($importConfig);
+
         // ---- Execute import operations based on options
         $this->executeImportOperations($importConfig);
 
@@ -141,7 +146,7 @@ class ImportService
         if ($importConfig->getOptionAll() || $importConfig->getOptionMapping()) {
             CliLogger::getCliStyle()->blue('--all || --mapping');
             CliLogger::section('Mapping Products');
-            $this->productMappingService->mapProducts();
+            $this->productMappingService->mapProducts($importConfig);
         }
 
         // ---- Device operations
@@ -273,5 +278,22 @@ class ImportService
         }
     }
 
+    /**
+     * Handles cache purging if requested via the --purge-cache option.
+     *
+     * @param ImportConfig $importConfig The DTO containing the CLI options.
+     */
+    private function handleCachePurging(ImportConfig $importConfig): void
+    {
+        if ($importConfig->getOptionPurgeCache()) {
+            CliLogger::getCliStyle()->blue('--purge-cache');
+            CliLogger::section('Purging Mapping Cache');
+            
+            // Purge the cache
+            $this->mappingCacheService->purgeMappingsCache();
+            
+            CliLogger::success('Mapping cache purged successfully.');
+        }
+    }
 
 }

@@ -97,6 +97,9 @@
         <service id="Topdata\TopdataConnectorSW6\Service\Checks\ConfigCheckerService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Checks\ConnectionTestService" autowire="true"/>
 
+        <!-- Cache Services -->
+        <service id="Topdata\TopdataConnectorSW6\Service\Cache\MappingCacheService" autowire="true"/>
+
         <!-- DB Helper Services -->
         <service id="Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceSynonymsService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataBrandService" autowire="true" />

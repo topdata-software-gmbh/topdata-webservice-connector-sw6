@@ -8,6 +8,7 @@ use Shopware\Core\Framework\Migration\MigrationStep;
 
 /**
  * @internal
+ * Creates the mapping cache table for storing EAN/OEM/PCD mappings
  */
 #[Package('core')]
 class Migration1746267946CreateMappingCacheTable extends MigrationStep
@@ -36,5 +37,10 @@ class Migration1746267946CreateMappingCacheTable extends MigrationStep
               KEY `idx_created_at` (`created_at`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ');
+    }
+
+    public function updateDestructive(Connection $connection): void
+    {
+        // No destructive changes needed
     }
 }

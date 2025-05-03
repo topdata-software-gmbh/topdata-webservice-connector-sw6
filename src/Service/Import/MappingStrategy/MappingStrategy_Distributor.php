@@ -7,6 +7,7 @@ use Exception;
 use Override;
 use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;
+use Topdata\TopdataConnectorSW6\DTO\ImportConfig;
 use Topdata\TopdataConnectorSW6\Service\Config\MergedPluginConfigHelperService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService;
@@ -46,7 +47,7 @@ final class MappingStrategy_Distributor extends AbstractMappingStrategy
      */
     // private function _mapDistributor(): void
     #[Override]
-    public function map(): void
+    public function map(ImportConfig $importConfig): void
     {
         $dataInsert = [];
         $artnos = $this->_getArticleNumbers();

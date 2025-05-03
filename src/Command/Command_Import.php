@@ -83,6 +83,7 @@ class Command_Import extends AbstractTopdataCommand
         $this->addOption('product-variated', null, InputOption::VALUE_NONE, 'Generate variated products based on color and capacity information (Import variants with other colors, Import variants with other capacities should be enabled in TopFeed plugin, product information should be already imported);');
         $this->addOption('experimental-v2', 'x', InputOption::VALUE_NONE, 'switch to use the faster v2 of the connector'); // 04/2025 added
         $this->addOption('product-device', '', InputOption::VALUE_NONE, 'fetch the product device relations from webservice'); // 04/2025 added
+        $this->addOption('purge-cache', null, InputOption::VALUE_NONE, 'purge the mapping cache before import'); // 05/2025 added
     }
 
     /**

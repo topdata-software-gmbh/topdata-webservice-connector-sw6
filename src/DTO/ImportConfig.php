@@ -27,6 +27,7 @@ class ImportConfig
     private bool $optionProductVariations; // --product-variated
     private bool $optionExperimentalV2; // --experimental-v2, 04/2025 added
     private bool $optionProductDevice; // --product-device, 04/2025 added
+    private bool $optionPurgeCache; // --purge-cache, 05/2025 added
 
 
     /**
@@ -49,6 +50,7 @@ class ImportConfig
         $ret->optionProductVariations = (bool)$input->getOption('product-variated'); // Generate variated products based on color and capacity information
         $ret->optionExperimentalV2 = (bool)$input->getOption('experimental-v2');
         $ret->optionProductDevice = (bool)$input->getOption('product-device');
+        $ret->optionPurgeCache = (bool)$input->getOption('purge-cache'); // purge the mapping cache before import
 
         return $ret;
     }
@@ -113,6 +115,10 @@ class ImportConfig
         return $this->optionProductDevice;
     }
 
+    public function getOptionPurgeCache(): bool
+    {
+        return $this->optionPurgeCache;
+    }
 
     public function toDict(): array
     {
@@ -129,6 +135,7 @@ class ImportConfig
             'optionProductMedia'       => $this->optionProductMediaOnly,
             'optionProductVariations'  => $this->optionProductVariations,
             'optionExperimentalV2'     => $this->optionExperimentalV2,
+            'optionPurgeCache'         => $this->optionPurgeCache,
         ];
     }
 
