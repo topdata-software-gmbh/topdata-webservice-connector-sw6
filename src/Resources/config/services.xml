@@ -109,15 +109,14 @@
         <service id="Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService" autowire="true"/>
         <!-- Import Services -->
         <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingHelperService" autowire="true" />
-        <service id="Topdata\TopdataConnectorSW6\Service\Import\ProductMappingService" autowire="true"/>
+        <service id="Topdata\TopdataConnectorSW6\Service\Import\ProductMappingService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductPropertyService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Import\DeviceImportService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Import\DeviceMediaImportService" autowire="true"/>
         <!-- Mapping Strategies -->
-        <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_EanOem" autowire="true"/><!-- default -->
-        <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Distributor" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_ProductNumberAs" autowire="true"/>
+        <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Unified" autowire="true"/>
         <!-- WIP: experimental faster and more reliable syncing -->
         <service id="Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipServiceV1" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipServiceV2" autowire="true" />
