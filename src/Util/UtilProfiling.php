@@ -68,8 +68,9 @@ class UtilProfiling
      *       ], ...
      *  ]
      * 04/2025 created
+     * 05/2025 added sorting
      */
-    public static function getProfiling(): array
+    public static function getProfiling(string|null $sortBy = 'time'): array
     {
         $ret = [];
         foreach (self::$profiling as $key => $val) {
@@ -80,7 +81,10 @@ class UtilProfiling
             ];
         }
 
-        // TODO: optional sorting
+        // ---- sorting
+        if ($sortBy) {
+            usort($ret, fn($a, $b) => $a[$sortBy] <=> $b[$sortBy]);
+        }
 
         return $ret;
     }
