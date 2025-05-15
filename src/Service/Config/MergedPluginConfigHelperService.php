@@ -8,9 +8,9 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
  * Service class to handle options for Topdata's Topfeed plugin.
- * as some of the import options are in the settings of the Topfeed plugin, 
+ * as some of the import options are in the settings of the Topfeed plugin,
  * we need to load them here
- * 
+ *
  * 03/2025 renamed from OptionsHelperService to TopfeedOptionsHelperService
  * 04/2025 renamed TopfeedOptionsHelperService to MergedPluginConfigHelperService
  */
@@ -20,7 +20,8 @@ class MergedPluginConfigHelperService
 
     public function __construct(
         private readonly SystemConfigService $systemConfigService,
-    ) {
+    )
+    {
     }
 
     /**
@@ -28,8 +29,8 @@ class MergedPluginConfigHelperService
      *
      * An "option" can be either something from command line or a plugin setting.
      *
-     * @param string $name  the option name
-     * @param mixed  $value the option value
+     * @param string $name the option name
+     * @param mixed $value the option value
      */
     private function _setOption($name, $value): void
     {
@@ -52,17 +53,13 @@ class MergedPluginConfigHelperService
     /**
      * Get an option.
      *
-     * @param  string $name the option name
+     * @param string $name the option name
      * @return mixed  the option value or false if the option is not set
      */
     public function getOption(string $name): mixed
     {
         return $this->options[$name] ?? false;
     }
-
-
-
-
 
 
     /**
@@ -77,9 +74,15 @@ class MergedPluginConfigHelperService
     public function _loadOptionsFromTopFeedPluginConfig(): void
     {
         $topfeedPluginConfig = $this->systemConfigService->get('TopdataTopFeedSW6.config');
+        if (!$topfeedPluginConfig) {
+            CliLogger::warning('TopdataTopFeedSW6.config not found in system config');
+            return;
+        }
+
         $this->_setOptions($topfeedPluginConfig);
         $this->_setOption(MergedPluginConfigKeyConstants::PRODUCT_COLOR_VARIANT, $topfeedPluginConfig['productVariantColor']); // FIXME? 'productColorVariant' != 'productVariantColor'
         $this->_setOption(MergedPluginConfigKeyConstants::PRODUCT_CAPACITY_VARIANT, $topfeedPluginConfig['productVariantCapacity']); // FIXME? 'productCapacityVariant' != 'productVariantCapacity'
+
     }
 
     /**
@@ -95,7 +98,7 @@ class MergedPluginConfigHelperService
         $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
 
         $this->_setOptions([
-            MergedPluginConfigKeyConstants::MAPPING_TYPE          => $pluginConfig['mappingType'] ,
+            MergedPluginConfigKeyConstants::MAPPING_TYPE          => $pluginConfig['mappingType'],
             MergedPluginConfigKeyConstants::ATTRIBUTE_OEM         => $pluginConfig['attributeOem'] ?? '',
             MergedPluginConfigKeyConstants::ATTRIBUTE_EAN         => $pluginConfig['attributeEan'] ?? '',
             MergedPluginConfigKeyConstants::ATTRIBUTE_ORDERNUMBER => $pluginConfig['attributeOrdernumber'] ?? '',   // fixme: this is not an ordernumber, but a product number
