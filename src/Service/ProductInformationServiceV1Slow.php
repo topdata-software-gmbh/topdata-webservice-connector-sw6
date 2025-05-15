@@ -87,7 +87,7 @@ class ProductInformationServiceV1Slow
         CliLogger::lap(true);
 
         foreach ($batches as $idxBatch => $batch) {
-            CliLogger::progress( ($idxBatch + 1), count($batches), 'Getting data from remote server xxx3');
+            CliLogger::progress( ($idxBatch + 1), count($batches), 'Getting data from remote server [Product Information]...');
 
             // ---- Fetch product data from the webservice
             $response = $this->topdataWebserviceClient->myProductList([

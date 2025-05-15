@@ -62,7 +62,7 @@ class DeviceImportService
         CliLogger::section("\n\nDevice type");
 
         // Log the activity of getting data from the remote server
-        CliLogger::writeln('Getting data from remote server...');
+        CliLogger::writeln('Getting data from remote server [DeviceType]...');
         CliLogger::lap(true);
 
         // Fetch device types from the remote server
@@ -173,7 +173,7 @@ class DeviceImportService
     {
         UtilProfiling::startTimer();
         CliLogger::section("\n\nSeries");
-        CliLogger::writeln('Getting data from remote server...');
+        CliLogger::writeln('Getting data from remote server [Series]...');
         CliLogger::lap(true);
         $series = $this->topdataWebserviceClient->getModelSeriesByBrandId();
         CliLogger::activity('Got ' . UtilFormatter::formatInteger(count($series->data)) . " series records from remote server\n");
