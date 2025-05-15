@@ -431,7 +431,7 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
 
         // 1. Check config
         $useExperimentalCacheV2 = TRUE; // (bool)$importConfig->getOptionExperimentalV2();
-        CliLogger::info('Experimental V2 Cache Enabled: ' . ($useExperimentalCacheV2 ? 'Yes' : 'No'));
+        CliLogger::info('Webservice Cache Enabled (Experimental): ' . ($useExperimentalCacheV2 ? 'Yes' : 'No'));
 
         // 2. Attempt to load from V2 cache (if enabled)
         //    This method now handles loading *and* populating the DB if successful.

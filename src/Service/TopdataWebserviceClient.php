@@ -108,21 +108,46 @@ class TopdataWebserviceClient
         return $this->httpGet('/waregroups', $params);
     }
 
+    /**
+     * fetches the OEMs assigned to the topdata user account
+     * - paginated
+     * - the 'match' array contains the data
+     */
     public function matchMyOems(array $params = []): mixed
     {
         return $this->httpGet('/match/oem', $params);
     }
 
+    /**
+     * fetches the PCDs assigned to the topdata user account
+     *
+     * - paginated
+     * - the 'match' array contains the data
+     *
+     */
     public function matchMyPcds(array $params = []): mixed
     {
         return $this->httpGet('/match/pcd', $params);
     }
 
+    /**
+     * fetches the EANs assigned to the topdata user account
+     *
+     * - paginated
+     * - the 'match' array contains the data
+     *
+     */
     public function matchMyEANs(array $params = []): mixed
     {
         return $this->httpGet('/match/ean', $params);
     }
 
+    /**
+     * fetches the Distributor SKUs assigned to the topdata user account
+     *
+     * - paginated
+     * - the 'match' array contains the data
+     */
     public function matchMyDistributor(array $params = []): mixed
     {
         return $this->httpGet('/match/distributor', $params);
@@ -133,6 +158,10 @@ class TopdataWebserviceClient
         return $this->httpGet('/product_list', $params);
     }
 
+    /**
+     * - not paginated
+     * - the 'data' array contains the data
+     */
     public function getBrands(): mixed
     {
         return $this->httpGet('/finder/ink_toner/brands');

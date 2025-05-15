@@ -20,7 +20,7 @@ class CurlHttpClient
 {
     const CURL_TIMEOUT                         = 30;  // seconds
     const EXPONENTIAL_BACKOFF_INITIAL_DELAY_MS = 1000; // ms, for exponential backoff
-    const EXPONENTIAL_BACKOFF_MAX_RETRIES      = 5;
+    const EXPONENTIAL_BACKOFF_MAX_RETRIES      = 8; // 1s, 2s, 4s, 8s, ...
     const EXPONENTIAL_BACKOFF_MULTIPLIER       = 2.0;
 
     public function __construct(

@@ -9,6 +9,7 @@ use Topdata\TopdataConnectorSW6\Constants\WebserviceFilterTypeConstants;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
+use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 
 /**
  * TODO: split: Db Helper Service + Import Service
@@ -37,13 +38,15 @@ class TopdataDeviceSynonymsService
     {
         UtilProfiling::startTimer();
         CliLogger::section("\n\nDevice synonyms");
-        $availableDevices = [];
+        $enabledDevices = [];
         foreach ($this->topdataDeviceService->_getEnabledDevices() as $pr) {
-            $availableDevices[$pr['ws_id']] = bin2hex($pr['id']);
+            $enabledDevices[$pr['ws_id']] = bin2hex($pr['id']);
         }
-        $chunkSize = 50;
+        CliLogger::info(UtilFormatter::formatInteger(count($enabledDevices)) . " enabled devices found.");
 
-        $chunks = array_chunk($availableDevices, $chunkSize, true);
+        // ---- process chunks ----
+        $chunkSize = 50;
+        $chunks = array_chunk($enabledDevices, $chunkSize, true);
         CliLogger::lap(true);
 
         foreach ($chunks as $idxChunk => $chunk) {
@@ -78,13 +81,13 @@ class TopdataDeviceSynonymsService
                     foreach ($product->product_variants->products as $variant) {
                         if (($variant->type == 'synonym')
                             && isset($chunk[$product->products_id])
-                            && isset($availableDevices[$variant->id])
+                            && isset($enabledDevices[$variant->id])
                         ) {
                             $prodId = $chunk[$product->products_id];
                             if (!isset($variantsMap[$prodId])) {
                                 $variantsMap[$prodId] = [];
                             }
-                            $variantsMap[$prodId][] = $availableDevices[$variant->id];
+                            $variantsMap[$prodId][] = $enabledDevices[$variant->id];
                         }
                     }
                 }
