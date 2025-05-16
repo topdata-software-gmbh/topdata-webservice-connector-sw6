@@ -83,30 +83,36 @@ class TopdataWebserviceClient
     }
 
 
-    public function myProducts(array $params = []): mixed
-    {
-        return $this->httpGet('/my_products', $params);
-    }
-
-
-    public function myProductsOfWaregroup(int $waregroupId): mixed
-    {
-        if ($waregroupId <= 0) {
-            return false;
-        }
-
-        return $this->httpGet("/waregroup/$waregroupId");
-    }
-
-    public function myDistributorProducts(array $params = []): mixed
-    {
-        return $this->httpGet('/distributor_products', $params);
-    }
-
-    public function myWaregroups(array $params = []): mixed
-    {
-        return $this->httpGet('/waregroups', $params);
-    }
+//    public function myProducts(array $params = []): mixed
+//    {
+//        return $this->httpGet('/my_products', $params);
+//    }
+//
+//
+//    // unused
+//    public function myProductsOfWaregroup(int $waregroupId): mixed
+//    {
+//        if ($waregroupId <= 0) {
+//            return false;
+//        }
+//
+//        return $this->httpGet("/waregroup/$waregroupId");
+//    }
+//
+//    // unused
+//    public function myDistributorProducts(array $params = []): mixed
+//    {
+//        return $this->httpGet('/distributor_products', $params);
+//    }
+//
+//    /**
+//     * - no pagination
+//     * - the 'waregroups' array contains the data
+//     */
+//    public function myWaregroups(array $params = []): mixed
+//    {
+//        return $this->httpGet('/waregroups', $params);
+//    }
 
     /**
      * fetches the OEMs assigned to the topdata user account
@@ -179,21 +185,16 @@ class TopdataWebserviceClient
         return $this->httpGet('/finder/ink_toner/modelseries', $params);
     }
 
-    public function getModelsBySeriesId(int|string $brandId, int|string $seriesId): mixed
-    {
-        $params = ['brand_id' => $brandId, 'modelserie_id' => $seriesId];
-        return $this->httpGet('/finder/ink_toner/models', $params);
-    }
+//    public function getModelsBySeriesId(int|string $brandId, int|string $seriesId): mixed
+//    {
+//        $params = ['brand_id' => $brandId, 'modelserie_id' => $seriesId];
+//        return $this->httpGet('/finder/ink_toner/models', $params);
+//    }
 
-    public function getModels(int $limit = 500, int $start = 0): mixed
+    public function getModels(int $limit, int $start): mixed
     {
         $params = ['limit' => $limit, 'start' => $start];
         return $this->httpGet('/finder/ink_toner/models', $params);
-    }
-
-    public function getModelsByBrandId(int|string $brandId): mixed
-    {
-        return $this->httpGet('/finder/ink_toner/models', ['brand_id' => $brandId]);
     }
 
     public function getUserInfo(): mixed
@@ -201,8 +202,14 @@ class TopdataWebserviceClient
         return $this->httpGet('/user/user_info');
     }
 
-    public function productAccessories(int|string $id, array $params = []): mixed
-    {
-        return $this->httpGet("/product_accessories/$id", $params);
-    }
+//    public function getModelsByBrandId(int|string $brandId): mixed
+//    {
+//        return $this->httpGet('/finder/ink_toner/models', ['brand_id' => $brandId]);
+//    }
+
+
+//    public function productAccessories(int|string $id, array $params = []): mixed
+//    {
+//        return $this->httpGet("/product_accessories/$id", $params);
+//    }
 }
