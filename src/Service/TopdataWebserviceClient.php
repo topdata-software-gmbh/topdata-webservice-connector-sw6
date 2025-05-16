@@ -69,6 +69,7 @@ class TopdataWebserviceClient
     }
 
 
+    // unused?
     public function getFinder(string $finder, string $step, array $params = []): mixed
     {
         $endpoint = "/finder/$finder/$step";
