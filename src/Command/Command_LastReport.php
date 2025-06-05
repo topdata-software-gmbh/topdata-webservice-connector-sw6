@@ -69,7 +69,7 @@ class Command_LastReport extends AbstractTopdataCommand
         $table->setRows($rows);
         $table->render();
 
-        CliLogger::getCliStyle()->newLine();
+        CliLogger::newLine();
 
         // Display report data as JSON
         CliLogger::title('Report Data');
