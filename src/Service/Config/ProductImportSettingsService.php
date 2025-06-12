@@ -6,7 +6,7 @@ use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 /**
- * Service class responsible for managing product import settings in a HIERARCHICAL way.
+ * Service class responsible for managing product import settings in a hierarchical way.
  *
  * This service allows retrieving and loading product-specific import settings,
  * overriding the global settings defined in OptionsHelperService.
@@ -14,35 +14,19 @@ use Shopware\Core\Framework\Uuid\Uuid;
  */
 class ProductImportSettingsService
 {
-    // TODO: make it enum
-    const OPTION_NAME_productName                 = 'productName';
-    const OPTION_NAME_productDescription          = 'productDescription';
-    const OPTION_NAME_productBrand                = 'productBrand';
-    const OPTION_NAME_productEan                  = 'productEan';
-    const OPTION_NAME_productOem                  = 'productOem';
-    const OPTION_NAME_productImages               = 'productImages';
-    const OPTION_NAME_specReferencePCD            = 'specReferencePCD';
-    const OPTION_NAME_specReferenceOEM            = 'specReferenceOEM';
-    const OPTION_NAME_productSpecifications       = 'productSpecifications';
-    const OPTION_NAME_productImagesDelete         = 'productImagesDelete'; // not used?
-    const OPTION_NAME_productSimilar              = 'productSimilar';
-    const OPTION_NAME_productSimilarCross         = 'productSimilarCross';
-    const OPTION_NAME_productAlternate            = 'productAlternate';
-    const OPTION_NAME_productAlternateCross       = 'productAlternateCross';
-    const OPTION_NAME_productRelated              = 'productRelated';
-    const OPTION_NAME_productRelatedCross         = 'productRelatedCross';
-    const OPTION_NAME_productBundled              = 'productBundled';
-    const OPTION_NAME_productBundledCross         = 'productBundledCross';
-    const OPTION_NAME_productColorVariant         = 'productColorVariant';
-    const OPTION_NAME_productVariantColorCross    = 'productVariantColorCross';
-    const OPTION_NAME_productCapacityVariant      = 'productCapacityVariant';
-    const OPTION_NAME_productVariantCapacityCross = 'productVariantCapacityCross';
-    const OPTION_NAME_productVariant              = 'productVariant';
-    const OPTION_NAME_productVariantCross         = 'productVariantCross';
 
 
+    /**
+     * @var array a map {productId => ...} containing product import settings.
+     */
     private array $productImportSettings = [];
 
+    /**
+     * Constructor for the ProductImportSettingsService.
+     *
+     * @param MergedPluginConfigHelperService $optionsHelperService The service for retrieving merged plugin configurations.
+     * @param Connection $connection The database connection.
+     */
     public function __construct(
         private readonly MergedPluginConfigHelperService $optionsHelperService,
         private readonly Connection                      $connection,
@@ -65,32 +49,32 @@ class ProductImportSettingsService
         if (isset($this->productImportSettings[$productId])) {
             // ---- get mapped option name
             $mappedOptionName = [
-                self::OPTION_NAME_productName           => 'name',
-                self::OPTION_NAME_productDescription    => 'description',
-                self::OPTION_NAME_productBrand          => 'brand',
-                self::OPTION_NAME_productEan            => 'EANs',
-                self::OPTION_NAME_productOem            => 'MPNs',
-                self::OPTION_NAME_productImages         => 'pictures',
-                self::OPTION_NAME_productImagesDelete   => 'unlinkOldPictures',
-                self::OPTION_NAME_productSpecifications => 'properties',
-                self::OPTION_NAME_specReferencePCD      => 'PCDsProp',
-                self::OPTION_NAME_specReferenceOEM      => 'MPNsProp',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productName           => 'name',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productDescription    => 'description',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productBrand          => 'brand',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productEan            => 'EANs',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productOem            => 'MPNs',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productImages         => 'pictures',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productImagesDelete   => 'unlinkOldPictures',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productSpecifications => 'properties',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_specReferencePCD      => 'PCDsProp',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_specReferenceOEM      => 'MPNsProp',
 
-                self::OPTION_NAME_productSimilar         => 'importSimilar',
-                self::OPTION_NAME_productAlternate       => 'importAlternates',
-                self::OPTION_NAME_productRelated         => 'importAccessories',
-                self::OPTION_NAME_productBundled         => 'importBoundles',
-                self::OPTION_NAME_productVariant         => 'importVariants',
-                self::OPTION_NAME_productColorVariant    => 'importColorVariants',
-                self::OPTION_NAME_productCapacityVariant => 'importCapacityVariants',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productSimilar         => 'importSimilar',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productAlternate       => 'importAlternates',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productRelated         => 'importAccessories',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productBundled         => 'importBoundles',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productVariant         => 'importVariants',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productColorVariant    => 'importColorVariants',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productCapacityVariant => 'importCapacityVariants',
 
-                self::OPTION_NAME_productSimilarCross         => 'crossSimilar',
-                self::OPTION_NAME_productAlternateCross       => 'crossAlternates',
-                self::OPTION_NAME_productRelatedCross         => 'crossAccessories',
-                self::OPTION_NAME_productBundledCross         => 'crossBoundles',
-                self::OPTION_NAME_productVariantCross         => 'crossVariants',
-                self::OPTION_NAME_productVariantColorCross    => 'crossColorVariants',
-                self::OPTION_NAME_productVariantCapacityCross => 'crossCapacityVariants',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productSimilarCross         => 'crossSimilar',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productAlternateCross       => 'crossAlternates',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productRelatedCross         => 'crossAccessories',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productBundledCross         => 'crossBoundles',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productVariantCross         => 'crossVariants',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productVariantColorCross    => 'crossColorVariants',
+                \Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productVariantCapacityCross => 'crossCapacityVariants',
             ][$optionName] ?? '';
 
             return $this->productImportSettings[$productId][$mappedOptionName] ?? false;
@@ -186,7 +170,9 @@ class ProductImportSettingsService
     public function filterProductIdsByConfig(string $optionName, array $productIds): array
     {
         $returnIds = [];
+        // ---- Iterate over each product ID
         foreach ($productIds as $pid) {
+            // ---- Check if the product option is enabled for the current product ID
             if ($this->isProductOptionEnabled($optionName, $pid)) {
                 $returnIds[] = $pid;
             }

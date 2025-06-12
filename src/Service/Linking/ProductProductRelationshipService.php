@@ -482,92 +482,92 @@ class ProductProductRelationshipService
         $productId = $productId_versionId['product_id'];
 
         // ---- Process similar products
-        if ($this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productSimilar, $productId)) {
+        if ($this->productImportSettingsService->isProductOptionEnabled(\Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productSimilar, $productId)) {
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findSimilarProducts($remoteProductData),
                 'topdata_product_to_similar',
                 'similar',
                 ProductRelationshipTypeEnum::SIMILAR,
-                $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productSimilarCross, $productId),
+                $this->productImportSettingsService->isProductOptionEnabled(\Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productSimilarCross, $productId),
                 $dateTime
             );
         }
 
         // ---- Process alternate products
-        if ($this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productAlternate, $productId)) {
+        if ($this->productImportSettingsService->isProductOptionEnabled(\Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productAlternate, $productId)) {
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findAlternateProducts($remoteProductData),
                 'topdata_product_to_alternate',
                 'alternate',
                 ProductRelationshipTypeEnum::ALTERNATE,
-                $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productAlternateCross, $productId),
+                $this->productImportSettingsService->isProductOptionEnabled(\Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productAlternateCross, $productId),
                 $dateTime
             );
         }
 
         // ---- Process related products (accessories)
-        if ($this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productRelated, $productId)) {
+        if ($this->productImportSettingsService->isProductOptionEnabled(\Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productRelated, $productId)) {
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findRelatedProducts($remoteProductData),
                 'topdata_product_to_related',
                 'related',
                 ProductRelationshipTypeEnum::RELATED,
-                $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productRelatedCross, $productId),
+                $this->productImportSettingsService->isProductOptionEnabled(\Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productRelatedCross, $productId),
                 $dateTime
             );
         }
 
         // ---- Process bundled products
-        if ($this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productBundled, $productId)) {
+        if ($this->productImportSettingsService->isProductOptionEnabled(\Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productBundled, $productId)) {
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->findBundledProducts($remoteProductData),
                 'topdata_product_to_bundled',
                 'bundled',
                 ProductRelationshipTypeEnum::BUNDLED,
-                $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productBundledCross, $productId),
+                $this->productImportSettingsService->isProductOptionEnabled(\Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productBundledCross, $productId),
                 $dateTime
             );
         }
 
         // ---- Process color variant products
-        if ($this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productColorVariant, $productId)) {
+        if ($this->productImportSettingsService->isProductOptionEnabled(\Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productColorVariant, $productId)) {
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findColorVariantProducts($remoteProductData),
                 'topdata_product_to_color_variant',
                 'color_variant',
                 ProductRelationshipTypeEnum::COLOR_VARIANT,
-                $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productVariantColorCross, $productId),
+                $this->productImportSettingsService->isProductOptionEnabled(\Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productVariantColorCross, $productId),
                 $dateTime
             );
         }
 
         // ---- Process capacity variant products
-        if ($this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productCapacityVariant, $productId)) {
+        if ($this->productImportSettingsService->isProductOptionEnabled(\Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productCapacityVariant, $productId)) {
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findCapacityVariantProducts($remoteProductData),
                 'topdata_product_to_capacity_variant',
                 'capacity_variant',
                 ProductRelationshipTypeEnum::CAPACITY_VARIANT,
-                $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productVariantCapacityCross, $productId),
+                $this->productImportSettingsService->isProductOptionEnabled(\Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productVariantCapacityCross, $productId),
                 $dateTime
             );
         }
 
         // ---- Process general variant products
-        if ($this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productVariant, $productId)) {
+        if ($this->productImportSettingsService->isProductOptionEnabled(\Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productVariant, $productId)) {
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findVariantProducts($remoteProductData),
                 'topdata_product_to_variant',
                 'variant',
                 ProductRelationshipTypeEnum::VARIANT,
-                $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productVariantCross, $productId),
+                $this->productImportSettingsService->isProductOptionEnabled(\Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants::OPTION_NAME_productVariantCross, $productId),
                 $dateTime
             );
         }

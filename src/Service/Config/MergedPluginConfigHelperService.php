@@ -112,6 +112,7 @@ class MergedPluginConfigHelperService
     {
         $this->_loadOptionsFromConnectorPluginConfig();
         $this->_loadOptionsFromTopFeedPluginConfig();
+        CliLogger::dump($this->options, "OPTIONS");
     }
 
 

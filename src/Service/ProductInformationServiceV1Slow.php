@@ -23,6 +23,7 @@ use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
 use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
+use Topdata\TopdataFoundationSW6\Util\UtilString;
 
 /**
  * Service for updating product specifications and media.
@@ -249,12 +250,12 @@ class ProductInformationServiceV1Slow
         $productId = $productId_versionId['product_id'];
 
         // ---- Prepare product name
-        if (!$onlyMedia && $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productName, $productId) && $remoteProductData->short_description != '') {
-            $productData['name'] = trim(substr($remoteProductData->short_description, 0, 255));
+        if (!$onlyMedia && $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productName, $productId) && $remoteProductData->short_description != '') {
+            $productData['name'] = UtilString::max255($remoteProductData->short_description);
         }
 
         // ---- Prepare product description
-        $descriptionImportType = $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productDescription, $productId);
+        $descriptionImportType = $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productDescription, $productId);
         if (!$onlyMedia && $descriptionImportType && ($descriptionImportType !== DescriptionImportTypeConstant::NO_IMPORT) && $remoteProductData->short_description != '') {
             $newDescription = $this->_renderDescription($descriptionImportType, $productId, $remoteProductData->short_description);
             if ($newDescription !== null) {
@@ -263,20 +264,20 @@ class ProductInformationServiceV1Slow
         }
 
         // ---- Prepare product manufacturer
-        if (!$onlyMedia && $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productBrand, $productId) && $remoteProductData->manufacturer != '') {
+        if (!$onlyMedia && $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productBrand, $productId) && $remoteProductData->manufacturer != '') {
             $productData['manufacturerId'] = $this->manufacturerService->getManufacturerIdByName($remoteProductData->manufacturer); // fixme
         }
         // ---- Prepare product EAN
-        if (!$onlyMedia && $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productEan, $productId) && count($remoteProductData->eans)) {
+        if (!$onlyMedia && $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productEan, $productId) && count($remoteProductData->eans)) {
             $productData['ean'] = $remoteProductData->eans[0];
         }
         // ---- Prepare product OEM
-        if (!$onlyMedia && $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productOem, $productId) && count($remoteProductData->oems)) {
+        if (!$onlyMedia && $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productOem, $productId) && count($remoteProductData->oems)) {
             $productData['manufacturerNumber'] = $remoteProductData->oems[0];
         }
 
         // ---- Prepare product images
-        if ($this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productImages, $productId)) {
+        if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productImages, $productId)) {
             if (isset($remoteProductData->images) && count($remoteProductData->images)) {
                 $media = [];
                 foreach ($remoteProductData->images as $k => $img) {
@@ -326,13 +327,13 @@ class ProductInformationServiceV1Slow
 
         // ---- Prepare product reference PCD
         if (!$onlyMedia
-            && $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_specReferencePCD, $productId)
+            && $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_specReferencePCD, $productId)
             && isset($remoteProductData->reference_pcds)
             && count((array)$remoteProductData->reference_pcds)
         ) {
             $propGroupName = 'Reference PCD';
             foreach ((array)$remoteProductData->reference_pcds as $propValue) {
-                $propValue = trim(substr(UtilStringFormatting::formatStringNoHTML($propValue), 0, 255));
+                $propValue = UtilString::max255(UtilStringFormatting::formatStringNoHTML($propValue));
                 if ($propValue == '') {
                     continue;
                 }
@@ -348,13 +349,13 @@ class ProductInformationServiceV1Slow
 
         // ---- Prepare product reference OEM
         if (!$onlyMedia
-            && $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_specReferenceOEM, $productId)
+            && $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_specReferenceOEM, $productId)
             && isset($remoteProductData->reference_oems)
             && count((array)$remoteProductData->reference_oems)
         ) {
             $propGroupName = 'Reference OEM';
             foreach ((array)$remoteProductData->reference_oems as $propValue) {
-                $propValue = trim(substr(UtilStringFormatting::formatStringNoHTML($propValue), 0, 255));
+                $propValue = UtilString::max255(UtilStringFormatting::formatStringNoHTML($propValue));
                 if ($propValue == '') {
                     continue;
                 }
@@ -369,7 +370,7 @@ class ProductInformationServiceV1Slow
 
         // ---- Prepare product specifications
         if (!$onlyMedia
-            && $this->productImportSettingsService->isProductOptionEnabled(ProductImportSettingsService::OPTION_NAME_productSpecifications, $productId)
+            && $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productSpecifications, $productId)
             && isset($remoteProductData->specifications)
             && count($remoteProductData->specifications)
         ) {
@@ -378,7 +379,7 @@ class ProductInformationServiceV1Slow
                 if (isset($ignoreSpecs[$spec->specification_id])) {
                     continue;
                 }
-                $propGroupName = trim(substr(trim(UtilStringFormatting::formatStringNoHTML($spec->specification)), 0, 255));
+                $propGroupName = UtilString::max255(UtilStringFormatting::formatStringNoHTML($spec->specification));
                 if ($propGroupName == '') {
                     continue;
                 }
