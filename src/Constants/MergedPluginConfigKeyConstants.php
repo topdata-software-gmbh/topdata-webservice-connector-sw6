@@ -14,10 +14,10 @@ namespace Topdata\TopdataConnectorSW6\Constants;
 class MergedPluginConfigKeyConstants
 {
     // ---- keys from the connector plugin config ... they are mapping options how to map the webservice data to the shopware data
-    const MAPPING_TYPE              = 'mappingType'; // aka MappingStrategy ("default" [EAN, OEM], "distributor", "product number")
-    const ATTRIBUTE_OEM             = 'attributeOem'; // this is the Name of the OEM attribute in Shopware ... not sure if still needed in sw6
-    const ATTRIBUTE_EAN             = 'attributeEan'; // this is the name of the EAN attribute in Shopware ... not sure if still needed in sw6
-    const ATTRIBUTE_ORDERNUMBER     = 'attributeOrdernumber'; // FIXME: this is not an ordernumber, but a product number
+    const MAPPING_TYPE          = 'mappingType'; // aka MappingStrategy ("default" [EAN, OEM], "distributor", "product number")
+    const ATTRIBUTE_OEM         = 'attributeOem'; // this is the Name of the OEM attribute in Shopware ... not sure if still needed in sw6
+    const ATTRIBUTE_EAN         = 'attributeEan'; // this is the name of the EAN attribute in Shopware ... not sure if still needed in sw6
+    const ATTRIBUTE_ORDERNUMBER = 'attributeOrdernumber'; // FIXME: this is not an ordernumber, but a product number
 
 
     // ---- keys from the Topfeed plugin config - used for linking/unlinking products to categories and products to products
@@ -53,4 +53,22 @@ class MergedPluginConfigKeyConstants
     const OPTION_NAME_productVariant              = 'productVariant';
     const OPTION_NAME_productVariantCross         = 'productVariantCross';
 
+    // ---- display options from the topfeed plugin config
+    const DISPLAY_OPTION_showAlternateProductsTab       = 'showAlternateProductsTab';
+    const DISPLAY_OPTION_showBundledProductsTab         = 'showBundledProductsTab';
+    const DISPLAY_OPTION_showBundlesTab                 = 'showBundlesTab';
+    const DISPLAY_OPTION_showRelatedProductsTab         = 'showRelatedProductsTab';
+    const DISPLAY_OPTION_showSimilarProductsTab         = 'showSimilarProductsTab';
+    const DISPLAY_OPTION_showVariantProductsTab         = 'showVariantProductsTab';
+    const DISPLAY_OPTION_showColorVariantProductsTab    = 'showColorVariantProductsTab';
+    const DISPLAY_OPTION_showCapacityVariantProductsTab = 'showCapacityVariantProductsTab';
+
+    // ---- list options from the topfeed plugin config
+    const LIST_OPTION_listColorVariantProducts    = 'listColorVariantProducts';
+    const LIST_OPTION_listCapacityVariantProducts = 'listCapacityVariantProducts';
+    const LIST_OPTION_listAlternateProducts       = 'listAlternateProducts';
+    const LIST_OPTION_listBundledProducts         = 'listBundledProducts';
+    const LIST_OPTION_listBundles                 = 'listBundles';
+    const LIST_OPTION_listRelatedProducts         = 'listRelatedProducts';
+    const LIST_OPTION_listVariantProducts         = 'listVariantProducts';
 }
