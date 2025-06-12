@@ -15,8 +15,8 @@ class MergedPluginConfigKeyConstants
 {
     // ---- keys from the connector plugin config ... they are mapping options how to map the webservice data to the shopware data
     const MAPPING_TYPE              = 'mappingType'; // aka MappingStrategy ("default" [EAN, OEM], "distributor", "product number")
-    const ATTRIBUTE_OEM             = 'attributeOem'; // this is the Name of the OEM attribute in Shopware
-    const ATTRIBUTE_EAN             = 'attributeEan'; // this is the name of the EAN attribute in Shopware
+    const ATTRIBUTE_OEM             = 'attributeOem'; // this is the Name of the OEM attribute in Shopware ... not sure if still needed in sw6
+    const ATTRIBUTE_EAN             = 'attributeEan'; // this is the name of the EAN attribute in Shopware ... not sure if still needed in sw6
     const ATTRIBUTE_ORDERNUMBER     = 'attributeOrdernumber'; // FIXME: this is not an ordernumber, but a product number
 
 
@@ -27,7 +27,7 @@ class MergedPluginConfigKeyConstants
     const PRODUCT_COLOR_VARIANT     = 'productColorVariant';
     const PRODUCT_CAPACITY_VARIANT  = 'productCapacityVariant'; // unused?
 
-    // moved from \Topdata\TopdataConnectorSW6\Service\Config\MergedPluginConfigHelperService to here
+    // moved from MergedPluginConfigHelperService to here:
     const OPTION_NAME_productName                 = 'productName';
     const OPTION_NAME_productDescription          = 'productDescription';
     const OPTION_NAME_productBrand                = 'productBrand';

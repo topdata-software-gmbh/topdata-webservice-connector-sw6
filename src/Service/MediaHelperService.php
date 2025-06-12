@@ -9,6 +9,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;
 use Topdata\TopdataConnectorSW6\Service\Config\ProductImportSettingsService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
@@ -205,16 +206,9 @@ class MediaHelperService
             return;
         }
 
-        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productImages', $productIds);
-        if (!count($ids)) {
-            return;
-        }
-        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productImagesDelete', $ids);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("UPDATE product SET product_media_id = NULL, product_media_version_id = NULL WHERE id IN ($ids)");
-            $this->connection->executeStatement("DELETE FROM product_media WHERE product_id IN ($ids)");
-        }
+        $ids = '0x' . implode(',0x', $productIds);
+        $this->connection->executeStatement("UPDATE product SET product_media_id = NULL, product_media_version_id = NULL WHERE id IN ($ids)");
+        $this->connection->executeStatement("DELETE FROM product_media WHERE product_id IN ($ids)");
     }
 
 

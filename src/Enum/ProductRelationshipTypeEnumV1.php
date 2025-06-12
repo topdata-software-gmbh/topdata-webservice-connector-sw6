@@ -9,7 +9,7 @@ namespace Topdata\TopdataConnectorSW6\Enum;
  * 04/2025 changed from CrossSellingTypeConstant to ProductRelationshipTypeEnum
  * TODO: make the values uppercase
  */
-enum ProductRelationshipTypeEnum: string
+enum ProductRelationshipTypeEnumV1: string
 {
     case SIMILAR          = 'similar';
     case ALTERNATE        = 'alternate';

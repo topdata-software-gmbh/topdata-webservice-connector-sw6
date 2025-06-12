@@ -18,6 +18,7 @@ use Topdata\TopdataConnectorSW6\Exception\WebserviceResponseException;
 use Topdata\TopdataConnectorSW6\Service\Config\MergedPluginConfigHelperService;
 use Topdata\TopdataConnectorSW6\Service\Config\ProductImportSettingsService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
+use Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductPropertyService;
 use Topdata\TopdataConnectorSW6\Service\Linking\ProductProductRelationshipService;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
@@ -34,7 +35,7 @@ use Topdata\TopdataFoundationSW6\Util\UtilString;
  */
 class ProductInformationServiceV1Slow
 {
-    const CHUNK_SIZE   = 50;
+    const CHUNK_SIZE = 50;
 
     private Context $context;
 
@@ -50,6 +51,7 @@ class ProductInformationServiceV1Slow
         private readonly LoggerInterface                   $logger,
         private readonly ManufacturerService               $manufacturerService,
         private readonly Connection                        $connection,
+        private readonly ShopwareProductPropertyService    $shopwareProductPropertyService,
     )
     {
         $this->context = Context::createDefaultContext();
@@ -58,7 +60,6 @@ class ProductInformationServiceV1Slow
 
     /**
      * 04/2025 TODO: this method is way too slow .. optimize it
-
      * Updates product information and media.
      *
      * Fetches product data from a remote server, processes it, and updates the local database.
@@ -88,7 +89,7 @@ class ProductInformationServiceV1Slow
         CliLogger::lap(true);
 
         foreach ($batches as $idxBatch => $batch) {
-            CliLogger::progress( ($idxBatch + 1), count($batches), 'Getting data from remote server [Product Information]...');
+            CliLogger::progress(($idxBatch + 1), count($batches), 'Getting data from remote server [Product Information]...');
 
             // ---- Fetch product data from the webservice
             $response = $this->topdataWebserviceClient->myProductList([
@@ -116,7 +117,7 @@ class ProductInformationServiceV1Slow
                 $this->_unlinkProperties($currentChunkProductIds);
                 $this->_unlinkCategories($currentChunkProductIds);
             }
-            $this->mediaHelperService->unlinkImages($currentChunkProductIds);
+            $this->_unlinkImages($currentChunkProductIds);
 
             // ---- Process products
             foreach ($response->products as $product) {
@@ -193,28 +194,6 @@ class ProductInformationServiceV1Slow
 
         UtilProfiling::stopTimer();
     }
-
-
-
-    /**
-     * Unlinks properties from products.
-     *
-     * @param array $productIds Array of product IDs to unlink properties from.
-     */
-    private function _unlinkProperties(array $productIds): void
-    {
-        if (!count($productIds)) {
-            return;
-        }
-
-        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productSpecifications', $productIds);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("UPDATE product SET property_ids = NULL WHERE id IN ($ids)");
-            $this->connection->executeStatement("DELETE FROM product_property WHERE product_id IN ($ids)");
-        }
-    }
-
 
 
     /**
@@ -471,6 +450,25 @@ class ProductInformationServiceV1Slow
         }
 
         return $descriptionFromWebservice;
+    }
+
+    private function _unlinkImages(array $productIds)
+    {
+        // --- filter by config
+        $productIds = $this->productImportSettingsService->filterProductIdsByConfig(MergedPluginConfigKeyConstants::OPTION_NAME_productImages, $productIds);
+        $productIds = $this->productImportSettingsService->filterProductIdsByConfig(MergedPluginConfigKeyConstants::OPTION_NAME_productImagesDelete, $productIds);
+
+        // ---- Delete old media
+        $this->mediaHelperService->unlinkImages($productIds);
+    }
+
+    private function _unlinkProperties(array $productIds)
+    {
+        // --- filter by config
+        $productIds = $this->productImportSettingsService->filterProductIdsByConfig(MergedPluginConfigKeyConstants::OPTION_NAME_productSpecifications, $productIds);
+
+        // ---- Delete old properties
+        $this->shopwareProductPropertyService->unlinkProperties($productIds);
     }
 
 }

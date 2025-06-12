@@ -41,7 +41,7 @@ class ProductImportSettingsService
      * This method first checks if the product has specific import settings. If so, it retrieves the option value
      * from these settings. If not, it falls back to the global option settings.
      *
-     * @param string $optionName The name of the option to retrieve.
+     * @param string $optionName The name of the option to retrieve, see MergedPluginConfigKeyConstants.
      * @param string $productId The ID of the product for which to retrieve the option.
      * @return bool Returns true if the option is enabled, false otherwise.
      */
@@ -50,25 +50,25 @@ class ProductImportSettingsService
         if (isset($this->productImportSettings[$productId])) {
             // ---- get mapped option name
             $mappedOptionName = [
-                MergedPluginConfigKeyConstants::OPTION_NAME_productName           => 'name',
-                MergedPluginConfigKeyConstants::OPTION_NAME_productDescription    => 'description',
-                MergedPluginConfigKeyConstants::OPTION_NAME_productBrand          => 'brand',
-                MergedPluginConfigKeyConstants::OPTION_NAME_productEan            => 'EANs',
-                MergedPluginConfigKeyConstants::OPTION_NAME_productOem            => 'MPNs',
-                MergedPluginConfigKeyConstants::OPTION_NAME_productImages         => 'pictures',
-                MergedPluginConfigKeyConstants::OPTION_NAME_productImagesDelete   => 'unlinkOldPictures',
-                MergedPluginConfigKeyConstants::OPTION_NAME_productSpecifications => 'properties',
-                MergedPluginConfigKeyConstants::OPTION_NAME_specReferencePCD      => 'PCDsProp',
-                MergedPluginConfigKeyConstants::OPTION_NAME_specReferenceOEM      => 'MPNsProp',
-
-                MergedPluginConfigKeyConstants::OPTION_NAME_productSimilar         => 'importSimilar',
-                MergedPluginConfigKeyConstants::OPTION_NAME_productAlternate       => 'importAlternates',
-                MergedPluginConfigKeyConstants::OPTION_NAME_productRelated         => 'importAccessories',
-                MergedPluginConfigKeyConstants::OPTION_NAME_productBundled         => 'importBoundles',
-                MergedPluginConfigKeyConstants::OPTION_NAME_productVariant         => 'importVariants',
-                MergedPluginConfigKeyConstants::OPTION_NAME_productColorVariant    => 'importColorVariants',
-                MergedPluginConfigKeyConstants::OPTION_NAME_productCapacityVariant => 'importCapacityVariants',
-
+                MergedPluginConfigKeyConstants::OPTION_NAME_productName                 => 'name',
+                MergedPluginConfigKeyConstants::OPTION_NAME_productDescription          => 'description',
+                MergedPluginConfigKeyConstants::OPTION_NAME_productBrand                => 'brand',
+                MergedPluginConfigKeyConstants::OPTION_NAME_productEan                  => 'EANs',
+                MergedPluginConfigKeyConstants::OPTION_NAME_productOem                  => 'MPNs',
+                MergedPluginConfigKeyConstants::OPTION_NAME_productImages               => 'pictures',
+                MergedPluginConfigKeyConstants::OPTION_NAME_productImagesDelete         => 'unlinkOldPictures',
+                MergedPluginConfigKeyConstants::OPTION_NAME_productSpecifications       => 'properties',
+                MergedPluginConfigKeyConstants::OPTION_NAME_specReferencePCD            => 'PCDsProp',
+                MergedPluginConfigKeyConstants::OPTION_NAME_specReferenceOEM            => 'MPNsProp',
+                // ----
+                MergedPluginConfigKeyConstants::OPTION_NAME_productSimilar              => 'importSimilar',
+                MergedPluginConfigKeyConstants::OPTION_NAME_productAlternate            => 'importAlternates',
+                MergedPluginConfigKeyConstants::OPTION_NAME_productRelated              => 'importAccessories',
+                MergedPluginConfigKeyConstants::OPTION_NAME_productBundled              => 'importBoundles',
+                MergedPluginConfigKeyConstants::OPTION_NAME_productVariant              => 'importVariants',
+                MergedPluginConfigKeyConstants::OPTION_NAME_productColorVariant         => 'importColorVariants',
+                MergedPluginConfigKeyConstants::OPTION_NAME_productCapacityVariant      => 'importCapacityVariants',
+                // ----
                 MergedPluginConfigKeyConstants::OPTION_NAME_productSimilarCross         => 'crossSimilar',
                 MergedPluginConfigKeyConstants::OPTION_NAME_productAlternateCross       => 'crossAlternates',
                 MergedPluginConfigKeyConstants::OPTION_NAME_productRelatedCross         => 'crossAccessories',
@@ -162,7 +162,7 @@ class ProductImportSettingsService
     /**
      * Filters product IDs based on a given configuration option.
      *
-     * @param string $optionName The name of the configuration option to check.
+     * @param string $optionName The name of the configuration option to check., see MergedPluginConfigKeyConstants.
      * @param array $productIds An array of product IDs to filter.
      * @return array An array of product IDs that match the configuration option.
      *

@@ -2,6 +2,7 @@
 
 namespace Topdata\TopdataConnectorSW6\Service\Linking;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use RuntimeException;
 use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingDefinition;
@@ -12,9 +13,10 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;
-use Topdata\TopdataConnectorSW6\Enum\ProductRelationshipTypeEnum;
+use Topdata\TopdataConnectorSW6\Enum\ProductRelationshipTypeEnumV1;
 use Topdata\TopdataConnectorSW6\Service\Config\ProductImportSettingsService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
+use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
@@ -49,55 +51,55 @@ class ProductProductRelationshipService
     /**
      * 04/2025 introduced to decouple the enum value from type in database... but maybe we can change the types in the database instead to the UPPERCASE enum values for consistency?
      */
-    private static function _getCrossDbType(ProductRelationshipTypeEnum $crossType)
+    private static function _getCrossDbType(ProductRelationshipTypeEnumV1 $crossType)
     {
         return match ($crossType) {
-            ProductRelationshipTypeEnum::SIMILAR          => 'similar',
-            ProductRelationshipTypeEnum::ALTERNATE        => 'alternate',
-            ProductRelationshipTypeEnum::RELATED          => 'related',
-            ProductRelationshipTypeEnum::BUNDLED          => 'bundled',
-            ProductRelationshipTypeEnum::COLOR_VARIANT    => 'colorVariant',
-            ProductRelationshipTypeEnum::CAPACITY_VARIANT => 'capacityVariant',
-            ProductRelationshipTypeEnum::VARIANT          => 'variant',
-            default                                       => throw new RuntimeException("Unknown cross-selling type: {$crossType->value}"),
+            ProductRelationshipTypeEnumV1::SIMILAR          => 'similar',
+            ProductRelationshipTypeEnumV1::ALTERNATE        => 'alternate',
+            ProductRelationshipTypeEnumV1::RELATED          => 'related',
+            ProductRelationshipTypeEnumV1::BUNDLED          => 'bundled',
+            ProductRelationshipTypeEnumV1::COLOR_VARIANT    => 'colorVariant',
+            ProductRelationshipTypeEnumV1::CAPACITY_VARIANT => 'capacityVariant',
+            ProductRelationshipTypeEnumV1::VARIANT          => 'variant',
+            default                                         => throw new RuntimeException("Unknown cross-selling type: {$crossType->value}"),
         };
     }
 
 
-    private static function _getCrossNameTranslations(ProductRelationshipTypeEnum $crossType): array
+    private static function _getCrossNameTranslations(ProductRelationshipTypeEnumV1 $crossType): array
     {
         return match ($crossType) {
-            ProductRelationshipTypeEnum::CAPACITY_VARIANT => [
+            ProductRelationshipTypeEnumV1::CAPACITY_VARIANT => [
                 'de-DE' => 'Kapazitätsvarianten',
                 'en-GB' => 'Capacity Variants',
                 'nl-NL' => 'capaciteit varianten',
             ],
-            ProductRelationshipTypeEnum::COLOR_VARIANT    => [
+            ProductRelationshipTypeEnumV1::COLOR_VARIANT    => [
                 'de-DE' => 'Farbvarianten',
                 'en-GB' => 'Color Variants',
                 'nl-NL' => 'kleur varianten',
             ],
-            ProductRelationshipTypeEnum::ALTERNATE        => [
+            ProductRelationshipTypeEnumV1::ALTERNATE        => [
                 'de-DE' => 'Alternative Produkte',
                 'en-GB' => 'Alternate Products',
                 'nl-NL' => 'alternatieve producten',
             ],
-            ProductRelationshipTypeEnum::RELATED          => [
+            ProductRelationshipTypeEnumV1::RELATED          => [
                 'de-DE' => 'Zubehör',
                 'en-GB' => 'Accessories',
                 'nl-NL' => 'Accessoires',
             ],
-            ProductRelationshipTypeEnum::VARIANT          => [
+            ProductRelationshipTypeEnumV1::VARIANT          => [
                 'de-DE' => 'Varianten',
                 'en-GB' => 'Variants',
                 'nl-NL' => 'varianten',
             ],
-            ProductRelationshipTypeEnum::BUNDLED          => [
+            ProductRelationshipTypeEnumV1::BUNDLED          => [
                 'de-DE' => 'Im Bundle',
                 'en-GB' => 'In Bundle',
                 'nl-NL' => 'In een bundel',
             ],
-            ProductRelationshipTypeEnum::SIMILAR          => [
+            ProductRelationshipTypeEnumV1::SIMILAR          => [
                 'de-DE' => 'Ähnlich',
                 'en-GB' => 'Similar',
                 'nl-NL' => 'Vergelijkbaar',
@@ -229,9 +231,9 @@ class ProductProductRelationshipService
      *
      * @param array $currentProduct The current product information
      * @param array $linkedProductIds Array of products to be linked
-     * @param ProductRelationshipTypeEnum $crossType The type of cross-selling relationship
+     * @param ProductRelationshipTypeEnumV1 $crossType The type of cross-selling relationship
      */
-    private function _addProductCrossSelling(array $currentProduct, array $linkedProductIds, ProductRelationshipTypeEnum $crossType): void
+    private function _addProductCrossSelling(array $currentProduct, array $linkedProductIds, ProductRelationshipTypeEnumV1 $crossType): void
     {
         if ($currentProduct['parent_id']) {
             //don't create cross if product is variation!
@@ -365,18 +367,18 @@ class ProductProductRelationshipService
      * @param array $relatedProducts Array of products to be linked
      * @param string $tableName The database table to insert into
      * @param string $idColumnPrefix The prefix for the ID column in the table
-     * @param ProductRelationshipTypeEnum $crossType The type of cross-selling relationship
+     * @param ProductRelationshipTypeEnumV1 $crossType The type of cross-selling relationship
      * @param bool $enableCrossSelling Whether to enable cross-selling
      * @param string $dateTime The current date/time string
      */
     private function _processProductRelationship(
-        array                       $productId_versionId,
-        array                       $relatedProducts,
-        string                      $tableName,
-        string                      $idColumnPrefix,
-        ProductRelationshipTypeEnum $crossType,
-        bool                        $enableCrossSelling,
-        string                      $dateTime
+        array                         $productId_versionId,
+        array                         $relatedProducts,
+        string                        $tableName,
+        string                        $idColumnPrefix,
+        ProductRelationshipTypeEnumV1 $crossType,
+        bool                          $enableCrossSelling,
+        string                        $dateTime
     ): void
     {
         if (empty($relatedProducts)) {
@@ -411,59 +413,72 @@ class ProductProductRelationshipService
 
 
 
+
     /**
-     * Unlinks products from similar, alternate, related, bundled, color variant, capacity variant and variant products.
+     * Orchestrator method to unlink products from various relationships based on plugin configuration.
+     * It filters the product IDs for each relationship type and delegates the deletion task.
      *
-     * @param array $productIds Array of product IDs to unlink.
+     * @param string[] $productIds Array of product IDs to unlink.
      * 04/2025 moved from MappingHelperService::unlinkProducts() to ProductRelationshipService::unlinkProducts()
      */
     public function unlinkProducts(array $productIds): void
     {
-        if (!count($productIds)) {
+        if (empty($productIds)) {
             return;
         }
 
-        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productSimilar', $productIds);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("DELETE FROM topdata_product_to_similar WHERE product_id IN ($ids)");
+        // Validate that IDs are valid hex UUIDs before processing to prevent errors
+        $validProductIds = array_filter($productIds, fn($id) => Uuid::isValid($id));
+        if (empty($validProductIds)) {
+            return;
         }
 
-        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productAlternate', $productIds);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("DELETE FROM topdata_product_to_alternate WHERE product_id IN ($ids)");
-        }
+        // Map configuration keys to their respective unlinking method and table name
+        // TODO: 7 tables which do basically the same thing .. why not just one and a column for the type? maybe for performance reasons?
+        $relationshipMap = [
+            MergedPluginConfigKeyConstants::OPTION_NAME_productSimilar         => 'topdata_product_to_similar',
+            MergedPluginConfigKeyConstants::OPTION_NAME_productAlternate       => 'topdata_product_to_alternate',
+            MergedPluginConfigKeyConstants::OPTION_NAME_productRelated         => 'topdata_product_to_related',
+            MergedPluginConfigKeyConstants::OPTION_NAME_productBundled         => 'topdata_product_to_bundled',
+            MergedPluginConfigKeyConstants::OPTION_NAME_productColorVariant    => 'topdata_product_to_color_variant',
+            MergedPluginConfigKeyConstants::OPTION_NAME_productCapacityVariant => 'topdata_product_to_capacity_variant',
+            MergedPluginConfigKeyConstants::OPTION_NAME_productVariant         => 'topdata_product_to_variant',
+        ];
 
-        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productRelated', $productIds);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("DELETE FROM topdata_product_to_related WHERE product_id IN ($ids)");
-        }
+        foreach ($relationshipMap as $configKey => $tableName) {
+            $idsToUnlink = $this->productImportSettingsService->filterProductIdsByConfig(
+                $configKey,
+                $validProductIds
+            );
 
-        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productBundled', $productIds);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("DELETE FROM topdata_product_to_bundled WHERE product_id IN ($ids)");
+            if (!empty($idsToUnlink)) {
+                $this->_deleteFromTableWhereProductIdsIn($tableName, $idsToUnlink);
+            }
+            ImportReport::incCounter('links deleted from ' . $tableName, count($idsToUnlink));
         }
+    }
 
-        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productColorVariant', $productIds);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("DELETE FROM topdata_product_to_color_variant WHERE product_id IN ($ids)");
-        }
-
-        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productCapacityVariant', $productIds);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("DELETE FROM topdata_product_to_capacity_variant WHERE product_id IN ($ids)");
-        }
-
-        $ids = $this->productImportSettingsService->filterProductIdsByConfig('productVariant', $productIds);
-        if (count($ids)) {
-            $ids = '0x' . implode(',0x', $ids);
-            $this->connection->executeStatement("DELETE FROM topdata_product_to_variant WHERE product_id IN ($ids)");
-        }
+    /**
+     * Executes a DELETE statement on a given table for a list of product IDs.
+     * This method uses parameterized queries to prevent SQL injection.
+     *
+     * @param string   $tableName   The name of the database table.
+     * @param string[] $productIds  The product IDs to delete.
+     */
+    private function _deleteFromTableWhereProductIdsIn(string $tableName, array $productIds): void
+    {
+        // The product IDs are expected to be UUIDs in hex format (without 0x)
+        // The database layer handles converting them to binary for the query.
+        $this->connection->executeStatement(
+        // Using backticks for the table name is a good practice
+            "DELETE FROM `{$tableName}` WHERE product_id IN (:ids)",
+            [
+                'ids' => $productIds,
+            ],
+            [
+                'ids' => ArrayParameterType::STRING,
+            ]
+        );
     }
 
 
@@ -490,7 +505,7 @@ class ProductProductRelationshipService
                 $this->_findSimilarProducts($remoteProductData),
                 'topdata_product_to_similar',
                 'similar',
-                ProductRelationshipTypeEnum::SIMILAR,
+                ProductRelationshipTypeEnumV1::SIMILAR,
                 $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productSimilarCross, $productId),
                 $dateTime
             );
@@ -503,7 +518,7 @@ class ProductProductRelationshipService
                 $this->_findAlternateProducts($remoteProductData),
                 'topdata_product_to_alternate',
                 'alternate',
-                ProductRelationshipTypeEnum::ALTERNATE,
+                ProductRelationshipTypeEnumV1::ALTERNATE,
                 $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productAlternateCross, $productId),
                 $dateTime
             );
@@ -516,7 +531,7 @@ class ProductProductRelationshipService
                 $this->_findRelatedProducts($remoteProductData),
                 'topdata_product_to_related',
                 'related',
-                ProductRelationshipTypeEnum::RELATED,
+                ProductRelationshipTypeEnumV1::RELATED,
                 $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productRelatedCross, $productId),
                 $dateTime
             );
@@ -529,7 +544,7 @@ class ProductProductRelationshipService
                 $this->findBundledProducts($remoteProductData),
                 'topdata_product_to_bundled',
                 'bundled',
-                ProductRelationshipTypeEnum::BUNDLED,
+                ProductRelationshipTypeEnumV1::BUNDLED,
                 $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productBundledCross, $productId),
                 $dateTime
             );
@@ -542,7 +557,7 @@ class ProductProductRelationshipService
                 $this->_findColorVariantProducts($remoteProductData),
                 'topdata_product_to_color_variant',
                 'color_variant',
-                ProductRelationshipTypeEnum::COLOR_VARIANT,
+                ProductRelationshipTypeEnumV1::COLOR_VARIANT,
                 $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productVariantColorCross, $productId),
                 $dateTime
             );
@@ -555,7 +570,7 @@ class ProductProductRelationshipService
                 $this->_findCapacityVariantProducts($remoteProductData),
                 'topdata_product_to_capacity_variant',
                 'capacity_variant',
-                ProductRelationshipTypeEnum::CAPACITY_VARIANT,
+                ProductRelationshipTypeEnumV1::CAPACITY_VARIANT,
                 $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productVariantCapacityCross, $productId),
                 $dateTime
             );
@@ -568,7 +583,7 @@ class ProductProductRelationshipService
                 $this->_findVariantProducts($remoteProductData),
                 'topdata_product_to_variant',
                 'variant',
-                ProductRelationshipTypeEnum::VARIANT,
+                ProductRelationshipTypeEnumV1::VARIANT,
                 $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productVariantCross, $productId),
                 $dateTime
             );
@@ -580,17 +595,17 @@ class ProductProductRelationshipService
     /**
      * 04/2025 created
      */
-    private static function _getCrossPosition(ProductRelationshipTypeEnum $crossType): int
+    private static function _getCrossPosition(ProductRelationshipTypeEnumV1 $crossType): int
     {
         return match ($crossType) {
-            ProductRelationshipTypeEnum::CAPACITY_VARIANT => 1,
-            ProductRelationshipTypeEnum::COLOR_VARIANT    => 2,
-            ProductRelationshipTypeEnum::ALTERNATE        => 3,
-            ProductRelationshipTypeEnum::RELATED          => 4,
-            ProductRelationshipTypeEnum::VARIANT          => 5,
-            ProductRelationshipTypeEnum::BUNDLED          => 6,
-            ProductRelationshipTypeEnum::SIMILAR          => 7,
-            default                                       => throw new RuntimeException("Unknown cross-selling type: {$crossType->value}"),
+            ProductRelationshipTypeEnumV1::CAPACITY_VARIANT => 1,
+            ProductRelationshipTypeEnumV1::COLOR_VARIANT    => 2,
+            ProductRelationshipTypeEnumV1::ALTERNATE        => 3,
+            ProductRelationshipTypeEnumV1::RELATED          => 4,
+            ProductRelationshipTypeEnumV1::VARIANT          => 5,
+            ProductRelationshipTypeEnumV1::BUNDLED          => 6,
+            ProductRelationshipTypeEnumV1::SIMILAR          => 7,
+            default                                         => throw new RuntimeException("Unknown cross-selling type: {$crossType->value}"),
         };
     }
 
