@@ -19,7 +19,7 @@ use Topdata\TopdataConnectorSW6\Service\Config\MergedPluginConfigHelperService;
 use Topdata\TopdataConnectorSW6\Service\Config\ProductImportSettingsService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductPropertyService;
-use Topdata\TopdataConnectorSW6\Service\Linking\ProductProductRelationshipService;
+use Topdata\TopdataConnectorSW6\Service\Linking\ProductProductRelationshipServiceV1;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataConnectorSW6\Util\UtilStringFormatting;
 use Topdata\TopdataFoundationSW6\Service\ManufacturerService;
@@ -40,18 +40,18 @@ class ProductInformationServiceV1Slow
     private Context $context;
 
     public function __construct(
-        private readonly TopdataToProductService           $topdataToProductHelperService,
-        private readonly MergedPluginConfigHelperService   $mergedPluginConfigHelperService,
-        private readonly ProductProductRelationshipService $productProductRelationshipService,
-        private readonly EntityRepository                  $productRepository,
-        private readonly TopdataWebserviceClient           $topdataWebserviceClient,
-        private readonly ProductImportSettingsService      $productImportSettingsService,
-        private readonly EntitiesHelperService             $entitiesHelperService,
-        private readonly MediaHelperService                $mediaHelperService,
-        private readonly LoggerInterface                   $logger,
-        private readonly ManufacturerService               $manufacturerService,
-        private readonly Connection                        $connection,
-        private readonly ShopwareProductPropertyService    $shopwareProductPropertyService,
+        private readonly TopdataToProductService             $topdataToProductHelperService,
+        private readonly MergedPluginConfigHelperService     $mergedPluginConfigHelperService,
+        private readonly ProductProductRelationshipServiceV1 $productProductRelationshipServiceV1,
+        private readonly EntityRepository                    $productRepository,
+        private readonly TopdataWebserviceClient             $topdataWebserviceClient,
+        private readonly ProductImportSettingsService        $productImportSettingsService,
+        private readonly EntitiesHelperService               $entitiesHelperService,
+        private readonly MediaHelperService                  $mediaHelperService,
+        private readonly LoggerInterface                     $logger,
+        private readonly ManufacturerService                 $manufacturerService,
+        private readonly Connection                          $connection,
+        private readonly ShopwareProductPropertyService      $shopwareProductPropertyService,
     )
     {
         $this->context = Context::createDefaultContext();
@@ -113,7 +113,7 @@ class ProductInformationServiceV1Slow
 
             // ---- Unlink products, properties, categories and images before re-linking
             if (!$onlyMedia) {
-                $this->productProductRelationshipService->unlinkProducts($currentChunkProductIds);
+                $this->productProductRelationshipServiceV1->unlinkProducts($currentChunkProductIds);
                 $this->_unlinkProperties($currentChunkProductIds);
                 $this->_unlinkCategories($currentChunkProductIds);
             }
@@ -160,7 +160,7 @@ class ProductInformationServiceV1Slow
 
                 // ---- Link products
                 if (!$onlyMedia) {
-                    $this->productProductRelationshipService->linkProducts($topid_products[$product->products_id][0], $product);
+                    $this->productProductRelationshipServiceV1->linkProducts($topid_products[$product->products_id][0], $product);
                 }
             }
             CliLogger::mem();

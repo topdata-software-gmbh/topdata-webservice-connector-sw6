@@ -29,7 +29,7 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
  *
  * 11/2024 created (extracted from MappingHelperService)
  */
-class ProductProductRelationshipService
+class ProductProductRelationshipServiceV1
 {
     const CHUNK_SIZE         = 30;
     const MAX_CROSS_SELLINGS = 24;

@@ -305,14 +305,9 @@ class DeviceImportService
                 $repeat = false;
                 break;
             }
-            CliLogger::activity("Processing data chunk $chunkNumber");
-            $i = 1;
+            CliLogger::activity("Processing Device Chunk $chunkNumber");
+
             foreach ($response->data as $s) {
-                $i++;
-                if ($i > 500) {
-                    $i = 1;
-                    CliLogger::activity();
-                }
 
                 $brandArr = $this->topdataBrandService->getBrandByWsId((int)$s->bId);
 
