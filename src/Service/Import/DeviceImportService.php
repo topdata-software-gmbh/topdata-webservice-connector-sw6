@@ -59,7 +59,8 @@ class DeviceImportService
     public function setDeviceTypes(): void
     {
         UtilProfiling::startTimer();
-        CliLogger::section("\n\nDevice type");
+        CliLogger::section("Device type");
+
 
         // Log the activity of getting data from the remote server
         CliLogger::writeln('Getting data from remote server [DeviceType]...');
@@ -70,6 +71,7 @@ class DeviceImportService
 
         // Log the number of fetched device types
         ImportReport::setCounter('Fetched DeviceTypes', count($types->data));
+        CliLogger::writeln('Fetched ' . count($types->data) . ' device types from remote server');
 
         // Initialize the repository and data arrays
         $topdataDeviceTypeRepository = $this->topdataDeviceTypeRepository;
@@ -85,9 +87,13 @@ class DeviceImportService
         // Process each fetched device type
         foreach ($types->data as $s) {
             foreach ($s->brandIds as $brandWsId) {
+                ImportReport::incCounter('DeviceTypes Total Processed');
+                ImportReport::incCounter('DeviceTypes Brand Lookups');
+
                 // Get the brand by its web service ID
                 $brand = $this->topdataBrandService->getBrandByWsId($brandWsId);
                 if (!$brand) {
+                    ImportReport::incCounter('DeviceTypes Brand Not Found');
                     continue;
                 }
 
@@ -113,6 +119,7 @@ class DeviceImportService
                         'wsId'    => (int)$s->id,
                         'enabled' => false,
                     ];
+                    ImportReport::incCounter('DeviceTypes Created');
                 } elseif (
                     $type['label'] != $s->val
                     || $type['sort'] != (int)$s->top
@@ -126,11 +133,15 @@ class DeviceImportService
                         'label'   => $s->val,
                         'sort'    => (int)$s->top,
                     ];
+                    ImportReport::incCounter('DeviceTypes Updated');
+                } else {
+                    ImportReport::incCounter('DeviceTypes Unchanged');
                 }
 
                 // Create new types in batches of 100
                 if (count($dataCreate) > 100) {
                     $topdataDeviceTypeRepository->create($dataCreate, $this->context);
+                    ImportReport::incCounter('DeviceTypes Create Batches');
                     $dataCreate = [];
                     CliLogger::activity();
                 }
@@ -138,6 +149,7 @@ class DeviceImportService
                 // Update existing types in batches of 100
                 if (count($dataUpdate) > 100) {
                     $topdataDeviceTypeRepository->update($dataUpdate, $this->context);
+                    ImportReport::incCounter('DeviceTypes Update Batches');
                     $dataUpdate = [];
                     CliLogger::activity();
                 }
@@ -147,17 +159,31 @@ class DeviceImportService
         // Create any remaining new types
         if (count($dataCreate)) {
             $topdataDeviceTypeRepository->create($dataCreate, $this->context);
+            ImportReport::incCounter('DeviceTypes Create Batches');
             CliLogger::activity();
         }
 
         // Update any remaining existing types
         if (count($dataUpdate)) {
             $topdataDeviceTypeRepository->update($dataUpdate, $this->context);
+            ImportReport::incCounter('DeviceTypes Update Batches');
             CliLogger::activity();
         }
 
         // Clear the fetched types data
         $types = null;
+
+        // Log summary
+        CliLogger::writeln('');
+        CliLogger::writeln('=== DeviceTypes Summary ===');
+        CliLogger::writeln('Total processed: ' . ImportReport::getCounter('DeviceTypes Total Processed'));
+        CliLogger::writeln('Brand lookups: ' . ImportReport::getCounter('DeviceTypes Brand Lookups'));
+        CliLogger::writeln('Brand not found: ' . ImportReport::getCounter('DeviceTypes Brand Not Found'));
+        CliLogger::writeln('Created: ' . ImportReport::getCounter('DeviceTypes Created'));
+        CliLogger::writeln('Updated: ' . ImportReport::getCounter('DeviceTypes Updated'));
+        CliLogger::writeln('Unchanged: ' . ImportReport::getCounter('DeviceTypes Unchanged'));
+        CliLogger::writeln('Create batches: ' . ImportReport::getCounter('DeviceTypes Create Batches'));
+        CliLogger::writeln('Update batches: ' . ImportReport::getCounter('DeviceTypes Update Batches'));
 
         // Log the completion of the device type processing
         CliLogger::writeln("\nDeviceType done " . CliLogger::lap() . 'sec');
@@ -172,21 +198,28 @@ class DeviceImportService
     public function setSeries(): void
     {
         UtilProfiling::startTimer();
-        CliLogger::section("\n\nSeries");
+        CliLogger::section("Series");
+
         CliLogger::writeln('Getting data from remote server [Series]...');
         CliLogger::lap(true);
         $series = $this->topdataWebserviceClient->getModelSeriesByBrandId();
         CliLogger::activity('Got ' . UtilFormatter::formatInteger(count($series->data)) . " series records from remote server\n");
         ImportReport::setCounter('Fetched Series', count($series->data));
+
         $topdataSeriesRepository = $this->topdataSeriesRepository;
         $dataCreate = [];
         $dataUpdate = [];
         CliLogger::activity('Processing data');
         $allSeries = $this->topdataSeriesService->getSeriesArray(true);
+
         foreach ($series->data as $s) {
             foreach ($s->brandIds as $brandWsId) {
+                ImportReport::incCounter('Series Total Processed');
+                ImportReport::incCounter('Series Brand Lookups');
+
                 $brand = $this->topdataBrandService->getBrandByWsId((int)$brandWsId);
                 if (!$brand) {
+                    ImportReport::incCounter('Series Brand Not Found');
                     continue;
                 }
 
@@ -209,6 +242,7 @@ class DeviceImportService
                         'wsId'    => (int)$s->id,
                         'enabled' => false,
                     ];
+                    ImportReport::incCounter('Series Created');
                 } elseif (
                     $serie['code'] != $code
                     || $serie['label'] != $s->val
@@ -222,16 +256,21 @@ class DeviceImportService
                         'label'   => $s->val,
                         'sort'    => (int)$s->top,
                     ];
+                    ImportReport::incCounter('Series Updated');
+                } else {
+                    ImportReport::incCounter('Series Unchanged');
                 }
 
                 if (count($dataCreate) > 100) {
                     $topdataSeriesRepository->create($dataCreate, $this->context);
+                    ImportReport::incCounter('Series Create Batches');
                     $dataCreate = [];
                     CliLogger::activity();
                 }
 
                 if (count($dataUpdate) > 100) {
                     $topdataSeriesRepository->update($dataUpdate, $this->context);
+                    ImportReport::incCounter('Series Update Batches');
                     $dataUpdate = [];
                     CliLogger::activity();
                 }
@@ -240,13 +279,28 @@ class DeviceImportService
 
         if (count($dataCreate)) {
             $topdataSeriesRepository->create($dataCreate, $this->context);
+            ImportReport::incCounter('Series Create Batches');
             CliLogger::activity();
         }
 
         if (count($dataUpdate)) {
             $topdataSeriesRepository->update($dataUpdate, $this->context);
+            ImportReport::incCounter('Series Update Batches');
             CliLogger::activity();
         }
+
+        // Log summary
+        CliLogger::writeln('');
+        CliLogger::writeln('=== Series Summary ===');
+        CliLogger::writeln('Total processed: ' . ImportReport::getCounter('Series Total Processed'));
+        CliLogger::writeln('Brand lookups: ' . ImportReport::getCounter('Series Brand Lookups'));
+        CliLogger::writeln('Brand not found: ' . ImportReport::getCounter('Series Brand Not Found'));
+        CliLogger::writeln('Created: ' . ImportReport::getCounter('Series Created'));
+        CliLogger::writeln('Updated: ' . ImportReport::getCounter('Series Updated'));
+        CliLogger::writeln('Unchanged: ' . ImportReport::getCounter('Series Unchanged'));
+        CliLogger::writeln('Create batches: ' . ImportReport::getCounter('Series Create Batches'));
+        CliLogger::writeln('Update batches: ' . ImportReport::getCounter('Series Update Batches'));
+
         CliLogger::writeln("\nSeries done " . CliLogger::lap() . 'sec');
         $series = null;
         $topdataSeriesRepository = null;
@@ -279,45 +333,46 @@ class DeviceImportService
         CliLogger::writeln('');
         $functionTimeStart = microtime(true);
         $chunkNumber = 0;
-//            if ((int)$this->optionsHelperService->getOption(OptionConstants::START)) {
-//                $chunkNumber = (int)$this->optionsHelperService->getOption(OptionConstants::START) - 1;
-//                $start = $chunkNumber * $limit;
-//            }
         $repeat = true;
         CliLogger::lap(true);
         $seriesArray = $this->topdataSeriesService->getSeriesArray(true);
         $typesArray = $this->topdataDeviceTypeService->getTypesArray(true);
+
         while ($repeat) {
             if ($start) {
                 CliLogger::mem();
                 CliLogger::activity(CliLogger::lap() . 'sec');
             }
             $chunkNumber++;
-//                if ((int)$this->optionsHelperService->getOption(OptionConstants::END) && ($chunkNumber > (int)$this->optionsHelperService->getOption(OptionConstants::END))) {
-//                    break;
-//                }
             CliLogger::activity("\nGetting device chunk $chunkNumber from remote server...");
 
             ImportReport::incCounter('Device Chunks');
             $response = $this->topdataWebserviceClient->getModels($limit, $start);
             CliLogger::activity(CliLogger::lap() . "sec\n");
+
             if (!isset($response->data) || count($response->data) == 0) {
                 $repeat = false;
                 break;
             }
-            CliLogger::activity("Processing Device Chunk $chunkNumber");
+
+            $recordsInChunk = count($response->data);
+            ImportReport::incCounter('Devices Records Fetched', $recordsInChunk);
+            CliLogger::activity("Processing Device Chunk $chunkNumber ($recordsInChunk records)");
 
             foreach ($response->data as $s) {
+                ImportReport::incCounter('Devices Total Processed');
 
                 $brandArr = $this->topdataBrandService->getBrandByWsId((int)$s->bId);
 
                 if (!$brandArr) {
+                    ImportReport::incCounter('Devices Brand Not Found');
                     continue;
                 }
 
                 $code = $brandArr['code'] . '_' . UtilStringFormatting::formCode($s->val);
 
                 if (isset($duplicates[$code])) {
+                    ImportReport::incCounter('Devices Duplicates Skipped');
                     continue;
                 }
                 $duplicates[$code] = true;
@@ -339,11 +394,11 @@ class DeviceImportService
                 }
 
                 $deviceArr = [];
+                ImportReport::incCounter('Devices Database Lookups');
                 $rez = $this
                     ->connection
                     ->createQueryBuilder()
                     ->select('*')
-//                        ->select(['LOWER(HEX(id))','LOWER(HEX(brand_id))', 'LOWER(HEX(type_id))', 'LOWER(HEX(series_id))','code','model','keywords','sort','ws_id'])
                     ->from('topdata_device')
                     ->where('code="' . $code . '"')
                     ->setMaxResults(1)
@@ -355,26 +410,26 @@ class DeviceImportService
                     $deviceArr['id'] = bin2hex($deviceArr['id']);
                     // brand
                     if (empty($deviceArr['brand_id'])) {
-                        ImportReport::incCounter('Device Without Brand Id');
+                        ImportReport::incCounter('Devices Without Brand Id');
                         $deviceArr['brand_id'] = 0x0; // or null?
                     } else {
-                        ImportReport::incCounter('Device With Brand Id');
+                        ImportReport::incCounter('Devices With Brand Id');
                         $deviceArr['brand_id'] = bin2hex($deviceArr['brand_id']);
                     }
                     // type
                     if (empty($deviceArr['type_id'])) {
-                        ImportReport::incCounter('Device Without Type Id');
+                        ImportReport::incCounter('Devices Without Type Id');
                         $deviceArr['type_id'] = 0x0; // or null?
                     } else {
-                        ImportReport::incCounter('Device With Type Id');
+                        ImportReport::incCounter('Devices With Type Id');
                         $deviceArr['type_id'] = bin2hex($deviceArr['type_id']);
                     }
                     // series
                     if (empty($deviceArr['series_id'])) {
-                        ImportReport::incCounter('Device Without Series Id');
+                        ImportReport::incCounter('Devices Without Series Id');
                         $deviceArr['series_id'] = 0x0; // or null?
                     } else {
-                        ImportReport::incCounter('Device With Series Id');
+                        ImportReport::incCounter('Devices With Series Id');
                         $deviceArr['series_id'] = bin2hex($deviceArr['series_id']);
                     }
                 }
@@ -382,6 +437,7 @@ class DeviceImportService
                 $serieId = null;
                 $serie = [];
                 if ($s->mId) {
+                    ImportReport::incCounter('Devices Series Lookups');
                     foreach ($seriesArray as $serieItem) {
                         if ($serieItem['ws_id'] == (int)$s->mId && $serieItem['brand_id'] == $brandArr['id']) {
                             $serie = $serieItem;
@@ -390,6 +446,7 @@ class DeviceImportService
                     }
                 }
                 if ($serie) {
+                    ImportReport::incCounter('Devices Series Found');
                     $serieId = $serie['id'];
                     $search_keywords[] = $serie['label'];
                 }
@@ -397,6 +454,7 @@ class DeviceImportService
                 $typeId = null;
                 $type = [];
                 if ($s->dId) {
+                    ImportReport::incCounter('Devices Type Lookups');
                     foreach ($typesArray as $typeItem) {
                         if ($typeItem['ws_id'] == (int)$s->dId && $typeItem['brand_id'] == $brandArr['id']) {
                             $type = $typeItem;
@@ -406,6 +464,7 @@ class DeviceImportService
                 }
 
                 if ($type) {
+                    ImportReport::incCounter('Devices Type Found');
                     $typeId = $type['id'];
                     $search_keywords[] = $type['label'];
                 }
@@ -425,32 +484,33 @@ class DeviceImportService
                         'enabled'  => false,
                         'mediaId'  => null,
                     ];
+                    ImportReport::incCounter('Devices Created');
                 } elseif (
                     $deviceArr['brand_id'] != $brandArr['id']
                     || $deviceArr['type_id'] != $typeId
                     || $deviceArr['series_id'] != $serieId
                     || $deviceArr['model'] != $s->val
                     || $deviceArr['keywords'] != $keywords
-//                        || $deviceArr['sort'] != $s->top
                     || $deviceArr['ws_id'] != $s->id
                 ) {
                     $dataUpdate[] = [
                         'id'       => $deviceArr['id'],
                         'brandId'  => $brandArr['id'],
-                        //                        'brandId' => $brand->getId(),
                         'typeId'   => $typeId,
                         'seriesId' => $serieId,
                         'model'    => $s->val,
                         'keywords' => $keywords,
-                        //                            'sort' => (int)$s->top,
                         'wsId'     => (int)$s->id,
-                        //                            'enabled' => false
                     ];
+                    ImportReport::incCounter('Devices Updated');
+                } else {
+                    ImportReport::incCounter('Devices Unchanged');
                 }
 
                 if (count($dataCreate) > 50) {
                     $created += count($dataCreate);
                     $this->topdataDeviceRepository->create($dataCreate, $this->context);
+                    ImportReport::incCounter('Devices Create Batches');
                     $dataCreate = [];
                     CliLogger::activity('+');
                 }
@@ -458,6 +518,7 @@ class DeviceImportService
                 if (count($dataUpdate) > 50) {
                     $updated += count($dataUpdate);
                     $this->topdataDeviceRepository->update($dataUpdate, $this->context);
+                    ImportReport::incCounter('Devices Update Batches');
                     $dataUpdate = [];
                     CliLogger::activity('*');
                 }
@@ -465,12 +526,14 @@ class DeviceImportService
             if (count($dataCreate)) {
                 $created += count($dataCreate);
                 $this->topdataDeviceRepository->create($dataCreate, $this->context);
+                ImportReport::incCounter('Devices Create Batches');
                 $dataCreate = [];
                 CliLogger::activity('+');
             }
             if (count($dataUpdate)) {
                 $updated += count($dataUpdate);
                 $this->topdataDeviceRepository->update($dataUpdate, $this->context);
+                ImportReport::incCounter('Devices Update Batches');
                 $dataUpdate = [];
                 CliLogger::activity('*');
             }
@@ -486,6 +549,32 @@ class DeviceImportService
         $duplicates = null;
         CliLogger::writeln('');
         $totalSecs = microtime(true) - $functionTimeStart;
+
+        // Enhanced reporting with all counters
+        CliLogger::writeln('');
+        CliLogger::writeln('=== Devices Import Summary ===');
+        CliLogger::writeln('Chunks processed: ' . ImportReport::getCounter('Device Chunks'));
+        CliLogger::writeln('Total records fetched: ' . ImportReport::getCounter('Devices Records Fetched'));
+        CliLogger::writeln('Total records processed: ' . ImportReport::getCounter('Devices Total Processed'));
+        CliLogger::writeln('Brand not found: ' . ImportReport::getCounter('Devices Brand Not Found'));
+        CliLogger::writeln('Duplicates skipped: ' . ImportReport::getCounter('Devices Duplicates Skipped'));
+        CliLogger::writeln('Database lookups: ' . ImportReport::getCounter('Devices Database Lookups'));
+        CliLogger::writeln('With brand ID: ' . ImportReport::getCounter('Devices With Brand Id'));
+        CliLogger::writeln('Without brand ID: ' . ImportReport::getCounter('Devices Without Brand Id'));
+        CliLogger::writeln('With type ID: ' . ImportReport::getCounter('Devices With Type Id'));
+        CliLogger::writeln('Without type ID: ' . ImportReport::getCounter('Devices Without Type Id'));
+        CliLogger::writeln('With series ID: ' . ImportReport::getCounter('Devices With Series Id'));
+        CliLogger::writeln('Without series ID: ' . ImportReport::getCounter('Devices Without Series Id'));
+        CliLogger::writeln('Series lookups: ' . ImportReport::getCounter('Devices Series Lookups'));
+        CliLogger::writeln('Series found: ' . ImportReport::getCounter('Devices Series Found'));
+        CliLogger::writeln('Type lookups: ' . ImportReport::getCounter('Devices Type Lookups'));
+        CliLogger::writeln('Type found: ' . ImportReport::getCounter('Devices Type Found'));
+        CliLogger::writeln('Created: ' . ImportReport::getCounter('Devices Created'));
+        CliLogger::writeln('Updated: ' . ImportReport::getCounter('Devices Updated'));
+        CliLogger::writeln('Unchanged: ' . ImportReport::getCounter('Devices Unchanged'));
+        CliLogger::writeln('Create batches: ' . ImportReport::getCounter('Devices Create Batches'));
+        CliLogger::writeln('Update batches: ' . ImportReport::getCounter('Devices Update Batches'));
+        CliLogger::writeln('Total time: ' . $totalSecs . ' seconds');
 
         CliLogger::getCliStyle()->dumpDict([
             'created'    => $created,

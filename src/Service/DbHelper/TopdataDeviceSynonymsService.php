@@ -37,7 +37,7 @@ class TopdataDeviceSynonymsService
     public function setDeviceSynonyms(): void
     {
         UtilProfiling::startTimer();
-        CliLogger::section("\n\nDevice synonyms");
+        CliLogger::section("Device synonyms");
         $enabledDevices = [];
         foreach ($this->topdataDeviceService->_getEnabledDevices() as $pr) {
             $enabledDevices[$pr['ws_id']] = bin2hex($pr['id']);

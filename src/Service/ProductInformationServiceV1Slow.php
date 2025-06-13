@@ -73,9 +73,9 @@ class ProductInformationServiceV1Slow
         UtilProfiling::startTimer();
 
         if ($onlyMedia) {
-            CliLogger::section("\n\nProduct media (--product-media-only)");
+            CliLogger::section("Product media (--product-media-only)");
         } else {
-            CliLogger::section("\n\nProduct information");
+            CliLogger::section("Product information");
         }
 
         // ---- Fetch the topid products

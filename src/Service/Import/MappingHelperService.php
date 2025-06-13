@@ -216,7 +216,7 @@ class MappingHelperService
     public function setBrands(): void
     {
         UtilProfiling::startTimer();
-        CliLogger::section("\n\nBrands");
+        CliLogger::section("Brands");
 
         // Log the start of the data fetching process
         CliLogger::writeln('Getting data from remote server [Brand]...');

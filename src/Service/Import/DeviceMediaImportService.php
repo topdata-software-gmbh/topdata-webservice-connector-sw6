@@ -58,19 +58,6 @@ class DeviceMediaImportService
         UtilProfiling::startTimer();
         CliLogger::writeln('Devices Media start');
 
-        // Initialize counters
-        ImportReport::resetCounter('Device Media Total Processed');
-        ImportReport::resetCounter('Device Media Chunks');
-        ImportReport::resetCounter('Device Media Records Fetched');
-        ImportReport::resetCounter('Device Media Devices Found');
-        ImportReport::resetCounter('Device Media Devices Skipped - Not Available');
-        ImportReport::resetCounter('Device Media Devices Skipped - No Brand');
-        ImportReport::resetCounter('Device Media Devices Skipped - Device Not Found');
-        ImportReport::resetCounter('Device Media Images Deleted');
-        ImportReport::resetCounter('Device Media Images Skipped - No Image');
-        ImportReport::resetCounter('Device Media Images Skipped - Current Newer');
-        ImportReport::resetCounter('Device Media Images Updated');
-        ImportReport::resetCounter('Device Media Errors');
 
         // Fetch enabled devices
         $available_Printers = [];
