@@ -28,6 +28,7 @@ class ImportConfig
     private bool $optionExperimentalV2; // --experimental-v2, 04/2025 added
     private bool $optionProductDevice; // --product-device, 04/2025 added
     private bool $optionPurgeCache; // --purge-cache, 05/2025 added
+    private ?string $baseUrl = null;
 
 
     /**
@@ -51,6 +52,7 @@ class ImportConfig
         $ret->optionExperimentalV2 = (bool)$input->getOption('experimental-v2');
         $ret->optionProductDevice = (bool)$input->getOption('product-device');
         $ret->optionPurgeCache = (bool)$input->getOption('purge-cache'); // purge the mapping cache before import
+        $ret->baseUrl = $input->getOption('base-url');
 
         return $ret;
     }
@@ -120,6 +122,13 @@ class ImportConfig
         return $this->optionPurgeCache;
     }
 
+    public function getBaseUrl(): ?string
+    {
+        return $this->baseUrl;
+    }
+
+
+
     public function toDict(): array
     {
         return [
@@ -136,8 +145,10 @@ class ImportConfig
             'optionProductVariations'  => $this->optionProductVariations,
             'optionExperimentalV2'     => $this->optionExperimentalV2,
             'optionPurgeCache'         => $this->optionPurgeCache,
+            'baseUrl'                  => $this->baseUrl,
         ];
     }
+
 
 
 }

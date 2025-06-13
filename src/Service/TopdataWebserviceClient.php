@@ -22,7 +22,7 @@ class TopdataWebserviceClient
     private CurlHttpClient $curlHttpClient;
 
 
-    private readonly string $apiBaseUrl;
+    private string $apiBaseUrl; // can be overridden with --base-url CLI option
     private readonly string $apiUid;
     private readonly string $apiPassword;
     private readonly string $apiSecurityKey;
@@ -169,7 +169,6 @@ class TopdataWebserviceClient
     }
 
 
-
 //    // unused
 //    public function getFinder(string $finder, string $step, array $params = []): mixed
 //    {
@@ -222,6 +221,16 @@ class TopdataWebserviceClient
 //    {
 //        return $this->httpGet("/product_accessories/$id", $params);
 //    }
+
+    public function setBaseUrl(string $getBaseUrl)
+    {
+        $this->apiBaseUrl = $getBaseUrl;
+    }
+
+    public function getBaseUrl(): string
+    {
+        return $this->apiBaseUrl;
+    }
 
 
 }

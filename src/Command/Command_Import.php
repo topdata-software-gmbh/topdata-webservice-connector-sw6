@@ -15,6 +15,7 @@ use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportConfig;
 use Topdata\TopdataConnectorSW6\Exception\MissingPluginConfigurationException;
 use Topdata\TopdataConnectorSW6\Service\ImportService;
+use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
@@ -30,15 +31,14 @@ use Topdata\TopdataFoundationSW6\Util\UtilThrowable;
  */
 class Command_Import extends AbstractTopdataCommand
 {
-
-
     private ?LockInterface $lock = null;
 
     public function __construct(
-        private readonly ImportService        $importService,
-        private readonly TopdataReportService $topdataReportService,
-        private readonly SystemConfigService  $systemConfigService,
-        private readonly LockFactory          $lockFactory,
+        private readonly ImportService           $importService,
+        private readonly TopdataReportService    $topdataReportService,
+        private readonly SystemConfigService     $systemConfigService,
+        private readonly LockFactory             $lockFactory,
+        private readonly TopdataWebserviceClient $topdataWebserviceClient,
     )
     {
         parent::__construct();
@@ -49,7 +49,7 @@ class Command_Import extends AbstractTopdataCommand
      *
      * @return array An array containing counters and a user ID.
      */
-    private function _getBasicReportData(): array
+    private function _getBasicReportData(ImportConfig $importConfig): array
     {
         $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
 
@@ -58,7 +58,7 @@ class Command_Import extends AbstractTopdataCommand
             'profiling' => UtilProfiling::getProfiling(),
             'apiConfig' => [
                 'uid'      => $pluginConfig['apiUid'],
-                'baseUrl'  => $pluginConfig['apiBaseUrl'],
+                'baseUrl'  => $importConfig->getBaseUrl() ?? $pluginConfig['apiBaseUrl'],
                 'language' => $pluginConfig['apiLanguage'],
             ],
         ];
@@ -84,6 +84,7 @@ class Command_Import extends AbstractTopdataCommand
         $this->addOption('experimental-v2', 'x', InputOption::VALUE_NONE, 'switch to use the faster v2 of the connector'); // 04/2025 added
         $this->addOption('product-device', '', InputOption::VALUE_NONE, 'fetch the product device relations from webservice'); // 04/2025 added
         $this->addOption('purge-cache', null, InputOption::VALUE_NONE, 'purge the mapping cache before import'); // 05/2025 added
+        $this->addOption('base-url', null, InputOption::VALUE_REQUIRED, 'Override base URL for import operation'); // 06/2025 added
     }
 
     /**
@@ -116,26 +117,32 @@ class Command_Import extends AbstractTopdataCommand
             $this->topdataReportService->newJobReport(TopdataJobTypeConstants::WEBSERVICE_IMPORT, $commandLine);
 
             // ---- print used credentials (TODO: a nice horizontal table and redact credentials)
-            $config = $this->systemConfigService->get('TopdataConnectorSW6.config');
-            CliLogger::dump($config);
+//            $pluginConfig = $this->systemConfigService->get('TopdataConnectorSW6.config');
+//            CliLogger::dump($pluginConfig);
 
 
             try {
                 // ---- Create Input Config DTO from cli options
                 $importConfig = ImportConfig::createFromCliInput($input);
+                // ---- Set base URL if provided as CLI option
+                if($importConfig->getBaseUrl()) {
+                    $this->topdataWebserviceClient->setBaseUrl($importConfig->getBaseUrl());
+                }
+
+                CliLogger::info('Using base URL: ' . $this->topdataWebserviceClient->getBaseUrl());
+
                 // ---- Execute the import service
                 $this->importService->execute($importConfig);
                 // ---- Mark as succeeded or failed based on the result
-                $this->topdataReportService->markAsSucceeded($this->_getBasicReportData());
+                $this->topdataReportService->markAsSucceeded($this->_getBasicReportData($importConfig));
 
                 return Command::SUCCESS;
-            }
-            catch (\Throwable $e) {
+            } catch (\Throwable $e) {
                 // ---- Handle exception and mark as failed
-                if( $e instanceof MissingPluginConfigurationException) {
+                if ($e instanceof MissingPluginConfigurationException) {
                     CliLogger::warning(GlobalPluginConstants::ERROR_MESSAGE_NO_WEBSERVICE_CREDENTIALS);
                 }
-                $reportData = $this->_getBasicReportData();
+                $reportData = $this->_getBasicReportData($importConfig);
                 $reportData['error'] = UtilThrowable::toArray($e);
                 $this->topdataReportService->markAsFailed($reportData);
 
