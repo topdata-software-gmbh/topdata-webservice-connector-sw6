@@ -69,51 +69,12 @@ class TopdataWebserviceClient
     }
 
 
-    // unused?
-    public function getFinder(string $finder, string $step, array $params = []): mixed
-    {
-        $endpoint = "/finder/$finder/$step";
-        return $this->httpGet($endpoint, $params);
-    }
-
-
     public function product($id, array $params = []): mixed
     {
         $endpoint = "/product/$id";
         return $this->httpGet($endpoint, $params);
     }
 
-
-//    public function myProducts(array $params = []): mixed
-//    {
-//        return $this->httpGet('/my_products', $params);
-//    }
-//
-//
-//    // unused
-//    public function myProductsOfWaregroup(int $waregroupId): mixed
-//    {
-//        if ($waregroupId <= 0) {
-//            return false;
-//        }
-//
-//        return $this->httpGet("/waregroup/$waregroupId");
-//    }
-//
-//    // unused
-//    public function myDistributorProducts(array $params = []): mixed
-//    {
-//        return $this->httpGet('/distributor_products', $params);
-//    }
-//
-//    /**
-//     * - no pagination
-//     * - the 'waregroups' array contains the data
-//     */
-//    public function myWaregroups(array $params = []): mixed
-//    {
-//        return $this->httpGet('/waregroups', $params);
-//    }
 
     /**
      * fetches the OEMs assigned to the topdata user account
@@ -174,24 +135,28 @@ class TopdataWebserviceClient
         return $this->httpGet('/finder/ink_toner/brands');
     }
 
-    public function getModelTypeByBrandId(int|string|false $brandId = false): mixed
+    /**
+     * not paginated
+     * 06/2025 renamed from getModelTypeByBrandId to getModelTypes and removed brandId parameter (was unused)
+     */
+    public function getModelTypes(): mixed
     {
-        $params = $brandId ? ['brand_id' => $brandId] : [];
-        return $this->httpGet('/finder/ink_toner/devicetypes', $params);
+        return $this->httpGet('/finder/ink_toner/devicetypes');
     }
 
-    public function getModelSeriesByBrandId(int|string|false $brandId = false): mixed
+    /**
+     * not paginated
+     * 06/2025 renamed from getModelSeriesByBrandId to getModelSeries and removed brandId parameter (was unused)
+     */
+    public function getModelSeries(): mixed
     {
-        $params = $brandId ? ['brand_id' => $brandId] : [];
-        return $this->httpGet('/finder/ink_toner/modelseries', $params);
+        return $this->httpGet('/finder/ink_toner/modelseries');
     }
 
-//    public function getModelsBySeriesId(int|string $brandId, int|string $seriesId): mixed
-//    {
-//        $params = ['brand_id' => $brandId, 'modelserie_id' => $seriesId];
-//        return $this->httpGet('/finder/ink_toner/models', $params);
-//    }
-
+    /**
+     * paginated (limit and start)
+     * 06/2025 created
+     */
     public function getModels(int $limit, int $start): mixed
     {
         $params = ['limit' => $limit, 'start' => $start];
@@ -203,14 +168,60 @@ class TopdataWebserviceClient
         return $this->httpGet('/user/user_info');
     }
 
+
+
+//    // unused
+//    public function getFinder(string $finder, string $step, array $params = []): mixed
+//    {
+//        $endpoint = "/finder/$finder/$step";
+//        return $this->httpGet($endpoint, $params);
+//    }
+//
+//    public function myProducts(array $params = []): mixed
+//    {
+//        return $this->httpGet('/my_products', $params);
+//    }
+//
+//
+//    // unused
+//    public function myProductsOfWaregroup(int $waregroupId): mixed
+//    {
+//        if ($waregroupId <= 0) {
+//            return false;
+//        }
+//
+//        return $this->httpGet("/waregroup/$waregroupId");
+//    }
+//
+//    // unused
+//    public function myDistributorProducts(array $params = []): mixed
+//    {
+//        return $this->httpGet('/distributor_products', $params);
+//    }
+//
+//    /**
+//     * - no pagination
+//     * - the 'waregroups' array contains the data
+//     */
+//    public function myWaregroups(array $params = []): mixed
+//    {
+//        return $this->httpGet('/waregroups', $params);
+//    }
+//    public function getModelsBySeriesId(int|string $brandId, int|string $seriesId): mixed
+//    {
+//        $params = ['brand_id' => $brandId, 'modelserie_id' => $seriesId];
+//        return $this->httpGet('/finder/ink_toner/models', $params);
+//    }
+//
 //    public function getModelsByBrandId(int|string $brandId): mixed
 //    {
 //        return $this->httpGet('/finder/ink_toner/models', ['brand_id' => $brandId]);
 //    }
-
-
+//
 //    public function productAccessories(int|string $id, array $params = []): mixed
 //    {
 //        return $this->httpGet("/product_accessories/$id", $params);
 //    }
+
+
 }
