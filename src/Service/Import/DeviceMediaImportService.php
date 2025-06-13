@@ -41,7 +41,7 @@ class DeviceMediaImportService
         $this->context = Context::createDefaultContext();
     }
 
-/**
+    /**
      * Sets the device media by fetching data from the remote server and updating the local database.
      *
      * This method retrieves device media information from the remote server, processes the data, and updates the local database
@@ -58,6 +58,20 @@ class DeviceMediaImportService
         UtilProfiling::startTimer();
         CliLogger::writeln('Devices Media start');
 
+        // Initialize counters
+        ImportReport::resetCounter('Device Media Total Processed');
+        ImportReport::resetCounter('Device Media Chunks');
+        ImportReport::resetCounter('Device Media Records Fetched');
+        ImportReport::resetCounter('Device Media Devices Found');
+        ImportReport::resetCounter('Device Media Devices Skipped - Not Available');
+        ImportReport::resetCounter('Device Media Devices Skipped - No Brand');
+        ImportReport::resetCounter('Device Media Devices Skipped - Device Not Found');
+        ImportReport::resetCounter('Device Media Images Deleted');
+        ImportReport::resetCounter('Device Media Images Skipped - No Image');
+        ImportReport::resetCounter('Device Media Images Skipped - Current Newer');
+        ImportReport::resetCounter('Device Media Images Updated');
+        ImportReport::resetCounter('Device Media Errors');
+
         // Fetch enabled devices
         $available_Printers = [];
         foreach ($this->topdataDeviceService->_getEnabledDevices() as $pr) {
@@ -67,9 +81,11 @@ class DeviceMediaImportService
         $processedPrintarsCount = 0;
         $chunkSize = self::BATCH_SIZE;
         CliLogger::writeln("Chunk size is $chunkSize devices");
+        CliLogger::writeln("Available devices: $availablePrintersCount");
         $start = 0;
         $chunkNumber = 0;
         CliLogger::lap(true);
+
         while (true) {
             $chunkNumber++;
             CliLogger::activity("\nFetching media chunk $chunkNumber from remote server...");
@@ -78,14 +94,21 @@ class DeviceMediaImportService
             CliLogger::activity(CliLogger::lap() . 'sec. ');
             CliLogger::mem();
             CliLogger::writeln('');
+
             if (!isset($models->data) || count($models->data) == 0) {
                 break;
             }
-            CliLogger::activity("Processing data chunk $chunkNumber");
+
+            $recordsInChunk = count($models->data);
+            ImportReport::incCounter('Device Media Records Fetched', $recordsInChunk);
+            CliLogger::activity("Processing data chunk $chunkNumber ($recordsInChunk records)");
 
             $processCounter = 1;
             foreach ($models->data as $s) {
+                ImportReport::incCounter('Device Media Total Processed');
+
                 if (!isset($available_Printers[$s->id])) {
+                    ImportReport::incCounter('Device Media Devices Skipped - Not Available');
                     continue;
                 }
 
@@ -99,6 +122,7 @@ class DeviceMediaImportService
 
                 $brand = $this->topdataBrandService->getBrandByWsId((int)$s->bId);
                 if (!$brand) {
+                    ImportReport::incCounter('Device Media Devices Skipped - No Brand');
                     continue;
                 }
 
@@ -112,10 +136,13 @@ class DeviceMediaImportService
                 )
                     ->getEntities()
                     ->first();
+
                 if (!$device) {
+                    ImportReport::incCounter('Device Media Devices Skipped - Device Not Found');
                     continue;
                 }
 
+                ImportReport::incCounter('Device Media Devices Found');
                 $currentMedia = $device->getMedia();
 
                 // Delete media if the image is null
@@ -127,6 +154,8 @@ class DeviceMediaImportService
                         ],
                     ], $this->context);
 
+                    ImportReport::incCounter('Device Media Images Deleted');
+
                     /*
                      * @todo Use \Shopware\Core\Content\Media\DataAbstractionLayer\MediaRepositoryDecorator
                      * for deleting file physically?
@@ -136,11 +165,13 @@ class DeviceMediaImportService
                 }
 
                 if (is_null($s->img)) {
+                    ImportReport::incCounter('Device Media Images Skipped - No Image');
                     continue;
                 }
 
                 // Skip if the current media is newer than the fetched media
                 if ($currentMedia && (date_timestamp_get($currentMedia->getCreatedAt()) > strtotime($s->img_date))) {
+                    ImportReport::incCounter('Device Media Images Skipped - Current Newer');
                     continue;
                 }
 
@@ -155,8 +186,10 @@ class DeviceMediaImportService
                                 'mediaId' => $mediaId,
                             ],
                         ], $this->context);
+                        ImportReport::incCounter('Device Media Images Updated');
                     }
                 } catch (Exception $e) {
+                    ImportReport::incCounter('Device Media Errors');
                     $this->logger->error($e->getMessage());
                     CliLogger::writeln('Exception: ' . $e->getMessage());
                 }
@@ -164,12 +197,25 @@ class DeviceMediaImportService
             CliLogger::writeln("processed $processedPrintarsCount of $availablePrintersCount devices " . CliLogger::lap() . 'sec. ');
             $start += $chunkSize;
             if (count($models->data) < $chunkSize) {
-                $repeat = false;
                 break;
             }
         }
 
+        // Final summary with all counters
         CliLogger::writeln('');
+        CliLogger::writeln('=== Device Media Import Summary ===');
+        CliLogger::writeln('Chunks processed: ' . ImportReport::getCounter('Device Media Chunks'));
+        CliLogger::writeln('Total records fetched: ' . ImportReport::getCounter('Device Media Records Fetched'));
+        CliLogger::writeln('Total records processed: ' . ImportReport::getCounter('Device Media Total Processed'));
+        CliLogger::writeln('Devices found: ' . ImportReport::getCounter('Device Media Devices Found'));
+        CliLogger::writeln('Devices skipped (not available): ' . ImportReport::getCounter('Device Media Devices Skipped - Not Available'));
+        CliLogger::writeln('Devices skipped (no brand): ' . ImportReport::getCounter('Device Media Devices Skipped - No Brand'));
+        CliLogger::writeln('Devices skipped (device not found): ' . ImportReport::getCounter('Device Media Devices Skipped - Device Not Found'));
+        CliLogger::writeln('Images updated: ' . ImportReport::getCounter('Device Media Images Updated'));
+        CliLogger::writeln('Images deleted: ' . ImportReport::getCounter('Device Media Images Deleted'));
+        CliLogger::writeln('Images skipped (no image): ' . ImportReport::getCounter('Device Media Images Skipped - No Image'));
+        CliLogger::writeln('Images skipped (current newer): ' . ImportReport::getCounter('Device Media Images Skipped - Current Newer'));
+        CliLogger::writeln('Errors encountered: ' . ImportReport::getCounter('Device Media Errors'));
         CliLogger::writeln('Devices Media done');
 
         UtilProfiling::stopTimer();
