@@ -157,7 +157,7 @@ class MappingCacheService
     }
 
     /**
-     * Loads mappings from the cache and inserts them into the topdata_to_product table.
+     * Loads mappings from the cache (topdata_mapping_cache) and inserts them into the topdata_to_product table.
      * Dynamically finds matching Shopware products based on the cached mapping values.
      *
      * @param string|null $mappingType Optional mapping type to load specific cache

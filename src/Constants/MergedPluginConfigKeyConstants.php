@@ -28,29 +28,33 @@ class MergedPluginConfigKeyConstants
     const PRODUCT_CAPACITY_VARIANT  = 'productCapacityVariant'; // unused?
 
     // moved from MergedPluginConfigHelperService to here:
-    const OPTION_NAME_productName                 = 'productName';
-    const OPTION_NAME_productDescription          = 'productDescription';
-    const OPTION_NAME_productBrand                = 'productBrand';
-    const OPTION_NAME_productEan                  = 'productEan';
-    const OPTION_NAME_productOem                  = 'productOem';
-    const OPTION_NAME_productImages               = 'productImages';
-    const OPTION_NAME_specReferencePCD            = 'specReferencePCD';
-    const OPTION_NAME_specReferenceOEM            = 'specReferenceOEM';
-    const OPTION_NAME_productSpecifications       = 'productSpecifications';
-    const OPTION_NAME_productImagesDelete         = 'productImagesDelete'; // not used?
-    const OPTION_NAME_productSimilar              = 'productSimilar';
+    const OPTION_NAME_productName           = 'productName';
+    const OPTION_NAME_productDescription    = 'productDescription';
+    const OPTION_NAME_productBrand          = 'productBrand';
+    const OPTION_NAME_productEan            = 'productEan';
+    const OPTION_NAME_productOem            = 'productOem';
+    const OPTION_NAME_productImages         = 'productImages';
+    const OPTION_NAME_specReferencePCD      = 'specReferencePCD';
+    const OPTION_NAME_specReferenceOEM      = 'specReferenceOEM';
+    const OPTION_NAME_productSpecifications = 'productSpecifications';
+    const OPTION_NAME_productImagesDelete   = 'productImagesDelete'; // not used?
+
+    // ---- relationship options from the topfeed plugin config
+
+    const RELATIONSHIP_OPTION_productSimilar         = 'productSimilar';
+    const RELATIONSHIP_OPTION_productAlternate       = 'productAlternate';
+    const RELATIONSHIO_OPTION_productRelated         = 'productRelated';
+    const RELATIONSHIP_OPTION_productBundled         = 'productBundled';
+    const RELATIONSHIP_OPTION_productColorVariant    = 'productColorVariant';
+    const RELATIONSHIP_OPTION_productCapacityVariant = 'productCapacityVariant';
+    const RELATIONSHIP_OPTION_productVariant         = 'productVariant';
+    // ---- cross-selling options from the topfeed plugin config [whether cross-selling is enabled]
     const OPTION_NAME_productSimilarCross         = 'productSimilarCross';
-    const OPTION_NAME_productAlternate            = 'productAlternate';
     const OPTION_NAME_productAlternateCross       = 'productAlternateCross';
-    const OPTION_NAME_productRelated              = 'productRelated';
     const OPTION_NAME_productRelatedCross         = 'productRelatedCross';
-    const OPTION_NAME_productBundled              = 'productBundled';
     const OPTION_NAME_productBundledCross         = 'productBundledCross';
-    const OPTION_NAME_productColorVariant         = 'productColorVariant';
     const OPTION_NAME_productVariantColorCross    = 'productVariantColorCross';
-    const OPTION_NAME_productCapacityVariant      = 'productCapacityVariant';
     const OPTION_NAME_productVariantCapacityCross = 'productVariantCapacityCross';
-    const OPTION_NAME_productVariant              = 'productVariant';
     const OPTION_NAME_productVariantCross         = 'productVariantCross';
 
     // ---- display options from the topfeed plugin config
