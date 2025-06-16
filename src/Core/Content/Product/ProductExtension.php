@@ -20,7 +20,7 @@ use Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\ColorVariant\Produ
 use Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\Related\ProductRelatedDefinition;
 use Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\Similar\ProductSimilarDefinition;
 use Topdata\TopdataConnectorSW6\Core\Content\Product\Agregate\Variant\ProductVariantDefinition;
-use Topdata\TopdataConnectorSW6\Core\Content\TopdataProduct\TopdataProductDefinition;
+use Topdata\TopdataConnectorSW6\Core\Content\TopdataToProduct\TopdataToProductDefinition;
 
 class ProductExtension extends EntityExtension
 {
@@ -31,7 +31,7 @@ class ProductExtension extends EntityExtension
                 'topdata',
                 'id',
                 'product_id',
-                TopdataProductDefinition::class,
+                TopdataToProductDefinition::class,
                 false
             ))->addFlags(new Inherited())
         );

@@ -18,7 +18,7 @@
         <service id="Topdata\TopdataConnectorSW6\Core\Content\Series\SeriesDefinition">
             <tag name="shopware.entity.definition" entity="topdata_series" />
         </service>
-        <service id="Topdata\TopdataConnectorSW6\Core\Content\TopdataProduct\TopdataProductDefinition">
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\TopdataToProduct\TopdataToProductDefinition">
             <tag name="shopware.entity.definition" entity="topdata_to_product" />
         </service>
         

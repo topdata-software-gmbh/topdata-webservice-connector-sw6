@@ -2,13 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Topdata\TopdataConnectorSW6\Core\Content\TopdataProduct;
+namespace Topdata\TopdataConnectorSW6\Core\Content\TopdataToProduct;
 
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 
-class TopdataProductEntity extends Entity
+/**
+ * 06/2025 rebamed TopdataToProductEntity --> TopdataToProductEntity
+ */
+class TopdataToProductEntity extends Entity
 {
     use EntityIdTrait;
 

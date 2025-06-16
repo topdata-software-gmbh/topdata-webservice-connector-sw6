@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Topdata\TopdataConnectorSW6\Core\Content\TopdataProduct;
+namespace Topdata\TopdataConnectorSW6\Core\Content\TopdataToProduct;
 
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
@@ -17,7 +17,10 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
 
-class TopdataProductDefinition extends EntityDefinition
+/**
+ * 06/2025 renamed TopdataToProductDefinition --> TopdataToProductDefinition
+ */
+class TopdataToProductDefinition extends EntityDefinition
 {
     public const ENTITY_NAME = 'topdata_to_product';
 
@@ -28,12 +31,12 @@ class TopdataProductDefinition extends EntityDefinition
 
     public function getEntityClass(): string
     {
-        return TopdataProductEntity::class;
+        return TopdataToProductEntity::class;
     }
 
     public function getCollectionClass(): string
     {
-        return TopdataProductCollection::class;
+        return TopdataToProductCollection::class;
     }
 
     protected function defineFields(): FieldCollection

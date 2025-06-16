@@ -205,7 +205,7 @@ class MappingCacheService
         // Process each mapping type
         $total = 0;
         foreach ($mappingsByType as $type => $typeMappings) {
-            CliLogger::info('Processing ' . count($typeMappings) . ' ' . $type . ' mappings...');
+            CliLogger::info('Processing ' . UtilFormatter::formatInteger(count($typeMappings)) . ' ' . $type . ' mappings...');
 
             // Get the appropriate product map based on mapping type
             $productMap = $this->getProductMapByType($type);
@@ -336,7 +336,8 @@ class MappingCacheService
             ];
         }
 
-        CliLogger::info('Found ' . count($oemMap) . ' unique OEMs in Shopware products.');
+        CliLogger::info('Found ' . UtilFormatter::formatInteger(count($oemMap)) . ' unique OEMs in Shopware products.');
+
         return $oemMap;
     }
 

@@ -182,7 +182,7 @@ final class MappingStrategy_Unified extends AbstractMappingStrategy
         foreach ($mappingTypes as $mappingType) {
             $loaded = $this->mappingCacheService->loadMappingsFromCache($mappingType);
             $totalLoaded += $loaded;
-            CliLogger::info("Loaded $loaded $mappingType mappings from cache.");
+            CliLogger::info("Loaded " . UtilFormatter::formatInteger($loaded) . " $mappingType mappings from cache.");
         }
 
         if ($totalLoaded > 0) {
