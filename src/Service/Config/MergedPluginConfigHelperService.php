@@ -79,7 +79,8 @@ class MergedPluginConfigHelperService
             return;
         }
 
-        $this->_setOptions($topfeedPluginConfig);
+        // MergedPluginConfigHelperService::_setOptions(): Argument #1 ($keyValueArray) must be of type array, null given
+        $this->_setOptions($topfeedPluginConfig ?? []);
         $this->_setOption(MergedPluginConfigKeyConstants::PRODUCT_COLOR_VARIANT, $topfeedPluginConfig['productVariantColor']); // FIXME? 'productColorVariant' != 'productVariantColor'
         $this->_setOption(MergedPluginConfigKeyConstants::PRODUCT_CAPACITY_VARIANT, $topfeedPluginConfig['productVariantCapacity']); // FIXME? 'productCapacityVariant' != 'productVariantCapacity'
 
