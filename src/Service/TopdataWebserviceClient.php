@@ -9,6 +9,7 @@ namespace Topdata\TopdataConnectorSW6\Service;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Topdata\TopdataConnectorSW6\Helper\CurlHttpClient;
+use Topdata\TopdataConnectorSW6\Util\ImportReport;
 
 /**
  * A simple http client for the topdata webservice with a retry mechanism (exponential backoff).
@@ -64,6 +65,8 @@ class TopdataWebserviceClient
             'filter'       => 'all'
         ]);
         $url = $this->apiBaseUrl . $endpoint . '?' . http_build_query($params);
+
+        ImportReport::incCounter("WS $endpoint"); // just for statistics and debugging
 
         return $this->curlHttpClient->get($url);
     }
