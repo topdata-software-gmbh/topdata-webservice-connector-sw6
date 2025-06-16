@@ -19,6 +19,8 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
  * Handles the import and association of media (images) for devices.
+ * This service fetches device media information from a remote source, processes it,
+ * and updates the local database by associating media files with devices.
  * Extracted from DeviceImportService in 04/2025.
  */
 class DeviceMediaImportService
@@ -58,21 +60,21 @@ class DeviceMediaImportService
         UtilProfiling::startTimer();
         CliLogger::writeln('Devices Media start');
 
-
-        // Fetch enabled devices
+        // ---- Fetch enabled devices
         $available_Printers = [];
         foreach ($this->topdataDeviceService->_getEnabledDevices() as $pr) {
             $available_Printers[$pr['ws_id']] = true;
         }
-        $availablePrintersCount = count($available_Printers);
-        $processedPrintarsCount = 0;
+        $numDevicesTotal = count($available_Printers);
+        $numDevicesProcessed = 0;
         $chunkSize = self::BATCH_SIZE;
         CliLogger::writeln("Chunk size is $chunkSize devices");
-        CliLogger::writeln("Available devices: $availablePrintersCount");
+        CliLogger::writeln("Available devices: $numDevicesTotal");
         $start = 0;
         $chunkNumber = 0;
         CliLogger::lap(true);
 
+        // ---- Main loop to process devices in chunks
         while (true) {
             $chunkNumber++;
             CliLogger::activity("\nFetching media chunk $chunkNumber from remote server...");
@@ -82,6 +84,7 @@ class DeviceMediaImportService
             CliLogger::mem();
             CliLogger::writeln('');
 
+            // ---- Check if there is no data, break the loop
             if (!isset($models->data) || count($models->data) == 0) {
                 break;
             }
@@ -90,29 +93,28 @@ class DeviceMediaImportService
             ImportReport::incCounter('Device Media Records Fetched', $recordsInChunk);
             CliLogger::activity("Processing data chunk $chunkNumber ($recordsInChunk records)");
 
-            $processCounter = 1;
+            // ---- Iterate through each device model in the chunk
             foreach ($models->data as $s) {
                 ImportReport::incCounter('Device Media Total Processed');
 
+                // ---- Skip if the device is not available
                 if (!isset($available_Printers[$s->id])) {
                     ImportReport::incCounter('Device Media Devices Skipped - Not Available');
                     continue;
                 }
 
-                $processedPrintarsCount++;
-
-                $processCounter++;
-                if ($processCounter >= 4) {
-                    $processCounter = 1;
-                    CliLogger::activity();
+                if ($numDevicesProcessed++ % 4 == 0) {
+                    CliLogger::progress($numDevicesProcessed, $numDevicesTotal);
                 }
 
+                // ---- Get the brand by its Webservice ID
                 $brand = $this->topdataBrandService->getBrandByWsId((int)$s->bId);
                 if (!$brand) {
                     ImportReport::incCounter('Device Media Devices Skipped - No Brand');
                     continue;
                 }
 
+                // ---- Construct the device code
                 $code = $brand['code'] . '_' . UtilStringFormatting::formCode($s->val);
                 $device = $this->topdataDeviceRepository->search(
                     (new Criteria())
@@ -124,6 +126,7 @@ class DeviceMediaImportService
                     ->getEntities()
                     ->first();
 
+                // ---- Skip if the device is not found
                 if (!$device) {
                     ImportReport::incCounter('Device Media Devices Skipped - Device Not Found');
                     continue;
@@ -132,7 +135,7 @@ class DeviceMediaImportService
                 ImportReport::incCounter('Device Media Devices Found');
                 $currentMedia = $device->getMedia();
 
-                // Delete media if the image is null
+                // ---- Delete media if the image is null
                 if (is_null($s->img) && $currentMedia) {
                     $this->topdataDeviceRepository->update([
                         [
@@ -151,12 +154,13 @@ class DeviceMediaImportService
                     continue;
                 }
 
+                // ---- Skip if the image is null
                 if (is_null($s->img)) {
                     ImportReport::incCounter('Device Media Images Skipped - No Image');
                     continue;
                 }
 
-                // Skip if the current media is newer than the fetched media
+                // ---- Skip if the current media is newer than the fetched media
                 if ($currentMedia && (date_timestamp_get($currentMedia->getCreatedAt()) > strtotime($s->img_date))) {
                     ImportReport::incCounter('Device Media Images Skipped - Current Newer');
                     continue;
@@ -164,6 +168,7 @@ class DeviceMediaImportService
 
                 $imageDate = strtotime(explode(' ', $s->img_date)[0]);
 
+                // ---- Try to update the media
                 try {
                     $mediaId = $this->mediaHelperService->getMediaId($s->img, $imageDate, self::IMAGE_PREFIX);
                     if ($mediaId) {
@@ -181,14 +186,14 @@ class DeviceMediaImportService
                     CliLogger::writeln('Exception: ' . $e->getMessage());
                 }
             }
-            CliLogger::writeln("processed $processedPrintarsCount of $availablePrintersCount devices " . CliLogger::lap() . 'sec. ');
+            CliLogger::writeln("processed $numDevicesProcessed of $numDevicesTotal devices " . CliLogger::lap() . 'sec. ');
             $start += $chunkSize;
             if (count($models->data) < $chunkSize) {
                 break;
             }
         }
 
-        // Final summary with all counters
+        // ---- Final summary with all counters
         CliLogger::writeln('');
         CliLogger::writeln('=== Device Media Import Summary ===');
         CliLogger::writeln('Chunks processed: ' . ImportReport::getCounter('Device Media Chunks'));
