@@ -9,8 +9,9 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 
 /**
- * Service class for managing the mapping between Topdata IDs and Shopware product IDs.
+ * service for handling the mapping between Topdata IDs and Shopware product IDs (in table `topdata_to_product`)
  * It handles fetching and storing product mappings in the database.
+ *
  * 11/2024 created (extracted from MappingHelperService)
  */
 class TopdataToProductService
@@ -90,8 +91,15 @@ class TopdataToProductService
         $this->topdataToProductRepository->create($dataInsert, $this->context);
     }
 
-    public function deleteAll()
+    /**
+     * 06/2025 added logMessageHint
+     */
+    public function deleteAll(?string $logMessageHint = null)
     {
+        CliLogger::warning("Clearing tbl `topdata_to_product`" . ($logMessageHint ? ' # ' . $logMessageHint : ''));
+//        CliLogger::warning('FIXME: NOT Deleting all existing mappings tbl `topdata_to_product`');
+//        return; // TODO: remove this
+
         $this->connection->executeStatement('TRUNCATE TABLE topdata_to_product');
     }
 

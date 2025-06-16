@@ -33,7 +33,7 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
 
     public function __construct(
         private readonly MergedPluginConfigHelperService $mergedPluginConfigHelperService,
-        private readonly TopdataToProductService         $topdataToProductHelperService,
+        private readonly TopdataToProductService         $topdataToProductService,
         private readonly TopdataWebserviceClient         $topdataWebserviceClient,
         private readonly ShopwareProductService          $shopwareProductService,
         private readonly MappingCacheService             $mappingCacheService,
@@ -365,15 +365,15 @@ final class MappingStrategy_EanOem extends AbstractMappingStrategy
         // NOTE: Consider if this blanket deletion is always desired. Maybe only delete if $mappings is not empty?
         // Or maybe the cache loading should *not* delete if it fails to load anything? This needs careful thought
         // based on exact requirements. Assuming the V2 cache load *replaces* DB content, we replicate that here.
-        CliLogger::info('Clearing existing mappings from database before insertion...');
-        $this->topdataToProductHelperService->deleteAll();
-        CliLogger::info('Existing mappings cleared.');
+//        CliLogger::info('Clearing existing mappings from database before insertion...');
+//        $this->topdataToProductService->deleteAll();
+//        CliLogger::info('Existing mappings cleared.');
 
 
         CliLogger::info('Inserting ' . UtilFormatter::formatInteger($totalToInsert) . ' total mappings into database...');
         $insertedCount = 0;
         foreach (array_chunk($mappings, self::BATCH_SIZE) as $batch) {
-            $this->topdataToProductHelperService->insertMany($batch);
+            $this->topdataToProductService->insertMany($batch);
             $insertedCount += count($batch);
             CliLogger::progress($insertedCount, $totalToInsert, 'Inserted mappings batch');
         }

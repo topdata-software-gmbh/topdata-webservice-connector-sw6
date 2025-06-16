@@ -21,13 +21,13 @@ use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 /**
  * Unified mapping strategy that handles EAN, OEM, PCD, and Distributor mappings.
  * Supports caching for all mapping types.
- * 
+ *
  * 05/2025 created (merged from MappingStrategy_EanOem and MappingStrategy_Distributor)
  */
 final class MappingStrategy_Unified extends AbstractMappingStrategy
 {
     const BATCH_SIZE = 500;
-    
+
     /**
      * Tracks product IDs already mapped in a single run to avoid duplicates
      */
@@ -53,14 +53,14 @@ final class MappingStrategy_Unified extends AbstractMappingStrategy
     public function map(ImportConfig $importConfig): void
     {
         $mappingType = $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::MAPPING_TYPE);
-        
+
         // Check if this is a distributor mapping type
         $isDistributorMapping = in_array($mappingType, [
             MappingTypeConstants::DISTRIBUTOR_DEFAULT,
             MappingTypeConstants::DISTRIBUTOR_CUSTOM,
             MappingTypeConstants::DISTRIBUTOR_CUSTOM_FIELD
         ]);
-        
+
         if ($isDistributorMapping) {
             $this->mapDistributor($importConfig);
         } else {
@@ -120,39 +120,39 @@ final class MappingStrategy_Unified extends AbstractMappingStrategy
     private function mapDistributor(ImportConfig $importConfig): void
     {
         CliLogger::section('Product Mapping Strategy: Distributor');
-        
+
         // 1. Check config
         $useExperimentalCacheV2 = TRUE; // (bool)$importConfig->getOptionExperimentalV2();
         CliLogger::info('Webservice Cache Enabled (Experimental): ' . ($useExperimentalCacheV2 ? 'Yes' : 'No'));
-        
+
         // 2. Attempt to load from V2 cache (if enabled)
         if ($useExperimentalCacheV2 && $this->tryLoadFromCacheV2(MappingTypeConstants::DISTRIBUTOR)) {
             CliLogger::section('Finished mapping using cached data (V2).');
             return; // Cache was successfully loaded and used, skip fetch/save
         }
-        
+
         // --- Cache was not used or failed, proceed with fetch and save ---
-        
+
         // 3. Build article number map from Shopware
         $articleNumberMap = $this->getArticleNumbers();
-        
+
         // 4. Fetch corresponding mappings from Topdata Webservice
         $mappingsByType = [
             MappingTypeConstants::DISTRIBUTOR => $this->processDistributorWebserviceMappings($articleNumberMap)
         ];
         unset($articleNumberMap); // Free memory
-        
+
         // 5. Save fetched mappings to V2 cache (if enabled)
         if ($useExperimentalCacheV2) {
             $this->saveToCacheV2($mappingsByType, MappingTypeConstants::DISTRIBUTOR);
         }
-        
+
         // 6. Flatten mappings for database persistence
         $flatMappings = $this->flattenMappings($mappingsByType);
-        
+
         // 7. Persist flattened mappings to the database
         $this->persistMappingsToDatabase($flatMappings);
-        
+
         CliLogger::section('Finished product mapping (fetched from webservice).');
     }
 
@@ -171,13 +171,13 @@ final class MappingStrategy_Unified extends AbstractMappingStrategy
         }
 
         CliLogger::info('Valid V2 cache found, attempting to load mappings...');
-        
+
         // For EAN/OEM group, we load EAN, OEM, and PCD mappings
         // For Distributor group, we load only Distributor mappings
-        $mappingTypes = ($mappingGroup === MappingTypeConstants::EAN_OEM_GROUP) 
+        $mappingTypes = ($mappingGroup === MappingTypeConstants::EAN_OEM_GROUP)
             ? [MappingTypeConstants::EAN, MappingTypeConstants::OEM, MappingTypeConstants::PCD]
             : [MappingTypeConstants::DISTRIBUTOR];
-        
+
         $totalLoaded = 0;
         foreach ($mappingTypes as $mappingType) {
             $loaded = $this->mappingCacheService->loadMappingsFromCache($mappingType);
@@ -207,26 +207,26 @@ final class MappingStrategy_Unified extends AbstractMappingStrategy
     {
         CliLogger::info('Saving fetched mappings to V2 cache...');
         $totalCached = 0;
-        
+
         foreach ($mappingsByType as $mappingType => $typeMappings) {
             if (!empty($typeMappings)) {
                 $count = count($typeMappings);
                 CliLogger::info("-> Caching " . UtilFormatter::formatInteger($count) . " $mappingType mappings...");
-                
+
                 // Extract only the necessary fields for caching (topDataId and value)
                 // This makes the cache independent of Shopware product IDs
-                $cacheMappings = array_map(function($mapping) {
+                $cacheMappings = array_map(function ($mapping) {
                     return [
                         'topDataId' => $mapping['topDataId'],
                         'value'     => $mapping['value']
                     ];
                 }, $typeMappings);
-                
+
                 $this->mappingCacheService->saveMappingsToCache($cacheMappings, $mappingType);
                 $totalCached += $count;
             }
         }
-        
+
         // Display cache statistics after saving
         $cacheStats = $this->mappingCacheService->getCacheStats();
         CliLogger::info('--- Cache Statistics ---');
@@ -244,7 +244,7 @@ final class MappingStrategy_Unified extends AbstractMappingStrategy
             CliLogger::info('Newest entry: ' . $cacheStats['newest']);
         }
         CliLogger::info('------------------------');
-        
+
         if ($totalCached > 0) {
             CliLogger::info('Finished saving ' . UtilFormatter::formatInteger($totalCached) . ' mappings to V2 cache.');
             ImportReport::setCounter('Mappings Saved to Cache', $totalCached);
@@ -265,33 +265,33 @@ final class MappingStrategy_Unified extends AbstractMappingStrategy
         $this->setted = []; // Reset for this run
         $mappings = [];
         $stored = 0;
-        
+
         CliLogger::info(UtilFormatter::formatInteger(count($articleNumberMap)) . ' products to check ...');
-        
+
         try {
             // Iterate through the pages of distributor data from the web service
             for ($page = 1; ; $page++) {
                 $response = $this->topdataWebserviceClient->matchMyDistributor(['page' => $page]);
-                
+
                 if (!isset($response->page->available_pages)) {
                     throw new Exception('distributor webservice no pages');
                 }
-                
+
                 $available_pages = (int)$response->page->available_pages;
-                
+
                 // Process each product in the current page
                 foreach ($response->match as $prod) {
                     $topDataId = $prod->products_id;
-                    
+
                     foreach ($prod->distributors as $distri) {
                         foreach ($distri->artnrs as $artnr) {
                             $originalValue = (string)$artnr;
                             $key = $originalValue; // For distributor, we use the original value as the key
-                            
+
                             if (isset($articleNumberMap[$key])) {
                                 foreach ($articleNumberMap[$key] as $articleNumberValue) {
                                     $shopwareProductKey = $articleNumberValue['id'] . '-' . $articleNumberValue['version_id'];
-                                    
+
                                     // Check if this specific Shopware product (id+version) hasn't been mapped yet in this run
                                     if (!isset($this->setted[$shopwareProductKey])) {
                                         $mappings[] = [
@@ -300,10 +300,10 @@ final class MappingStrategy_Unified extends AbstractMappingStrategy
                                             'productVersionId' => $articleNumberValue['version_id'],
                                             'value'            => $originalValue, // Store original value for caching
                                         ];
-                                        
+
                                         $this->setted[$shopwareProductKey] = true; // Mark as mapped for this run
                                         $stored++;
-                                        
+
                                         if (($stored % 50) == 0) {
                                             CliLogger::activity();
                                         }
@@ -313,9 +313,9 @@ final class MappingStrategy_Unified extends AbstractMappingStrategy
                         }
                     }
                 }
-                
+
                 CliLogger::progress($page, $available_pages, 'fetch distributor data');
-                
+
                 if ($page >= $available_pages) {
                     break;
                 }
@@ -324,10 +324,10 @@ final class MappingStrategy_Unified extends AbstractMappingStrategy
             CliLogger::error('Error fetching distributor data from webservice: ' . $e->getMessage());
             throw $e; // Re-throw for now to indicate failure
         }
-        
+
         CliLogger::writeln("\n" . UtilFormatter::formatInteger($stored) . ' - stored topdata products');
         ImportReport::setCounter('Fetched Distributor SKUs', $stored);
-        
+
         return $mappings;
     }
 
@@ -617,9 +617,9 @@ final class MappingStrategy_Unified extends AbstractMappingStrategy
         // NOTE: Consider if this blanket deletion is always desired. Maybe only delete if $mappings is not empty?
         // Or maybe the cache loading should *not* delete if it fails to load anything? This needs careful thought
         // based on exact requirements. Assuming the V2 cache load *replaces* DB content, we replicate that here.
-        CliLogger::info('Clearing existing mappings from database before insertion...');
-        $this->topdataToProductService->deleteAll();
-        CliLogger::info('Existing mappings cleared.');
+//        CliLogger::info('Clearing existing mappings from database before insertion...');
+//        $this->topdataToProductService->deleteAll();
+//        CliLogger::info('Existing mappings cleared.');
 
 
         CliLogger::info('Inserting ' . UtilFormatter::formatInteger($totalToInsert) . ' total mappings into database...');
@@ -646,7 +646,7 @@ final class MappingStrategy_Unified extends AbstractMappingStrategy
         foreach ($mappingsByType as $typeMappings) {
             if (!empty($typeMappings)) {
                 // Extract only the fields needed for database insertion (exclude 'value')
-                $dbMappings = array_map(function($mapping) {
+                $dbMappings = array_map(function ($mapping) {
                     return [
                         'topDataId'        => $mapping['topDataId'],
                         'productId'        => $mapping['productId'],

@@ -187,7 +187,7 @@ class MappingCacheService
         }
 
         // Clear existing mappings before inserting new ones
-        $this->topdataToProductService->deleteAll();
+        // $this->topdataToProductService->deleteAll('Clear existing mappings before inserting new ones');
 
         // Group mappings by type for efficient processing
         $mappingsByType = [];

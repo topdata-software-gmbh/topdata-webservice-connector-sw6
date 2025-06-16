@@ -7,6 +7,7 @@ use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
 use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;
 use Topdata\TopdataConnectorSW6\DTO\ImportConfig;
 use Topdata\TopdataConnectorSW6\Service\Config\MergedPluginConfigHelperService;
+use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\AbstractMappingStrategy;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_ProductNumberAs;
 use Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Unified;
@@ -31,10 +32,10 @@ class ProductMappingService
     private array $setted;
 
     public function __construct(
-        private readonly Connection                      $connection,
         private readonly MergedPluginConfigHelperService $mergedPluginConfigHelperService,
         private readonly MappingStrategy_ProductNumberAs $mappingStrategy_ProductNumberAs,
         private readonly MappingStrategy_Unified         $mappingStrategy_Unified,
+        private readonly TopdataToProductService         $topdataToProductService,
     )
     {
     }
@@ -50,7 +51,7 @@ class ProductMappingService
         CliLogger::info('ProductMappingService::mapProducts() - using mapping type: ' . $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::MAPPING_TYPE));
 
         // ---- Clear existing mappings
-        $this->connection->executeStatement('TRUNCATE TABLE topdata_to_product');
+        $this->topdataToProductService->deleteAll('ProductMappingService::mapProducts - Clear existing mappings before mapping');
 
         // ---- Create the appropriate strategy based on mapping type
         $strategy = $this->_createMappingStrategy();
