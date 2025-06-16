@@ -402,9 +402,9 @@ class ProductProductRelationshipServiceV1
                 'created_at'
             ]);
 
-            $this->connection->executeStatement(
-                "INSERT INTO $tableName ($columns) VALUES " . implode(',', $chunk)
-            );
+            $SQL = "INSERT INTO $tableName ($columns) VALUES " . implode(',', $chunk);
+            CliLogger::debug($SQL);
+            $this->connection->executeStatement($SQL);
             CliLogger::activity();
         }
 
@@ -502,6 +502,7 @@ class ProductProductRelationshipServiceV1
 
         // ---- Process similar products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productSimilar, $productId)) {
+            CliLogger::debug("Processing similar products");
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findSimilarProducts($remoteProductData),
@@ -515,6 +516,7 @@ class ProductProductRelationshipServiceV1
 
         // ---- Process alternate products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productAlternate, $productId)) {
+            CliLogger::debug("Processing alternate products");
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findAlternateProducts($remoteProductData),
@@ -528,6 +530,7 @@ class ProductProductRelationshipServiceV1
 
         // ---- Process related products (accessories)
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIO_OPTION_productRelated, $productId)) {
+            CliLogger::debug("Processing related products");
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findRelatedProducts($remoteProductData),
@@ -541,6 +544,7 @@ class ProductProductRelationshipServiceV1
 
         // ---- Process bundled products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productBundled, $productId)) {
+            CliLogger::debug("Processing bundled products");
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->findBundledProducts($remoteProductData),
@@ -554,6 +558,7 @@ class ProductProductRelationshipServiceV1
 
         // ---- Process color variant products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productColorVariant, $productId)) {
+            CliLogger::debug("Processing color variant products");
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findColorVariantProducts($remoteProductData),
@@ -567,6 +572,7 @@ class ProductProductRelationshipServiceV1
 
         // ---- Process capacity variant products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productCapacityVariant, $productId)) {
+            CliLogger::debug("Processing capacity variant products");
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findCapacityVariantProducts($remoteProductData),
@@ -580,6 +586,7 @@ class ProductProductRelationshipServiceV1
 
         // ---- Process general variant products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productVariant, $productId)) {
+            CliLogger::debug("Processing general variant products");
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findVariantProducts($remoteProductData),
