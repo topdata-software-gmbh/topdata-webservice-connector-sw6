@@ -45,32 +45,11 @@ class ImportService
         private readonly DeviceImportService                $deviceImportService,
         private readonly DeviceMediaImportService           $deviceMediaImportService, // Added for refactoring
         private readonly MappingCacheService                $mappingCacheService, // Added for cache integration
+        private readonly ReportCliDumper                    $reportCliDumper,
     )
     {
     }
 
-    private static array $counterDescriptions = [
-        'linking_v2.products.found'                => 'Total unique Shopware product IDs identified for processing.',
-        'linking_v2.products.chunks'               => 'Number of chunks the product IDs were split into.',
-        'linking_v2.chunks.processed'              => 'Number of chunks successfully processed.',
-        'linking_v2.webservice.calls'              => 'Number of webservice calls made to fetch device links.',
-        'linking_v2.webservice.device_ids_fetched' => 'Total unique device webservice IDs fetched from the webservice.',
-        'linking_v2.database.devices_found'        => 'Total corresponding devices found in the local database.',
-        'linking_v2.links.deleted'                 => 'Total number of existing device-product links deleted across all chunks.',
-        'linking_v2.links.inserted'                => 'Total number of new device-product links inserted across all chunks.',
-        'linking_v2.status.devices.enabled'        => 'Total number of devices marked as enabled.',
-        'linking_v2.status.devices.disabled'       => 'Total number of devices marked as disabled.',
-        'linking_v2.status.brands.enabled'         => 'Total number of brands marked as enabled.',
-        'linking_v2.status.brands.disabled'        => 'Total number of brands marked as disabled.',
-        'linking_v2.status.series.enabled'         => 'Total number of series marked as enabled.',
-        'linking_v2.status.series.disabled'        => 'Total number of series marked as disabled.',
-        'linking_v2.status.types.enabled'          => 'Total number of device types marked as enabled.',
-        'linking_v2.status.types.disabled'         => 'Total number of device types marked as disabled.',
-        'linking_v2.active.devices'                => 'Final count of active devices at the end of the process.',
-        'linking_v2.active.brands'                 => 'Final count of active brands at the end of the process.',
-        'linking_v2.active.series'                 => 'Final count of active series at the end of the process.',
-        'linking_v2.active.types'                  => 'Final count of active device types at the end of the process.',
-    ];
 
     /**
      * ==== MAIN ====
@@ -111,20 +90,7 @@ class ImportService
         $this->executeImportOperations($importConfig);
 
         // ---- Dump report
-        $io = CliLogger::getCliStyle();
-        $counters = ImportReport::getCountersSorted();
-        $descriptions = self::$counterDescriptions;
-
-        $table = new Table($io);
-        $table->setHeaders(['Counter', 'Value', 'Description']);
-
-        foreach ($counters as $key => $value) {
-            $description = $descriptions[$key] ?? ''; // Handle missing descriptions
-            $table->addRow([$key, $value, $description]);
-        }
-
-        $io->title('Counters Report');
-        $table->render();
+        ImportReport::dumpImportReportToCli();
 
         // ---- Dump profiling
         UtilProfiling::dumpProfilingToCli();
