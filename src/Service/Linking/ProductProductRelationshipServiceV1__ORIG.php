@@ -4,7 +4,6 @@ namespace Topdata\TopdataConnectorSW6\Service\Linking;
 
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Types\Types;
 use RuntimeException;
 use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingDefinition;
 use Shopware\Core\Framework\Context;
@@ -32,12 +31,10 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
  * 06/2025 deprecated
  * @deprecated - use ProductProductRelationshipServiceV2
  */
-class ProductProductRelationshipServiceV1
+class ProductProductRelationshipServiceV1__ORIG
 {
     const CHUNK_SIZE         = 30;
     const MAX_CROSS_SELLINGS = 24;
-    const BULK_INSERT_SIZE = 500;
-    const USE_TRANSACTIONS = true;
 
     private Context $context;
 
@@ -376,7 +373,7 @@ class ProductProductRelationshipServiceV1
      * @param bool $enableCrossSelling Whether to enable cross-selling
      * @param string $dateTime The current date/time string
      */
-    private function _processProductRelationship__ORIG(
+    private function _processProductRelationship(
         array                         $productId_versionId,
         array                         $relatedProducts,
         string                        $tableName,
@@ -495,120 +492,6 @@ class ProductProductRelationshipServiceV1
 
 
     /**
-     * Maps relationship types to their corresponding database table names
-     *
-     * @param string $type The relationship type
-     * @return string The database table name
-     */
-    private function getTableForType(string $type): string
-    {
-        $map = [
-            'similar' => 'topdata_product_to_similar',
-            'alternate' => 'topdata_product_to_alternate',
-            'related' => 'topdata_product_to_related',
-            'bundled' => 'topdata_product_to_bundled',
-            'color_variant' => 'topdata_product_to_color_variant',
-            'capacity_variant' => 'topdata_product_to_capacity_variant',
-            'variant' => 'topdata_product_to_variant',
-        ];
-        return $map[$type] ?? '';
-    }
-
-    /**
-     * Maps relationship types to their corresponding ID column prefixes
-     *
-     * @param string $type The relationship type
-     * @return string The ID column prefix
-     */
-    private function getIdColumnPrefix(string $type): string
-    {
-        $map = [
-            'similar' => 'similar',
-            'alternate' => 'alternate',
-            'related' => 'related',
-            'bundled' => 'bundled',
-            'color_variant' => 'color_variant',
-            'capacity_variant' => 'capacity_variant',
-            'variant' => 'variant',
-        ];
-        return $map[$type] ?? '';
-    }
-
-    /**
-     * Processes all relationship types in bulk using database transactions
-     *
-     * @param array $productId_versionId Product ID and version information
-     * @param array $allRelationships Array of all relationship types and their products
-     * @param string $dateTime The current date/time string
-     */
-    private function _processBulkRelationships(
-        array $productId_versionId,
-        array $allRelationships,
-        string $dateTime
-    ): void {
-        if (self::USE_TRANSACTIONS) {
-            $this->connection->beginTransaction();
-        }
-        
-        try {
-            foreach ($allRelationships as $type => $products) {
-                if (empty($products)) {
-                    continue;
-                }
-                
-                $tableName = $this->getTableForType($type);
-                $idColumnPrefix = $this->getIdColumnPrefix($type);
-                
-                if (empty($tableName) || empty($idColumnPrefix)) {
-                    continue;
-                }
-                
-                // Process products in batches
-                $productChunks = array_chunk($products, self::BULK_INSERT_SIZE);
-                
-                foreach ($productChunks as $chunk) {
-                    $values = [];
-                    foreach ($chunk as $tempProd) {
-                        $values[] = [
-                            'product_id' => hex2bin($productId_versionId['product_id']),
-                            'product_version_id' => hex2bin($productId_versionId['product_version_id']),
-                            "{$idColumnPrefix}_product_id" => hex2bin($tempProd['product_id']),
-                            "{$idColumnPrefix}_product_version_id" => hex2bin($tempProd['product_version_id']),
-                            'created_at' => $dateTime
-                        ];
-                    }
-                    
-                    // Use bulk insert with proper type mapping
-                    foreach ($values as $value) {
-                        $this->connection->insert(
-                            $tableName,
-                            $value,
-                            [
-                                'product_id' => Types::BINARY,
-                                'product_version_id' => Types::BINARY,
-                                "{$idColumnPrefix}_product_id" => Types::BINARY,
-                                "{$idColumnPrefix}_product_version_id" => Types::BINARY,
-                                'created_at' => Types::STRING
-                            ]
-                        );
-                    }
-                    
-                    CliLogger::activity();
-                }
-            }
-            
-            if (self::USE_TRANSACTIONS) {
-                $this->connection->commit();
-            }
-        } catch (\Exception $e) {
-            if (self::USE_TRANSACTIONS) {
-                $this->connection->rollBack();
-            }
-            throw $e;
-        }
-    }
-
-    /**
      * ==== MAIN ====
      *
      * Main method to link products with various relationships based on remote product data
@@ -624,124 +507,102 @@ class ProductProductRelationshipServiceV1
         $dateTime = date('Y-m-d H:i:s');
         $productId = $productId_versionId['product_id'];
 
-        // Collect all relationships first
-        $allRelationships = [];
-        $crossSellingData = [];
-
-        // ---- Collect similar products
+        // ---- Process similar products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productSimilar, $productId)) {
-            CliLogger::debug("Collecting similar products for product $productId");
-            $similarProducts = $this->_findSimilarProducts($remoteProductData);
-            if (!empty($similarProducts)) {
-                $allRelationships['similar'] = $similarProducts;
-                if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productSimilarCross, $productId)) {
-                    $crossSellingData[] = [
-                        'products' => $similarProducts,
-                        'type' => ProductRelationshipTypeEnumV1::SIMILAR
-                    ];
-                }
-            }
+            CliLogger::debug("Processing similar products for product $productId");
+            $this->_processProductRelationship(
+                $productId_versionId,
+                $this->_findSimilarProducts($remoteProductData),
+                'topdata_product_to_similar',
+                'similar',
+                ProductRelationshipTypeEnumV1::SIMILAR,
+                $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productSimilarCross, $productId),
+                $dateTime
+            );
         }
 
-        // ---- Collect alternate products
+        // ---- Process alternate products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productAlternate, $productId)) {
-            CliLogger::debug("Collecting alternate products for product $productId");
-            $alternateProducts = $this->_findAlternateProducts($remoteProductData);
-            if (!empty($alternateProducts)) {
-                $allRelationships['alternate'] = $alternateProducts;
-                if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productAlternateCross, $productId)) {
-                    $crossSellingData[] = [
-                        'products' => $alternateProducts,
-                        'type' => ProductRelationshipTypeEnumV1::ALTERNATE
-                    ];
-                }
-            }
+            CliLogger::debug("Processing alternate products for product $productId");
+            $this->_processProductRelationship(
+                $productId_versionId,
+                $this->_findAlternateProducts($remoteProductData),
+                'topdata_product_to_alternate',
+                'alternate',
+                ProductRelationshipTypeEnumV1::ALTERNATE,
+                $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productAlternateCross, $productId),
+                $dateTime
+            );
         }
 
-        // ---- Collect related products (accessories)
+        // ---- Process related products (accessories)
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIO_OPTION_productRelated, $productId)) {
-            CliLogger::debug("Collecting related products for product $productId");
-            $relatedProducts = $this->_findRelatedProducts($remoteProductData);
-            if (!empty($relatedProducts)) {
-                $allRelationships['related'] = $relatedProducts;
-                if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productRelatedCross, $productId)) {
-                    $crossSellingData[] = [
-                        'products' => $relatedProducts,
-                        'type' => ProductRelationshipTypeEnumV1::RELATED
-                    ];
-                }
-            }
+            CliLogger::debug("Processing related products for product $productId");
+            $this->_processProductRelationship(
+                $productId_versionId,
+                $this->_findRelatedProducts($remoteProductData),
+                'topdata_product_to_related',
+                'related',
+                ProductRelationshipTypeEnumV1::RELATED,
+                $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productRelatedCross, $productId),
+                $dateTime
+            );
         }
 
-        // ---- Collect bundled products
+        // ---- Process bundled products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productBundled, $productId)) {
-            CliLogger::debug("Collecting bundled products for product $productId");
-            $bundledProducts = $this->findBundledProducts($remoteProductData);
-            if (!empty($bundledProducts)) {
-                $allRelationships['bundled'] = $bundledProducts;
-                if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productBundledCross, $productId)) {
-                    $crossSellingData[] = [
-                        'products' => $bundledProducts,
-                        'type' => ProductRelationshipTypeEnumV1::BUNDLED
-                    ];
-                }
-            }
+            CliLogger::debug("Processing bundled products for product $productId");
+            $this->_processProductRelationship(
+                $productId_versionId,
+                $this->findBundledProducts($remoteProductData),
+                'topdata_product_to_bundled',
+                'bundled',
+                ProductRelationshipTypeEnumV1::BUNDLED,
+                $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productBundledCross, $productId),
+                $dateTime
+            );
         }
 
-        // ---- Collect color variant products
+        // ---- Process color variant products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productColorVariant, $productId)) {
-            CliLogger::debug("Collecting color variant products for product $productId");
-            $colorVariantProducts = $this->_findColorVariantProducts($remoteProductData);
-            if (!empty($colorVariantProducts)) {
-                $allRelationships['color_variant'] = $colorVariantProducts;
-                if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productVariantColorCross, $productId)) {
-                    $crossSellingData[] = [
-                        'products' => $colorVariantProducts,
-                        'type' => ProductRelationshipTypeEnumV1::COLOR_VARIANT
-                    ];
-                }
-            }
+            CliLogger::debug("Processing color variant products for product $productId");
+            $this->_processProductRelationship(
+                $productId_versionId,
+                $this->_findColorVariantProducts($remoteProductData),
+                'topdata_product_to_color_variant',
+                'color_variant',
+                ProductRelationshipTypeEnumV1::COLOR_VARIANT,
+                $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productVariantColorCross, $productId),
+                $dateTime
+            );
         }
 
-        // ---- Collect capacity variant products
+        // ---- Process capacity variant products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productCapacityVariant, $productId)) {
-            CliLogger::debug("Collecting capacity variant products for product $productId");
-            $capacityVariantProducts = $this->_findCapacityVariantProducts($remoteProductData);
-            if (!empty($capacityVariantProducts)) {
-                $allRelationships['capacity_variant'] = $capacityVariantProducts;
-                if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productVariantCapacityCross, $productId)) {
-                    $crossSellingData[] = [
-                        'products' => $capacityVariantProducts,
-                        'type' => ProductRelationshipTypeEnumV1::CAPACITY_VARIANT
-                    ];
-                }
-            }
+            CliLogger::debug("Processing capacity variant products for product $productId");
+            $this->_processProductRelationship(
+                $productId_versionId,
+                $this->_findCapacityVariantProducts($remoteProductData),
+                'topdata_product_to_capacity_variant',
+                'capacity_variant',
+                ProductRelationshipTypeEnumV1::CAPACITY_VARIANT,
+                $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productVariantCapacityCross, $productId),
+                $dateTime
+            );
         }
 
-        // ---- Collect general variant products
+        // ---- Process general variant products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productVariant, $productId)) {
-            CliLogger::debug("Collecting general variant products for product $productId");
-            $variantProducts = $this->_findVariantProducts($remoteProductData);
-            if (!empty($variantProducts)) {
-                $allRelationships['variant'] = $variantProducts;
-                if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productVariantCross, $productId)) {
-                    $crossSellingData[] = [
-                        'products' => $variantProducts,
-                        'type' => ProductRelationshipTypeEnumV1::VARIANT
-                    ];
-                }
-            }
-        }
-
-        // Process all relationships in bulk
-        if (!empty($allRelationships)) {
-            CliLogger::debug("Processing bulk relationships for product $productId");
-            $this->_processBulkRelationships($productId_versionId, $allRelationships, $dateTime);
-        }
-
-        // Process cross-selling relationships
-        foreach ($crossSellingData as $crossData) {
-            $this->_addProductCrossSelling($productId_versionId, $crossData['products'], $crossData['type']);
+            CliLogger::debug("Processing general variant products for product $productId");
+            $this->_processProductRelationship(
+                $productId_versionId,
+                $this->_findVariantProducts($remoteProductData),
+                'topdata_product_to_variant',
+                'variant',
+                ProductRelationshipTypeEnumV1::VARIANT,
+                $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productVariantCross, $productId),
+                $dateTime
+            );
         }
 
         UtilProfiling::stopTimer();
