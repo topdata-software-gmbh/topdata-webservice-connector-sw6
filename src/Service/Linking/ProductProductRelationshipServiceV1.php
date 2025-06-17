@@ -10,6 +10,7 @@ use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSell
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -256,8 +257,8 @@ class ProductProductRelationshipServiceV1
             // ---- Remove existing cross-selling product assignments
             $crossId = $productCrossSellingEntity->getId();
             $this->connection->executeStatement("
-                    DELETE 
-                    FROM product_cross_selling_assigned_products 
+                    DELETE
+                    FROM product_cross_selling_assigned_products
                     WHERE cross_selling_id = 0x$crossId
             ");
         } else {
@@ -503,13 +504,13 @@ class ProductProductRelationshipServiceV1
     private function getTableForType(string $type): string
     {
         $map = [
-            'similar' => 'topdata_product_to_similar',
-            'alternate' => 'topdata_product_to_alternate',
-            'related' => 'topdata_product_to_related',
-            'bundled' => 'topdata_product_to_bundled',
-            'color_variant' => 'topdata_product_to_color_variant',
+            'similar'          => 'topdata_product_to_similar',
+            'alternate'        => 'topdata_product_to_alternate',
+            'related'          => 'topdata_product_to_related',
+            'bundled'          => 'topdata_product_to_bundled',
+            'color_variant'    => 'topdata_product_to_color_variant',
             'capacity_variant' => 'topdata_product_to_capacity_variant',
-            'variant' => 'topdata_product_to_variant',
+            'variant'          => 'topdata_product_to_variant',
         ];
         return $map[$type] ?? '';
     }
@@ -523,13 +524,13 @@ class ProductProductRelationshipServiceV1
     private function getIdColumnPrefix(string $type): string
     {
         $map = [
-            'similar' => 'similar',
-            'alternate' => 'alternate',
-            'related' => 'related',
-            'bundled' => 'bundled',
-            'color_variant' => 'color_variant',
+            'similar'          => 'similar',
+            'alternate'        => 'alternate',
+            'related'          => 'related',
+            'bundled'          => 'bundled',
+            'color_variant'    => 'color_variant',
             'capacity_variant' => 'capacity_variant',
-            'variant' => 'variant',
+            'variant'          => 'variant',
         ];
         return $map[$type] ?? '';
     }
@@ -542,61 +543,62 @@ class ProductProductRelationshipServiceV1
      * @param string $dateTime The current date/time string
      */
     private function _processBulkRelationships(
-        array $productId_versionId,
-        array $allRelationships,
+        array  $productId_versionId,
+        array  $allRelationships,
         string $dateTime
-    ): void {
+    ): void
+    {
         if (self::USE_TRANSACTIONS) {
             $this->connection->beginTransaction();
         }
-        
+
         try {
             foreach ($allRelationships as $type => $products) {
                 if (empty($products)) {
                     continue;
                 }
-                
+
                 $tableName = $this->getTableForType($type);
                 $idColumnPrefix = $this->getIdColumnPrefix($type);
-                
+
                 if (empty($tableName) || empty($idColumnPrefix)) {
                     continue;
                 }
-                
+
                 // Process products in batches
                 $productChunks = array_chunk($products, self::BULK_INSERT_SIZE);
-                
+
                 foreach ($productChunks as $chunk) {
                     $values = [];
                     foreach ($chunk as $tempProd) {
                         $values[] = [
-                            'product_id' => hex2bin($productId_versionId['product_id']),
-                            'product_version_id' => hex2bin($productId_versionId['product_version_id']),
-                            "{$idColumnPrefix}_product_id" => hex2bin($tempProd['product_id']),
+                            'product_id'                       => hex2bin($productId_versionId['product_id']),
+                            'product_version_id'               => hex2bin($productId_versionId['product_version_id']),
+                            "{$idColumnPrefix}_product_id"         => hex2bin($tempProd['product_id']),
                             "{$idColumnPrefix}_product_version_id" => hex2bin($tempProd['product_version_id']),
-                            'created_at' => $dateTime
+                            'created_at'                       => $dateTime
                         ];
                     }
-                    
+
                     // Use bulk insert with proper type mapping
                     foreach ($values as $value) {
                         $this->connection->insert(
                             $tableName,
                             $value,
                             [
-                                'product_id' => Types::BINARY,
-                                'product_version_id' => Types::BINARY,
-                                "{$idColumnPrefix}_product_id" => Types::BINARY,
+                                'product_id'                       => Types::BINARY,
+                                'product_version_id'               => Types::BINARY,
+                                "{$idColumnPrefix}_product_id"         => Types::BINARY,
                                 "{$idColumnPrefix}_product_version_id" => Types::BINARY,
-                                'created_at' => Types::STRING
+                                'created_at'                       => Types::STRING
                             ]
                         );
                     }
-                    
+
                     CliLogger::activity();
                 }
             }
-            
+
             if (self::USE_TRANSACTIONS) {
                 $this->connection->commit();
             }
@@ -746,6 +748,233 @@ class ProductProductRelationshipServiceV1
 
         UtilProfiling::stopTimer();
     }
+
+
+    /**
+     * ==== NEW BULK METHOD ====
+     *
+     * Main method to link MULTIPLE products with various relationships based on remote product data.
+     * This method is optimized for performance by processing products in a single batch.
+     *
+     * @param array $productsToProcess Array of products to process, each element containing 'productId_versionId' and 'remoteProductData'
+     */
+    public function linkMultipleProducts(array $productsToProcess): void
+    {
+        if (empty($productsToProcess)) {
+            return;
+        }
+
+        UtilProfiling::startTimer();
+        $dateTime = date('Y-m-d H:i:s');
+        CliLogger::debug("Starting bulk processing for " . count($productsToProcess) . " products.");
+
+        $allRelationships = [];
+        $allCrossSellingData = [];
+
+        // 1. Collect all relationships and cross-selling data from all products
+        foreach ($productsToProcess as $productData) {
+            $productId_versionId = $productData['productId_versionId'];
+            $remoteProductData = $productData['remoteProductData'];
+            $productId = $productId_versionId['product_id'];
+
+            $relationshipFinders = [
+                'similar'          => ['config' => MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productSimilar, 'cross_config' => MergedPluginConfigKeyConstants::OPTION_NAME_productSimilarCross, 'finder' => [$this, '_findSimilarProducts'], 'cross_type' => ProductRelationshipTypeEnumV1::SIMILAR],
+                'alternate'        => ['config' => MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productAlternate, 'cross_config' => MergedPluginConfigKeyConstants::OPTION_NAME_productAlternateCross, 'finder' => [$this, '_findAlternateProducts'], 'cross_type' => ProductRelationshipTypeEnumV1::ALTERNATE],
+                'related'          => ['config' => MergedPluginConfigKeyConstants::RELATIONSHIO_OPTION_productRelated, 'cross_config' => MergedPluginConfigKeyConstants::OPTION_NAME_productRelatedCross, 'finder' => [$this, '_findRelatedProducts'], 'cross_type' => ProductRelationshipTypeEnumV1::RELATED],
+                'bundled'          => ['config' => MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productBundled, 'cross_config' => MergedPluginConfigKeyConstants::OPTION_NAME_productBundledCross, 'finder' => [$this, 'findBundledProducts'], 'cross_type' => ProductRelationshipTypeEnumV1::BUNDLED],
+                'color_variant'    => ['config' => MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productColorVariant, 'cross_config' => MergedPluginConfigKeyConstants::OPTION_NAME_productVariantColorCross, 'finder' => [$this, '_findColorVariantProducts'], 'cross_type' => ProductRelationshipTypeEnumV1::COLOR_VARIANT],
+                'capacity_variant' => ['config' => MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productCapacityVariant, 'cross_config' => MergedPluginConfigKeyConstants::OPTION_NAME_productVariantCapacityCross, 'finder' => [$this, '_findCapacityVariantProducts'], 'cross_type' => ProductRelationshipTypeEnumV1::CAPACITY_VARIANT],
+                'variant'          => ['config' => MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productVariant, 'cross_config' => MergedPluginConfigKeyConstants::OPTION_NAME_productVariantCross, 'finder' => [$this, '_findVariantProducts'], 'cross_type' => ProductRelationshipTypeEnumV1::VARIANT],
+            ];
+
+            foreach ($relationshipFinders as $type => $details) {
+                if ($this->productImportSettingsService->isProductOptionEnabled($details['config'], $productId)) {
+                    $foundProducts = call_user_func($details['finder'], $remoteProductData);
+                    if (!empty($foundProducts)) {
+                        if (!isset($allRelationships[$type])) {
+                            $allRelationships[$type] = [];
+                        }
+                        foreach ($foundProducts as $targetProduct) {
+                            $allRelationships[$type][] = ['source' => $productId_versionId, 'target' => $targetProduct];
+                        }
+
+                        if ($this->productImportSettingsService->isProductOptionEnabled($details['cross_config'], $productId)) {
+                            $allCrossSellingData[] = ['source' => $productId_versionId, 'products' => $foundProducts, 'type' => $details['cross_type']];
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Process all collected relationships in bulk
+        if (!empty($allRelationships)) {
+            CliLogger::debug("Processing bulk relationships...");
+            $this->_processAllRelationshipsBulk($allRelationships, $dateTime);
+        }
+
+        // 3. Process all collected cross-selling data in bulk
+        if (!empty($allCrossSellingData)) {
+            CliLogger::debug("Processing bulk cross-selling...");
+            $this->_processAllCrossSellingsBulk($allCrossSellingData);
+        }
+
+        UtilProfiling::stopTimer();
+    }
+
+    /**
+     * Processes all relationships for multiple products in a true bulk fashion.
+     */
+    private function _processAllRelationshipsBulk(array $allRelationships, string $dateTime): void
+    {
+        if (self::USE_TRANSACTIONS) {
+            $this->connection->beginTransaction();
+        }
+
+        try {
+            foreach ($allRelationships as $type => $relations) {
+                if (empty($relations)) {
+                    continue;
+                }
+
+                $tableName = $this->getTableForType($type);
+                $idColumnPrefix = $this->getIdColumnPrefix($type);
+
+                if (empty($tableName) || empty($idColumnPrefix)) {
+                    continue;
+                }
+
+                $valuesSql = [];
+                foreach ($relations as $relation) {
+                    $sourceProd = $relation['source'];
+                    $targetProd = $relation['target'];
+                    $valuesSql[] = "(0x{$sourceProd['product_id']}, 0x{$sourceProd['product_version_id']}, 0x{$targetProd['product_id']}, 0x{$targetProd['product_version_id']}, '$dateTime')";
+                }
+
+                $chunks = array_chunk($valuesSql, self::BULK_INSERT_SIZE);
+                foreach ($chunks as $chunk) {
+                    $columns = implode(', ', [
+                        'product_id',
+                        'product_version_id',
+                        "{$idColumnPrefix}_product_id",
+                        "{$idColumnPrefix}_product_version_id",
+                        'created_at'
+                    ]);
+
+                    $sql = "INSERT INTO `$tableName` ($columns) VALUES " . implode(',', $chunk);
+                    $this->connection->executeStatement($sql);
+                    CliLogger::activity();
+                }
+            }
+
+            if (self::USE_TRANSACTIONS) {
+                $this->connection->commit();
+            }
+        } catch (\Exception $e) {
+            if (self::USE_TRANSACTIONS) {
+                $this->connection->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Processes all cross-selling for multiple products in a true bulk fashion.
+     */
+    private function _processAllCrossSellingsBulk(array $allCrossSellingData): void
+    {
+        // 1. Filter out variants, which don't get cross-sellings
+        $dataToProcess = array_filter($allCrossSellingData, fn($data) => empty($data['source']['parent_id']));
+        if (empty($dataToProcess)) {
+            return;
+        }
+
+        // 2. Fetch existing cross-selling entities for all products in the batch
+        $productIds = array_unique(array_map(fn($data) => $data['source']['product_id'], $dataToProcess));
+        $dbTypes = array_unique(array_map(fn($data) => self::_getCrossDbType($data['type']), $dataToProcess));
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsAnyFilter('productId', $productIds));
+        $criteria->addFilter(new EqualsAnyFilter('topdataExtension.type', $dbTypes));
+        $criteria->addAssociation('topdataExtension');
+        $existingCrossSells = $this->productCrossSellingRepository->search($criteria, $this->context)->getEntities();
+
+        $existingMap = []; // [productId][dbType] => crossSellingEntity
+        foreach ($existingCrossSells as $cs) {
+            $ext = $cs->getExtension('topdataExtension');
+            if ($ext && $ext->get('type')) {
+                $existingMap[$cs->getProductId()][$ext->get('type')] = $cs;
+            }
+        }
+
+        // 3. Prepare data for bulk create/update operations
+        $crossSellsToCreate = [];
+        $assignmentsToDeleteIds = [];
+        $allAssignmentsToCreate = [];
+
+        foreach ($dataToProcess as $data) {
+            $sourceProduct = $data['source'];
+            $linkedProducts = $data['products'];
+            $crossType = $data['type'];
+            $dbType = self::_getCrossDbType($crossType);
+            $productId = $sourceProduct['product_id'];
+
+            if (isset($existingMap[$productId][$dbType])) {
+                // Exists: mark old assignments for deletion
+                $crossId = $existingMap[$productId][$dbType]->getId();
+                $assignmentsToDeleteIds[] = $crossId;
+            } else {
+                // Does not exist: prepare new cross-sell entity for creation
+                $crossId = Uuid::randomHex();
+                $crossSellsToCreate[] = [
+                    'id'               => $crossId,
+                    'productId'        => $productId,
+                    'productVersionId' => $sourceProduct['product_version_id'],
+                    'name'             => self::_getCrossNameTranslations($crossType),
+                    'position'         => self::_getCrossPosition($crossType),
+                    'type'             => ProductCrossSellingDefinition::TYPE_PRODUCT_LIST,
+                    'sortBy'           => ProductCrossSellingDefinition::SORT_BY_NAME,
+                    'sortDirection'    => FieldSorting::ASCENDING,
+                    'active'           => true,
+                    'limit'            => self::MAX_CROSS_SELLINGS,
+                    'topdataExtension' => ['type' => $dbType],
+                ];
+            }
+
+            // Prepare new assignments for creation
+            $i = 1;
+            foreach ($linkedProducts as $prodIdData) {
+                $allAssignmentsToCreate[] = [
+                    'crossSellingId'   => $crossId,
+                    'productId'        => $prodIdData['product_id'],
+                    'productVersionId' => $prodIdData['product_version_id'],
+                    'position'         => $i++,
+                ];
+            }
+        }
+
+        // 4. Execute all DB operations in bulk
+        if (!empty($assignmentsToDeleteIds)) {
+            $this->connection->executeStatement(
+                "DELETE FROM product_cross_selling_assigned_products WHERE cross_selling_id IN (:ids)",
+                ['ids' => array_map('hex2bin', array_unique($assignmentsToDeleteIds))],
+                ['ids' => ArrayParameterType::BINARY]
+            );
+            CliLogger::activity();
+        }
+
+        if (!empty($crossSellsToCreate)) {
+            $this->productCrossSellingRepository->create($crossSellsToCreate, $this->context);
+            CliLogger::activity();
+        }
+
+        if (!empty($allAssignmentsToCreate)) {
+            foreach (array_chunk($allAssignmentsToCreate, self::BULK_INSERT_SIZE) as $chunk) {
+                $this->productCrossSellingAssignedProductsRepository->create($chunk, $this->context);
+                CliLogger::activity();
+            }
+        }
+    }
+
 
     /**
      * 04/2025 created

@@ -119,6 +119,8 @@ class ProductInformationServiceV1Slow
             }
             $this->_unlinkImages($currentChunkProductIds);
 
+            $productsForLinking = [];
+
             // ---- Process products
             foreach ($response->products as $product) {
                 if (!isset($topid_products[$product->products_id])) {
@@ -158,11 +160,20 @@ class ProductInformationServiceV1Slow
                     }
                 }
 
-                // ---- Link products
+                // ---- Collect products for bulk linking
                 if (!$onlyMedia) {
-                    $this->productProductRelationshipServiceV1->linkProducts($topid_products[$product->products_id][0], $product);
+                    $productsForLinking[] = [
+                        'productId_versionId' => $topid_products[$product->products_id][0],
+                        'remoteProductData'   => $product,
+                    ];
                 }
             }
+
+            // ---- Link products in bulk for the entire batch
+            if (!$onlyMedia && !empty($productsForLinking)) {
+                $this->productProductRelationshipServiceV1->linkMultipleProducts($productsForLinking);
+            }
+
             CliLogger::mem();
             CliLogger::activity(' ' . CliLogger::lap() . "sec\n");
         }
