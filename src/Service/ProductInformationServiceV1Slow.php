@@ -35,7 +35,8 @@ use Topdata\TopdataFoundationSW6\Util\UtilString;
  */
 class ProductInformationServiceV1Slow
 {
-    const CHUNK_SIZE = 50;
+    const CHUNK_SIZE                 = 50;
+    const BATCH_SIZE_UPDATE_PRODUCTS = 10;
 
     private Context $context;
 
@@ -148,7 +149,7 @@ class ProductInformationServiceV1Slow
                 }
 
                 // ---- Update product data in chunks
-                if (count($productDataUpdate) > 10) {
+                if (count($productDataUpdate) > self::BATCH_SIZE_UPDATE_PRODUCTS) {
                     $this->productRepository->update($productDataUpdate, $this->context);
                     $productDataUpdate = [];
                     CliLogger::activity();
