@@ -45,7 +45,6 @@ class ImportService
         private readonly DeviceImportService                $deviceImportService,
         private readonly DeviceMediaImportService           $deviceMediaImportService, // Added for refactoring
         private readonly MappingCacheService                $mappingCacheService, // Added for cache integration
-        private readonly ReportCliDumper                    $reportCliDumper,
     )
     {
     }
