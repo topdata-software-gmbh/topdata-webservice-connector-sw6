@@ -107,7 +107,7 @@ class ProductProductRelationshipServiceV2
                 'en-GB' => 'Similar',
                 'nl-NL' => 'Vergelijkbaar',
             ],
-            default                                => throw new RuntimeException("Unknown cross-selling type: {$crossType->value}"),
+            default                                         => throw new RuntimeException("Unknown cross-selling type: {$crossType->value}"),
         };
     }
 
@@ -461,22 +461,19 @@ class ProductProductRelationshipServiceV2
      * Executes a DELETE statement on the unified table for a list of product IDs and relationship type.
      * Updated to work with the unified topdata_product_relationships table
      *
-     * @param string   $relationshipType The relationship type to delete
-     * @param string[] $productIds       The product IDs to delete
+     * @param string $relationshipType The relationship type to delete
+     * @param string[] $productIds The product IDs to delete. The product IDs are expected to be UUIDs in hex format (without 0x and without dashes)
      */
-    private function _deleteFromUnifiedTableWhereProductIdsIn(string $relationshipType, array $productIds): void
+    private function _deleteFromUnifiedTableWhereProductIdsIn(string $relationshipType, array $productIds): int
     {
-        // The product IDs are expected to be UUIDs in hex format (without 0x)
-        // The database layer handles converting them to binary for the query.
-        $this->connection->executeStatement(
+        return (int)$this->connection->executeStatement(
             "DELETE FROM `topdata_product_relationships` WHERE product_id IN (:ids) AND relationship_type = :type",
             [
-                'ids' => $productIds,
+                'ids'  => array_map('hex2bin', $productIds),
                 'type' => $relationshipType,
             ],
             [
-                'ids' => ArrayParameterType::STRING,
-                'type' => \PDO::PARAM_STR,
+                'ids' => ArrayParameterType::BINARY,
             ]
         );
     }

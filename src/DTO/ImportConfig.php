@@ -22,7 +22,7 @@ class ImportConfig
     private bool $optionDeviceMedia; // --device-media
     private bool $optionDeviceSynonyms; // --device-synonyms
     private bool $optionProduct; // --product
-    private bool $optionProductInformation; // --product-information
+    private bool $optionProductInformation; // --product-info
     private bool $optionProductMediaOnly; // --product-media-only // todo: remove
     private bool $optionProductVariations; // --product-variated
     private bool $optionExperimentalV2; // --experimental-v2, 04/2025 added

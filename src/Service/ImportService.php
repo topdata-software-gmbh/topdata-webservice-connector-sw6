@@ -209,7 +209,11 @@ class ImportService
         }
 
         // ---- Product information
-        $this->_handleProductInformation($importConfig);
+        if ($importConfig->getOptionAll() ||
+            $importConfig->getOptionProductInformation() ||
+            $importConfig->getOptionProductMediaOnly()) {
+            $this->_handleProductInformation($importConfig);
+        }
 
         // ---- Device synonyms
         if ($importConfig->getOptionAll() || $importConfig->getOptionDeviceSynonyms()) {

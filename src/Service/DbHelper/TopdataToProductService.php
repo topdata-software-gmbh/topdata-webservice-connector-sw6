@@ -19,6 +19,7 @@ class TopdataToProductService
 
     /**
      * @var array|null it is a map with format: [top_data_id => [product_id, product_version_id, parent_id]]
+     * some kind of cache, returned by getTopdataProductMappings()
      */
     private ?array $topdataProductMappings = null;
     private Context $context; // default context
@@ -60,7 +61,7 @@ class TopdataToProductService
             ');
 
             // ---- log to console
-            CliLogger::info('getTopdataProductMappings - fetched ' . UtilFormatter::formatInteger(count($rows)) . ' mappings from database');
+            CliLogger::info('getTopdataProductMappings - fetched ' . UtilFormatter::formatInteger(count($rows)) . ' mappings from database [topdata_to_product]');
             if (empty($rows)) {
                 CliLogger::warning('No mapped products found in database. Did you set the correct mapping in plugin config?');
             }

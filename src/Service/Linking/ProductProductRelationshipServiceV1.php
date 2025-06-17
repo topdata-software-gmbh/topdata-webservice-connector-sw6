@@ -466,21 +466,28 @@ class ProductProductRelationshipServiceV1
      *
      * @param string   $tableName   The name of the database table.
      * @param string[] $productIds  The product IDs to delete.
+     * @return int The number of deleted rows.
      */
-    private function _deleteFromTableWhereProductIdsIn(string $tableName, array $productIds): void
+    private function _deleteFromTableWhereProductIdsIn(string $tableName, array $productIds): int
     {
+        CliLogger::debug("unlinking " . count($productIds) . " products from $tableName");
+        // dump($productIds);
+
         // The product IDs are expected to be UUIDs in hex format (without 0x)
-        // The database layer handles converting them to binary for the query.
-        $this->connection->executeStatement(
-        // Using backticks for the table name is a good practice
-            "DELETE FROM `{$tableName}` WHERE product_id IN (:ids)",
+        $SQL = "DELETE FROM `{$tableName}` WHERE product_id IN (:ids)";
+        CLiLogger::debug($SQL);
+        $numDeleted = $this->connection->executeStatement(
+            $SQL,
             [
-                'ids' => $productIds,
+                'ids' => array_map('hex2bin', $productIds),
             ],
             [
-                'ids' => ArrayParameterType::STRING,
+                'ids' => ArrayParameterType::BINARY,
             ]
         );
+        CliLogger::debug("deleted $numDeleted rows from $tableName");
+
+        return (int)$numDeleted;
     }
 
 
@@ -502,7 +509,7 @@ class ProductProductRelationshipServiceV1
 
         // ---- Process similar products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productSimilar, $productId)) {
-            CliLogger::debug("Processing similar products");
+            CliLogger::debug("Processing similar products for product $productId");
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findSimilarProducts($remoteProductData),
@@ -516,7 +523,7 @@ class ProductProductRelationshipServiceV1
 
         // ---- Process alternate products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productAlternate, $productId)) {
-            CliLogger::debug("Processing alternate products");
+            CliLogger::debug("Processing alternate products for product $productId");
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findAlternateProducts($remoteProductData),
@@ -530,7 +537,7 @@ class ProductProductRelationshipServiceV1
 
         // ---- Process related products (accessories)
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIO_OPTION_productRelated, $productId)) {
-            CliLogger::debug("Processing related products");
+            CliLogger::debug("Processing related products for product $productId");
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findRelatedProducts($remoteProductData),
@@ -544,7 +551,7 @@ class ProductProductRelationshipServiceV1
 
         // ---- Process bundled products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productBundled, $productId)) {
-            CliLogger::debug("Processing bundled products");
+            CliLogger::debug("Processing bundled products for product $productId");
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->findBundledProducts($remoteProductData),
@@ -558,7 +565,7 @@ class ProductProductRelationshipServiceV1
 
         // ---- Process color variant products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productColorVariant, $productId)) {
-            CliLogger::debug("Processing color variant products");
+            CliLogger::debug("Processing color variant products for product $productId");
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findColorVariantProducts($remoteProductData),
@@ -572,7 +579,7 @@ class ProductProductRelationshipServiceV1
 
         // ---- Process capacity variant products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productCapacityVariant, $productId)) {
-            CliLogger::debug("Processing capacity variant products");
+            CliLogger::debug("Processing capacity variant products for product $productId");
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findCapacityVariantProducts($remoteProductData),
@@ -586,7 +593,7 @@ class ProductProductRelationshipServiceV1
 
         // ---- Process general variant products
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::RELATIONSHIP_OPTION_productVariant, $productId)) {
-            CliLogger::debug("Processing general variant products");
+            CliLogger::debug("Processing general variant products for product $productId");
             $this->_processProductRelationship(
                 $productId_versionId,
                 $this->_findVariantProducts($remoteProductData),
