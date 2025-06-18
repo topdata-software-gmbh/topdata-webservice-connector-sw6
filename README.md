@@ -108,3 +108,10 @@ chown -R www-data:www-data .
 php -d memory_limit=2048M bin/console topdata:connector:import -v --all
 ```
 
+## Performance considerations
+The update of a single image scans the `file_name` column of the `media` table. 
+Unfortunately this column has no index which leads to a slow full table scan. To speed up the searching in the `media` table, consider adding an index:
+
+```sql
+CREATE INDEX IX__file_name ON media (file_name(255));
+```
