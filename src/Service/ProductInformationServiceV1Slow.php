@@ -40,6 +40,7 @@ class ProductInformationServiceV1Slow
 
     private Context $context;
 
+
     public function __construct(
         private readonly TopdataToProductService             $topdataToProductHelperService,
         private readonly MergedPluginConfigHelperService     $mergedPluginConfigHelperService,
@@ -53,6 +54,7 @@ class ProductInformationServiceV1Slow
         private readonly ManufacturerService                 $manufacturerService,
         private readonly Connection                          $connection,
         private readonly ShopwareProductPropertyService      $shopwareProductPropertyService,
+        private readonly ShopwarePropertyService             $shopwarePropertyService,
     )
     {
         $this->context = Context::createDefaultContext();
@@ -328,7 +330,7 @@ class ProductInformationServiceV1Slow
                 if ($propValue == '') {
                     continue;
                 }
-                $propertyId = $this->entitiesHelperService->getPropertyId($propGroupName, $propValue);
+                $propertyId = $this->shopwarePropertyService->getPropertyId($propGroupName, $propValue);
 
                 if (!isset($productData['properties'])) {
                     $productData['properties'] = [];
@@ -350,7 +352,7 @@ class ProductInformationServiceV1Slow
                 if ($propValue == '') {
                     continue;
                 }
-                $propertyId = $this->entitiesHelperService->getPropertyId($propGroupName, $propValue);
+                $propertyId = $this->shopwarePropertyService->getPropertyId($propGroupName, $propValue);
                 if (!isset($productData['properties'])) {
                     $productData['properties'] = [];
                 }
@@ -379,7 +381,7 @@ class ProductInformationServiceV1Slow
                     continue;
                 }
 
-                $propertyId = $this->entitiesHelperService->getPropertyId($propGroupName, $propValue);
+                $propertyId = $this->shopwarePropertyService->getPropertyId($propGroupName, $propValue);
                 if (!isset($productData['properties'])) {
                     $productData['properties'] = [];
                 }

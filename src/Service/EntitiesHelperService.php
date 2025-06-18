@@ -25,26 +25,17 @@ use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
  */
 class EntitiesHelperService
 {
-    const LANGUAGE_NAME       = 'English';
-
-    private ?array $propertyGroups = null;
     private ?array $categoryTree = null;
     private ?array $manufacturers = null;
-    private ?string $rootCategoryId = null;
     private ?string $defaultCmsListingPageId = null;
     private mixed $temp;
-    private ?array $propertyGroupsOptionsArray = null;
-    private ?string $enLangID = null;
-    private ?string $deLangID = null;
     private readonly string $systemDefaultLocaleCode;
     private readonly Context $context;
 
     public function __construct(
         private readonly Connection          $connection,
-        private readonly EntityRepository    $propertyGroupRepository,
         private readonly EntityRepository    $categoryRepository,
         private readonly EntityRepository    $productManufacturerRepository,
-        private readonly EntityRepository    $propertyGroupOptionRepository,
         private readonly LocaleHelperService $localeHelperService,
     )
     {
@@ -52,216 +43,6 @@ class EntitiesHelperService
         $this->context = Context::createDefaultContext();
     }
 
-
-    protected function loadPropertyGroups(): void
-    {
-        $this->propertyGroups = $this->propertyGroupRepository->search(
-            (new Criteria())->addAssociation('options'),
-            $this->context
-        )->getEntities();
-    }
-
-    //    public function getPropertyId(string $propGroupName, string $propValue) : string
-    //    {
-    //        if($this->propertyGroups === null) {
-    //            $this->loadPropertyGroups();
-    //        }
-    //
-    //        $currentGroup = null;
-    //        $currentOptionId = Uuid::randomHex();
-    //
-    //        foreach ($this->propertyGroups as $propertyGroup) {
-    //            if($propertyGroup->getName() == $propGroupName) {
-    //                $currentGroup = $propertyGroup;
-    //                break;
-    //            }
-    //        }
-    //
-    //        if($currentGroup === null) {
-    //            $this->propertyGroupRepository->create([
-    //                    [
-    //                        'id' => Uuid::randomHex(),
-    //                        'sortingType' => PropertyGroupDefinition::SORTING_TYPE_ALPHANUMERIC,
-    //                        'displayType' => PropertyGroupDefinition::DISPLAY_TYPE_TEXT,
-    //                        'name' => [
-    //                            $this->systemDefaultLocaleCode => $propGroupName
-    //                        ],
-    //                        'options' => [
-    //                            [
-    //                                'id' => $currentOptionId,
-    //                                'name' => [
-    //                                    $this->systemDefaultLocaleCode => $propValue
-    //                                ],
-    //                            ]
-    //                        ]
-    //
-    //                    ]
-    //                ], $this->context);
-    //            $this->loadPropertyGroups();
-    //            return $currentOptionId;
-    //        }
-    //
-    //        foreach ($currentGroup->getOptions() as $propertyGroupOption) {
-    //            if($propertyGroupOption->getName() == $propValue) {
-    //                return $propertyGroupOption->getId();
-    //            }
-    //        }
-    //
-    //        $this->propertyGroupRepository->update([
-    //                [
-    //                    'id' => $currentGroup->getId(),
-    //                    'options' => [
-    //                        [
-    //                            'id' => $currentOptionId,
-    //                            'name' => [
-    //                                $this->systemDefaultLocaleCode => $propValue
-    //                            ],
-    //                        ]
-    //                    ]
-    //
-    //                ]
-    //            ], $this->context);
-    //
-    //        $this->loadPropertyGroups();
-    //        return $currentOptionId;
-    //    }
-
-    public function getPropertyId(string $propGroupName, string $propValue): string
-    {
-        $propGroups = $this->getPropertyGroupsOptionsArray();
-
-        $currentGroup = null;
-        $currentGroupId = null;
-        $currentOptionId = Uuid::randomHex();
-
-        foreach ($propGroups as $id => $propertyGroup) {
-            if ($propertyGroup['name'] == $propGroupName) {
-                $currentGroupId = $id;
-                $currentGroup = $propertyGroup;
-                break;
-            }
-        }
-
-        if ($currentGroup === null) {
-            $currentGroupId = Uuid::randomHex();
-            //            echo '1';
-            $this->propertyGroupRepository->create([
-                [
-                    'id'          => $currentGroupId,
-                    'sortingType' => PropertyGroupDefinition::SORTING_TYPE_ALPHANUMERIC,
-                    'displayType' => PropertyGroupDefinition::DISPLAY_TYPE_TEXT,
-                    'filterable'  => false,
-                    'name'        => [
-                        $this->systemDefaultLocaleCode => $propGroupName,
-                    ],
-                    'options'     => [
-                        [
-                            'id'   => $currentOptionId,
-                            'name' => [
-                                $this->systemDefaultLocaleCode => $propValue,
-                            ],
-                        ],
-                    ],
-
-                ],
-            ], $this->context);
-            //            echo '2';
-            $this->addOptionPropertyGroupsOptionsArray($currentGroupId, $propGroupName, $currentOptionId, $propValue);
-
-            return $currentOptionId;
-        }
-
-        foreach ($propertyGroup['options'] as $id => $value) {
-            if ($value == $propValue) {
-                return $id;
-            }
-        }
-
-        //        $this->propertyGroupRepository->update([
-        //                [
-        //                    'id' => $currentGroupId,
-        //                    'options' => [
-        //                        [
-        //                            'id' => $currentOptionId,
-        //                            'name' => [
-        //                                $this->systemDefaultLocaleCode => $propValue
-        //                            ],
-        //                        ]
-        //                    ]
-        //
-        //                ]
-        //            ], $this->context);
-        //        echo 'a';
-        //        $this->propertyGroupOptionRepository->create([
-        //            [
-        //                'id' => $currentOptionId,
-        //                'groupId' => $currentGroupId,
-        //                'name' => [
-        //                    $this->systemDefaultLocaleCode => $propValue
-        //                ],
-        //            ]
-        //        ], $this->context);
-        $currentDateTime = date('Y-m-d H:i:s');
-        $enId = $this->getEnID();
-        $deId = $this->getDeID();
-        CliLogger::debug("# new property group option $propValue");
-        $SQL = '
-            INSERT INTO property_group_option 
-            (id, property_group_id, created_at) 
-            VALUES (
-                0x' . $currentOptionId . ',
-                0x' . $currentGroupId . ',
-                "' . $currentDateTime . '"
-            )
-        ';
-        $this->connection->executeStatement($SQL);
-        // CliLogger::debug($SQL);
-        //        echo 'b';
-        if ($enId) {
-            $this->connection->insert(
-                'property_group_option_translation',
-                [
-                    'property_group_option_id' => Uuid::fromHexToBytes($currentOptionId),
-                    'language_id'              => Uuid::fromHexToBytes($enId),
-                    'name'                     => $propValue,
-                    'created_at'               => $currentDateTime,
-                ]
-            );
-        }
-
-        if ($deId) {
-            $this->connection->insert(
-                'property_group_option_translation',
-                [
-                    'property_group_option_id' => Uuid::fromHexToBytes($currentOptionId),
-                    'language_id'              => Uuid::fromHexToBytes($deId),
-                    'name'                     => $propValue,
-                    'created_at'               => $currentDateTime,
-                ]
-            );
-        }
-
-        $this->addOptionPropertyGroupsOptionsArray($currentGroupId, $propGroupName, $currentOptionId, $propValue);
-        //echo " #\n";
-
-        return $currentOptionId;
-    }
-
-    public function getRootCategoryId(): string
-    {
-        if (null !== $this->rootCategoryId) {
-            return $this->rootCategoryId;
-        }
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('parentId', null));
-        $rootCategory = $this->categoryRepository->search($criteria, $this->context)->first();
-        if (!$rootCategory) {
-            throw new \RuntimeException('Root category not found');
-        }
-        $this->rootCategoryId = $rootCategory->getId();
-
-        return $this->rootCategoryId;
-    }
 
     private function buildCategorySubTree(?string $categoryId, $categories): array
     {
@@ -510,206 +291,140 @@ class EntitiesHelperService
         return $manufacturerId;
     }
 
-    /**
-     * Returns product ids which are compatible with same devices
-     * [['a_id'=>hexid, 'a_version_id'=>hexversionid], ...].
-     */
-    public function getAlternateProductIds(ProductEntity $product): array
-    {
-        $result = $this->connection->executeQuery('
-SELECT DISTINCT LOWER(HEX(a.id)) a_id, LOWER(HEX(a.version_id)) a_version_id 
- FROM product a, 
-      topdata_device_to_product tdp, 
-      topdata_device_to_product tda 
- WHERE (0x' . $product->getId() . ' = tdp.product_id) AND (0x' . $product->getVersionId() . ' = tdp.product_version_id)
-   AND  (a.id = tda.product_id) AND (a.version_id = tda.product_version_id)
-   AND  (tdp.device_id = tda.device_id)
-   AND  (0x' . $product->getId() . ' != a.id)
-            ')->fetchAllAssociative();
-
-        return $result;
-
-        /*
-         #all alternates:
-         SELECT DISTINCT p.product_number, a.product_number
- FROM product p,
-      product a,
-      topdata_device_to_product tdp,
-      topdata_device_to_product tda
- WHERE (p.id = tdp.product_id) AND (p.version_id = tdp.product_version_id)
-   AND  (a.id = tda.product_id) AND (a.version_id = tda.product_version_id)
-   AND  (tdp.device_id = tda.device_id)
-   AND  (p.id != a.id)
-         */
-    }
-
-//    protected function getLanguageId(string $languageName = ''): string
+//    /**
+//     * Returns product ids which are compatible with same devices
+//     * [['a_id'=>hexid, 'a_version_id'=>hexversionid], ...].
+//     * 06/2025 unused
+//     */
+//    public function getAlternateProductIds(ProductEntity $product): array
 //    {
-//        if ($languageName === '') {
-//            $languageName = static::LANGUAGE_NAME;
-//        }
+//        $result = $this->connection->executeQuery('
+//SELECT DISTINCT LOWER(HEX(a.id)) a_id, LOWER(HEX(a.version_id)) a_version_id
+// FROM product a,
+//      topdata_device_to_product tdp,
+//      topdata_device_to_product tda
+// WHERE (0x' . $product->getId() . ' = tdp.product_id) AND (0x' . $product->getVersionId() . ' = tdp.product_version_id)
+//   AND  (a.id = tda.product_id) AND (a.version_id = tda.product_version_id)
+//   AND  (tdp.device_id = tda.device_id)
+//   AND  (0x' . $product->getId() . ' != a.id)
+//            ')->fetchAllAssociative();
 //
-//        $result = $this->connection->executeQuery("
-//SELECT LOWER(HEX(id)) id
-// FROM language
-// WHERE name='$languageName' LIMIT 1
-//            ")->fetchAllAssociative();
+//        return $result;
 //
-//        if (!$result) {
-//            throw new \Exception('No English labguage in db!');
-//        }
-//
-//        foreach ($result as $res) {
-//            return $res['id'];
-//        }
+//        /*
+//         #all alternates:
+//         SELECT DISTINCT p.product_number, a.product_number
+// FROM product p,
+//      product a,
+//      topdata_device_to_product tdp,
+//      topdata_device_to_product tda
+// WHERE (p.id = tdp.product_id) AND (p.version_id = tdp.product_version_id)
+//   AND  (a.id = tda.product_id) AND (a.version_id = tda.product_version_id)
+//   AND  (tdp.device_id = tda.device_id)
+//   AND  (p.id != a.id)
+//         */
 //    }
 
-    public function getPropertyGroupsOptionsArray(): array
-    {
-        if (is_array($this->propertyGroupsOptionsArray)) {
-            return $this->propertyGroupsOptionsArray;
-        }
 
-        $this->propertyGroupsOptionsArray = [];
+//    public function getPropertyGroupsOptionsArray(): array
+//    {
+//        if (is_array($this->propertyGroupsOptionsArray)) {
+//            return $this->propertyGroupsOptionsArray;
+//        }
+//
+//        $this->propertyGroupsOptionsArray = [];
+//
+//        // --- THE FIX ---
+//        // Step 1: Reliably get the binary ID of the system's default language.
+//        // This ensures we are reading the same language that we are writing.
+//        $systemLangIdBytes = $this->connection->fetchOne(
+//            'SELECT language.id
+//             FROM language
+//             JOIN locale ON language.translation_code_id = locale.id
+//             WHERE locale.code = :code',
+//            ['code' => $this->systemDefaultLocaleCode]
+//        );
+//
+//        if ($systemLangIdBytes === false) {
+//            // Fallback or throw an error if the system language can't be found.
+//            // This protects against a misconfigured system.
+//            throw new \RuntimeException(sprintf(
+//                'System default language with locale code "%s" could not be found in the database.',
+//                $this->systemDefaultLocaleCode
+//            ));
+//        }
+//
+//        // Step 2: Convert the binary ID to its hex representation for the SQL query.
+//        $langIdHex = bin2hex($systemLangIdBytes);
+//        // --- END FIX ---
+//
+//
+//        // Step 3: Use the dynamically determined language ID in the query.
+//        $result = $this->connection->executeQuery("
+//            SELECT LOWER(HEX(pg.id)) pg_id, pgt.name pg_name, LOWER(HEX(pgo.id)) pgo_id, pgot.name pgo_name
+//            FROM property_group_option as pgo,
+//                 property_group_option_translation as pgot,
+//                 property_group as pg,
+//                 property_group_translation as pgt
+//            WHERE (pg.id = pgo.property_group_id)
+//                AND (pg.id = pgt.property_group_id)
+//                AND (pgt.language_id = 0x$langIdHex) -- <-- Using the correct language ID
+//                AND (pgo.id = pgot.property_group_option_id)
+//                AND (pgot.language_id = 0x$langIdHex) -- <-- Using the correct language ID
+//        ")->fetchAllAssociative();
+//
+//        foreach ($result as $res) {
+//            if (!isset($this->propertyGroupsOptionsArray[$res['pg_id']])) {
+//                $this->propertyGroupsOptionsArray[$res['pg_id']] = [
+//                    'name'    => $res['pg_name'],
+//                    'options' => [],
+//                ];
+//            }
+//            $this->propertyGroupsOptionsArray[$res['pg_id']]['options'][$res['pgo_id']] = $res['pgo_name'];
+//        }
+//
+//        return $this->propertyGroupsOptionsArray;
+//    }
 
-        // --- THE FIX ---
-        // Step 1: Reliably get the binary ID of the system's default language.
-        // This ensures we are reading the same language that we are writing.
-        $systemLangIdBytes = $this->connection->fetchOne(
-            'SELECT language.id 
-             FROM language 
-             JOIN locale ON language.translation_code_id = locale.id 
-             WHERE locale.code = :code',
-            ['code' => $this->systemDefaultLocaleCode]
-        );
-
-        if ($systemLangIdBytes === false) {
-            // Fallback or throw an error if the system language can't be found.
-            // This protects against a misconfigured system.
-            throw new \RuntimeException(sprintf(
-                'System default language with locale code "%s" could not be found in the database.',
-                $this->systemDefaultLocaleCode
-            ));
-        }
-
-        // Step 2: Convert the binary ID to its hex representation for the SQL query.
-        $langIdHex = bin2hex($systemLangIdBytes);
-        // --- END FIX ---
 
 
-        // Step 3: Use the dynamically determined language ID in the query.
-        $result = $this->connection->executeQuery("
-            SELECT LOWER(HEX(pg.id)) pg_id, pgt.name pg_name, LOWER(HEX(pgo.id)) pgo_id, pgot.name pgo_name
-            FROM property_group_option as pgo, 
-                 property_group_option_translation as pgot, 
-                 property_group as pg, 
-                 property_group_translation as pgt
-            WHERE (pg.id = pgo.property_group_id)
-                AND (pg.id = pgt.property_group_id)
-                AND (pgt.language_id = 0x$langIdHex) -- <-- Using the correct language ID
-                AND (pgo.id = pgot.property_group_option_id)
-                AND (pgot.language_id = 0x$langIdHex) -- <-- Using the correct language ID
-        ")->fetchAllAssociative();
+//    /**
+//     * 06/2025 unused
+//     */
+//    public function productAlternatesCount(string $productId)
+//    {
+//        if (!UtilUuid::isValidUuid($productId)) {
+//            return 0;
+//        }
+//        /*
+//        return $this->connection->executeQuery('
+//SELECT COUNT(*) as cnt
+// FROM topdata_product_to_alternate
+// WHERE 0x'.$productId.' = product_id
+//     LIMIT 1
+//            ')->fetchColumn();
+//*/
+//
+//        return $this->connection->executeQuery('SELECT COUNT(*) as cnt FROM topdata_product_to_alternate WHERE 0x' . $productId . ' = product_id LIMIT 1')->fetchOne();
+//    }
 
-        foreach ($result as $res) {
-            if (!isset($this->propertyGroupsOptionsArray[$res['pg_id']])) {
-                $this->propertyGroupsOptionsArray[$res['pg_id']] = [
-                    'name'    => $res['pg_name'],
-                    'options' => [],
-                ];
-            }
-            $this->propertyGroupsOptionsArray[$res['pg_id']]['options'][$res['pgo_id']] = $res['pgo_name'];
-        }
-
-        return $this->propertyGroupsOptionsArray;
-    }
-
-
-    public function addOptionPropertyGroupsOptionsArray($groupId, $groupName, $groupOptId, $groupOptVal): void
-    {
-        if (!isset($this->propertyGroupsOptionsArray[$groupId])) {
-            $this->propertyGroupsOptionsArray[$groupId] = [
-                'name'    => $groupName,
-                'options' => [],
-            ];
-        }
-        $this->propertyGroupsOptionsArray[$groupId]['options'][$groupOptId] = $groupOptVal;
-    }
-
-    public function productAlternatesCount(string $productId)
-    {
-        if (!UtilUuid::isValidUuid($productId)) {
-            return 0;
-        }
-        /*
-        return $this->connection->executeQuery('
-SELECT COUNT(*) as cnt
- FROM topdata_product_to_alternate
- WHERE 0x'.$productId.' = product_id
-     LIMIT 1
-            ')->fetchColumn();
-*/
-
-        return $this->connection->executeQuery('SELECT COUNT(*) as cnt FROM topdata_product_to_alternate WHERE 0x' . $productId . ' = product_id LIMIT 1')->fetchOne();
-    }
-
-    public function getDeviceSynonymsIds(string $deviceId): array
-    {
-        $xids = [];
-
-        if (!UtilUuid::isValidUuid($deviceId)) {
-            return $xids;
-        }
-
-        $deviceIds = $this->connection->executeQuery('
-SELECT LOWER(HEX(synonym_id)) as id
- FROM topdata_device_to_synonym
- WHERE 0x' . $deviceId . ' = device_id
-            ')->fetchAllAssociative();
-        foreach ($deviceIds as $id) {
-            $xids[] = $id['id'];
-        }
-
-        return $xids;
-    }
-
-    private function getEnID()
-    {
-        if ($this->enLangID || ($this->enLangID === false)) {
-            return $this->enLangID;
-        }
-
-        /*
-        $rez = $this->connection
-            ->prepare('SELECT LOWER(HEX(id)) as id FROM language WHERE name="English" LIMIT 1');
-        $rez->execute();
-        $result = $rez->fetchOne();
-        */
-
-        $result = $this->connection->executeQuery('SELECT LOWER(HEX(id)) as id FROM language WHERE name="English" LIMIT 1')->fetchOne();
-
-        $this->enLangID = $result ?: false;
-
-        return $this->enLangID;
-    }
-
-    private function getDeID()
-    {
-        if ($this->deLangID || ($this->deLangID === false)) {
-            return $this->deLangID;
-        }
-
-        /*
-        $rez = $this->connection
-            ->prepare('SELECT LOWER(HEX(id)) as id FROM language WHERE name="Deutsch" LIMIT 1');
-        $rez->execute();
-        $result = $rez->fetchColumn();
-        */
-
-        $result = $this->connection->executeQuery('SELECT LOWER(HEX(id)) as id FROM language WHERE name="Deutsch" LIMIT 1')->fetchOne();
-
-        $this->deLangID = $result ?: false;
-
-        return $this->deLangID;
-    }
+//    public function getDeviceSynonymsIds(string $deviceId): array
+//    {
+//        $xids = [];
+//
+//        if (!UtilUuid::isValidUuid($deviceId)) {
+//            return $xids;
+//        }
+//
+//        $deviceIds = $this->connection->executeQuery('
+//SELECT LOWER(HEX(synonym_id)) as id
+// FROM topdata_device_to_synonym
+// WHERE 0x' . $deviceId . ' = device_id
+//            ')->fetchAllAssociative();
+//        foreach ($deviceIds as $id) {
+//            $xids[] = $id['id'];
+//        }
+//
+//        return $xids;
+//    }
 }
