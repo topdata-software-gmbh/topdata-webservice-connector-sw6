@@ -14,6 +14,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use Topdata\TopdataFoundationSW6\Util\UtilUuid;
 use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
 
@@ -203,15 +204,18 @@ class EntitiesHelperService
         $currentDateTime = date('Y-m-d H:i:s');
         $enId = $this->getEnID();
         $deId = $this->getDeID();
-        $this->connection->executeStatement('
+        CliLogger::debug("# new property group option $propValue");
+        $SQL = '
             INSERT INTO property_group_option 
             (id, property_group_id, created_at) 
             VALUES (
-            0x' . $currentOptionId . ',
-            0x' . $currentGroupId . ',
-            "' . $currentDateTime . '"
-                )
-        ');
+                0x' . $currentOptionId . ',
+                0x' . $currentGroupId . ',
+                "' . $currentDateTime . '"
+            )
+        ';
+        $this->connection->executeStatement($SQL);
+        // CliLogger::debug($SQL);
         //        echo 'b';
         if ($enId) {
             $this->connection->insert(
@@ -238,6 +242,7 @@ class EntitiesHelperService
         }
 
         $this->addOptionPropertyGroupsOptionsArray($currentGroupId, $propGroupName, $currentOptionId, $propValue);
+        //echo " #\n";
 
         return $currentOptionId;
     }
@@ -538,26 +543,26 @@ SELECT DISTINCT LOWER(HEX(a.id)) a_id, LOWER(HEX(a.version_id)) a_version_id
          */
     }
 
-    protected function getLanguageId(string $languageName = ''): string
-    {
-        if ($languageName === '') {
-            $languageName = static::LANGUAGE_NAME;
-        }
-
-        $result = $this->connection->executeQuery("
-SELECT LOWER(HEX(id)) id
- FROM language
- WHERE name='$languageName' LIMIT 1
-            ")->fetchAllAssociative();
-
-        if (!$result) {
-            throw new \Exception('No English labguage in db!');
-        }
-
-        foreach ($result as $res) {
-            return $res['id'];
-        }
-    }
+//    protected function getLanguageId(string $languageName = ''): string
+//    {
+//        if ($languageName === '') {
+//            $languageName = static::LANGUAGE_NAME;
+//        }
+//
+//        $result = $this->connection->executeQuery("
+//SELECT LOWER(HEX(id)) id
+// FROM language
+// WHERE name='$languageName' LIMIT 1
+//            ")->fetchAllAssociative();
+//
+//        if (!$result) {
+//            throw new \Exception('No English labguage in db!');
+//        }
+//
+//        foreach ($result as $res) {
+//            return $res['id'];
+//        }
+//    }
 
     public function getPropertyGroupsOptionsArray(): array
     {
@@ -567,17 +572,44 @@ SELECT LOWER(HEX(id)) id
 
         $this->propertyGroupsOptionsArray = [];
 
-        $langId = $this->getLanguageId();
+        // --- THE FIX ---
+        // Step 1: Reliably get the binary ID of the system's default language.
+        // This ensures we are reading the same language that we are writing.
+        $systemLangIdBytes = $this->connection->fetchOne(
+            'SELECT language.id 
+             FROM language 
+             JOIN locale ON language.translation_code_id = locale.id 
+             WHERE locale.code = :code',
+            ['code' => $this->systemDefaultLocaleCode]
+        );
+
+        if ($systemLangIdBytes === false) {
+            // Fallback or throw an error if the system language can't be found.
+            // This protects against a misconfigured system.
+            throw new \RuntimeException(sprintf(
+                'System default language with locale code "%s" could not be found in the database.',
+                $this->systemDefaultLocaleCode
+            ));
+        }
+
+        // Step 2: Convert the binary ID to its hex representation for the SQL query.
+        $langIdHex = bin2hex($systemLangIdBytes);
+        // --- END FIX ---
+
+
+        // Step 3: Use the dynamically determined language ID in the query.
         $result = $this->connection->executeQuery("
-SELECT LOWER(HEX(pg.id)) pg_id, pgt.name pg_name, LOWER(HEX(pgo.id)) pgo_id, pgot.name pgo_name
- FROM property_group_option as pgo, property_group_option_translation as pgot, 
-      property_group as pg, property_group_translation as pgt
- WHERE (pg.id = pgo.property_group_id)
-    AND(pg.id = pgt.property_group_id)
-    AND(pgt.language_id = 0x$langId)
-    AND (pgo.id = pgot.property_group_option_id)
- 	AND(pgot.language_id = 0x$langId)
-            ")->fetchAllAssociative();
+            SELECT LOWER(HEX(pg.id)) pg_id, pgt.name pg_name, LOWER(HEX(pgo.id)) pgo_id, pgot.name pgo_name
+            FROM property_group_option as pgo, 
+                 property_group_option_translation as pgot, 
+                 property_group as pg, 
+                 property_group_translation as pgt
+            WHERE (pg.id = pgo.property_group_id)
+                AND (pg.id = pgt.property_group_id)
+                AND (pgt.language_id = 0x$langIdHex) -- <-- Using the correct language ID
+                AND (pgo.id = pgot.property_group_option_id)
+                AND (pgot.language_id = 0x$langIdHex) -- <-- Using the correct language ID
+        ")->fetchAllAssociative();
 
         foreach ($result as $res) {
             if (!isset($this->propertyGroupsOptionsArray[$res['pg_id']])) {
@@ -591,6 +623,7 @@ SELECT LOWER(HEX(pg.id)) pg_id, pgt.name pg_name, LOWER(HEX(pgo.id)) pgo_id, pgo
 
         return $this->propertyGroupsOptionsArray;
     }
+
 
     public function addOptionPropertyGroupsOptionsArray($groupId, $groupName, $groupOptId, $groupOptVal): void
     {
