@@ -32,6 +32,28 @@ class ShopwarePropertyService
         $this->context = Context::createDefaultContext();
     }
 
+
+    /**
+     * @todo [I18N] Refactor for proper multi-language support.
+     *
+     * NOTE ON CURRENT LIMITATION:
+     * This method currently has a significant limitation regarding multi-language support.
+     * It receives a single string for a property name (`$propGroupName`) and its value (`$propValue`),
+     * which are fetched from the Topdata webservice in only ONE language (defined in the plugin config).
+     *
+     * It then proceeds to create translations for multiple languages (e.g., English and German)
+     * but uses the *same single-language string* for all of them. For example, if the API language
+     * is German, both the 'de-DE' and 'en-GB' translations in Shopware will be in German.
+     *
+     * TO IMPLEMENT "REAL I18N":
+     * 1. The `TopdataWebserviceClient` must be refactored to allow changing the request language at runtime
+     *    (e.g., with a `setLanguage()` method).
+     * 2. The import process must be updated to loop through all active Shopware languages, call the
+     *    webservice for each language, and collect all translations.
+     * 3. This `getPropertyId` method must be changed to accept arrays of translations for group names
+     *    and values, and then use the repository's `create` or `update` methods to save all
+     *    translations in a single, correct operation, removing the direct SQL inserts below.
+     */
     public function getPropertyId(string $propGroupName, string $propValue): string
     {
         $propGroups = $this->getPropertyGroupsOptionsArray();
@@ -91,6 +113,9 @@ class ShopwarePropertyService
             'INSERT INTO property_group_option (id, property_group_id, created_at) VALUES (0x' . $currentOptionId . ', 0x' . $currentGroupId . ', "' . $currentDateTime . '")'
         );
 
+        // TODO: [I18N] The lines below are the core of the issue. The same `$propValue`
+        // is being inserted for both English and German language IDs. This needs to be
+        // replaced by a repository call with a proper translations array when implementing "real i18n".
         if ($enId) {
             $this->connection->insert('property_group_option_translation', [
                 'property_group_option_id' => Uuid::fromHexToBytes($currentOptionId),
