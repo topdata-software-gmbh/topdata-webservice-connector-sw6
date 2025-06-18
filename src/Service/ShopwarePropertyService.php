@@ -2,9 +2,6 @@
 
 namespace Topdata\TopdataConnectorSW6\Service;
 
-use Shopware\Core\System\SystemConfig\SystemConfigService;
-use Topdata\TopdataConnectorSW6\Helper\CurlHttpClient;
-use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Property\PropertyGroupDefinition;
 use Shopware\Core\Framework\Context;
@@ -20,7 +17,6 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
  */
 class ShopwarePropertyService
 {
-    private ?array $propertyGroups = null;
     private ?array $propertyGroupsOptionsArray = null;
     private readonly string $systemDefaultLocaleCode;
     private readonly Context $context;
@@ -30,7 +26,6 @@ class ShopwarePropertyService
     public function __construct(
         private readonly Connection $connection,
         private readonly EntityRepository $propertyGroupRepository,
-        private readonly EntityRepository $propertyGroupOptionRepository,
         private readonly LocaleHelperService $localeHelperService
     ) {
         $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();
@@ -194,11 +189,4 @@ class ShopwarePropertyService
         return $this->deLangID;
     }
 
-    protected function loadPropertyGroups(): void
-    {
-        $this->propertyGroups = $this->propertyGroupRepository->search(
-            (new Criteria())->addAssociation('options'),
-            $this->context
-        )->getEntities();
-    }
 }

@@ -87,6 +87,7 @@
         <service id="Topdata\TopdataConnectorSW6\Service\EntitiesHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\ProgressLoggingService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\MediaHelperService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\ShopwarePropertyService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\Linking\ProductProductRelationshipServiceV1" autowire="true" />
 
         <!-- Config Services -->
