@@ -76,9 +76,9 @@ class ProductInformationServiceV1Slow
         UtilProfiling::startTimer();
 
         if ($onlyMedia) {
-            CliLogger::section("Product media (--product-media-only)");
+            CliLogger::section('Product media (--product-media-only)');
         } else {
-            CliLogger::section("Product information");
+            CliLogger::section('Product information');
         }
 
         // ---- Fetch the topid products
@@ -92,7 +92,7 @@ class ProductInformationServiceV1Slow
         CliLogger::lap(true);
 
         foreach ($batches as $idxBatch => $batch) {
-            CliLogger::progress(($idxBatch + 1), count($batches), 'Getting data from remote server [Product Information]...');
+            CliLogger::progressBar(($idxBatch + 1), count($batches), 'Fetching data from remote server [Product Information]...');
 
             // ---- Fetch product data from the webservice
             $response = $this->topdataWebserviceClient->myProductList([
@@ -245,6 +245,8 @@ class ProductInformationServiceV1Slow
         // ---- Prepare product name
         if (!$onlyMedia && $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productName, $productId) && $remoteProductData->short_description != '') {
             $productData['name'] = UtilString::max255($remoteProductData->short_description);
+        } else {
+// dd("dsfsdfsdfsdf", $onlyMedia, $this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productName, $productId), $remoteProductData->short_description);
         }
 
         // ---- Prepare product description

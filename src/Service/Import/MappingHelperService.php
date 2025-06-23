@@ -219,7 +219,7 @@ class MappingHelperService
         CliLogger::section("Brands");
 
         // Log the start of the data fetching process
-        CliLogger::writeln('Getting data from remote server [Brand]...');
+        CliLogger::writeln('Fetching data from remote server [Brand]...');
         CliLogger::lap(true);
 
         // Fetch the brands from the remote server
