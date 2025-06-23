@@ -7,7 +7,7 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;
 
 /**
- * Service class responsible for managing product import settings in a hierarchical way.
+ * Service class responsible for managing product import settings in a hierarchical way ("hierarchical configuration override").
  *
  * This service allows retrieving and loading product-specific import settings,
  * overriding the global settings defined in OptionsHelperService.
