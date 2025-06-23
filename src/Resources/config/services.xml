@@ -81,13 +81,22 @@
             <tag name="console.command"/>
         </service>
 
+
+
         <!-- SERVICES -->
+
+        <!-- Shopware6 Core Table Helper Services -->
+        <service id="Topdata\TopdataConnectorSW6\Service\Shopware\ShopwarePropertyService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\Shopware\ShopwareLanguageService" autowire="true" />
+        <service id="Topdata\TopdataConnectorSW6\Service\Shopware\ShopwareProductService" autowire="true"/>
+        <service id="Topdata\TopdataConnectorSW6\Service\Shopware\ShopwareProductPropertyService" autowire="true"/>
+
+        <!-- Misc Services -->
         <service id="Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ImportService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\EntitiesHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\ProgressLoggingService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\MediaHelperService" autowire="true" />
-        <service id="Topdata\TopdataConnectorSW6\Service\ShopwarePropertyService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\Linking\ProductProductRelationshipServiceV1" autowire="true" />
 
         <!-- Config Services -->
@@ -108,16 +117,17 @@
         <service id="Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceTypeService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService" autowire="true"/>
+
         <!-- Import Services -->
         <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\Import\ProductMappingService" autowire="true" />
-        <service id="Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService" autowire="true"/>
-        <service id="Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductPropertyService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Import\DeviceImportService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Import\DeviceMediaImportService" autowire="true"/>
+
         <!-- Mapping Strategies -->
         <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_ProductNumberAs" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy\MappingStrategy_Unified" autowire="true"/>
+
         <!-- WIP: experimental faster and more reliable syncing -->
         <service id="Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipServiceV1" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\Linking\ProductDeviceRelationshipServiceV2" autowire="true" />

@@ -7,7 +7,7 @@ use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\MappingTypeConstants;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
-use Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService;
+use Topdata\TopdataConnectorSW6\Service\Shopware\ShopwareProductService;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;

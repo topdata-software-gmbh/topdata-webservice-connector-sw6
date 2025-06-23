@@ -1,6 +1,6 @@
 <?php
 
-namespace Topdata\TopdataConnectorSW6\Service\Import;
+namespace Topdata\TopdataConnectorSW6\Service\Shopware;
 
 
 use Doctrine\DBAL\Connection;

@@ -1,10 +1,10 @@
 # Checklist: Implement Verbose Category Override Logging
 
 ## Implementation
-- [ ] Add Breadcrumb Fetching Method
-- [ ] Add Default Language Helper
-- [ ] Add Logging in loadProductImportSettings()
-- [ ] Import CliLogger
+- [x] Add Breadcrumb Fetching Method
+- [x] Add Default Language Helper
+- [x] Add Logging in loadProductImportSettings()
+- [x] Import CliLogger
 
 ## Testing
 - [ ] Create test categories with overrides

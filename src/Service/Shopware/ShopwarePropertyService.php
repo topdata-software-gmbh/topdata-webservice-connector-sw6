@@ -1,12 +1,11 @@
 <?php
 
-namespace Topdata\TopdataConnectorSW6\Service;
+namespace Topdata\TopdataConnectorSW6\Service\Shopware;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Property\PropertyGroupDefinition;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
@@ -20,13 +19,12 @@ class ShopwarePropertyService
     private ?array $propertyGroupsOptionsArray = null;
     private readonly string $systemDefaultLocaleCode;
     private readonly Context $context;
-    private ?string $enLangID = null;
-    private ?string $deLangID = null;
 
     public function __construct(
         private readonly Connection $connection,
         private readonly EntityRepository $propertyGroupRepository,
-        private readonly LocaleHelperService $localeHelperService
+        private readonly LocaleHelperService $localeHelperService,
+        private readonly ShopwareLanguageService $shopwareLanguageService,
     ) {
         $this->systemDefaultLocaleCode = $this->localeHelperService->getLocaleCodeOfSystemLanguage();
         $this->context = Context::createDefaultContext();
@@ -105,8 +103,8 @@ class ShopwarePropertyService
 
         $currentOptionId = Uuid::randomHex();
         $currentDateTime = date('Y-m-d H:i:s');
-        $enId = $this->getEnID();
-        $deId = $this->getDeID();
+        $enId = $this->shopwareLanguageService->getLanguageId_EN();
+        $deId = $this->shopwareLanguageService->getLanguageId_DE();
         CliLogger::debug("# new property group option $propValue");
 
         $this->connection->executeStatement(
@@ -194,24 +192,5 @@ class ShopwarePropertyService
         $this->propertyGroupsOptionsArray[$groupId]['options'][$groupOptId] = $groupOptVal;
     }
 
-    private function getEnID(): ?string
-    {
-        if ($this->enLangID || ($this->enLangID === false)) {
-            return $this->enLangID;
-        }
-        $result = $this->connection->executeQuery('SELECT LOWER(HEX(id)) as id FROM language WHERE name="English" LIMIT 1')->fetchOne();
-        $this->enLangID = $result ?: null;
-        return $this->enLangID;
-    }
-
-    private function getDeID(): ?string
-    {
-        if ($this->deLangID || ($this->deLangID === false)) {
-            return $this->deLangID;
-        }
-        $result = $this->connection->executeQuery('SELECT LOWER(HEX(id)) as id FROM language WHERE name="Deutsch" LIMIT 1')->fetchOne();
-        $this->deLangID = $result ?: null;
-        return $this->deLangID;
-    }
 
 }

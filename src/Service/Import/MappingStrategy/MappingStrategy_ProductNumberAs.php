@@ -5,7 +5,7 @@ namespace Topdata\TopdataConnectorSW6\Service\Import\MappingStrategy;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\DTO\ImportConfig;
-use Topdata\TopdataConnectorSW6\Service\Import\ShopwareProductService;
+use Topdata\TopdataConnectorSW6\Service\Shopware\ShopwareProductService;
 use Topdata\TopdataConnectorSW6\Util\UtilMappingHelper;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
