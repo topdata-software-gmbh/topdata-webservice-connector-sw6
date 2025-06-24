@@ -5,6 +5,8 @@ namespace Topdata\TopdataConnectorSW6\Service\Config;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;
+use Topdata\TopdataConnectorSW6\Service\Shopware\BreadcrumbService;
+use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
  * Service class responsible for managing product import settings in a hierarchical way ("hierarchical configuration override").
@@ -30,9 +32,38 @@ class ProductImportSettingsService
      */
     public function __construct(
         private readonly MergedPluginConfigHelperService $optionsHelperService,
-        private readonly Connection                      $connection,
+        private readonly Connection $connection,
+        private readonly BreadcrumbService $breadcrumbService
     )
     {
+    }
+
+    /**
+     * Logs all categories that have configuration overrides enabled.
+     * The categories are displayed as a breadcrumb path.
+     */
+    public function logCategoryOverrides(): void
+    {
+        CliLogger::section('Categories with Configuration Overrides');
+
+        $overriddenCategories = $this->connection->fetchFirstColumn('
+            SELECT LOWER(HEX(category_id))
+            FROM topdata_category_extension
+            WHERE plugin_settings = 0
+        ');
+
+        if (empty($overriddenCategories)) {
+            CliLogger::info('No category overrides found.');
+
+            return;
+        }
+
+        $breadcrumbs = [];
+        foreach ($overriddenCategories as $categoryId) {
+            $breadcrumbs[] = $this->breadcrumbService->getCategoryBreadcrumb($categoryId);
+        }
+
+        CliLogger::getCliStyle()->list($breadcrumbs);
     }
 
     /**

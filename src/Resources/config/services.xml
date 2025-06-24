@@ -90,6 +90,7 @@
         <service id="Topdata\TopdataConnectorSW6\Service\Shopware\ShopwareLanguageService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\Shopware\ShopwareProductService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Shopware\ShopwareProductPropertyService" autowire="true"/>
+        <service id="Topdata\TopdataConnectorSW6\Service\Shopware\BreadcrumbService" autowire="true"/>
 
         <!-- Misc Services -->
         <service id="Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient" autowire="true"/>
