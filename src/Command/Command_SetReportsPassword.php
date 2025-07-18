@@ -9,6 +9,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Topdata\TopdataConnectorSW6\Service\TopdataReportService;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
 
 /**
  * Command to set the password for accessing Topdata reports.
@@ -18,19 +19,21 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
     name: 'topdata:foundation:reports:set-password',
     description: 'Set password for reports access',
 )]
-class SetReportsPasswordCommand extends AbstractTopdataCommand
+class Command_SetReportsPassword extends AbstractTopdataCommand
 {
     public function __construct(
         private readonly TopdataReportService $reportService,
-        private readonly SystemConfigService $systemConfigService
-    ) {
+        private readonly SystemConfigService  $systemConfigService
+    )
+    {
         parent::__construct();
     }
 
     /**
      * Configures the command by adding the 'password' argument.
      */
-    protected function configure(): void {
+    protected function configure(): void
+    {
         $this->addArgument('password', InputArgument::REQUIRED, 'New password');
     }
 

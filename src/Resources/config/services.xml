@@ -83,10 +83,10 @@
         <service id="Topdata\TopdataConnectorSW6\Command\Command_LastReport" autowire="true">
             <tag name="console.command"/>
         </service>
-        <service id="Topdata\TopdataConnectorSW6\Command\CheckCrashedJobsCommand" autowire="true">
+        <service id="Topdata\TopdataConnectorSW6\Command\Command_CheckCrashedJobs" autowire="true">
             <tag name="console.command"/>
         </service>
-        <service id="Topdata\TopdataConnectorSW6\Command\SetReportsPasswordCommand" autowire="true">
+        <service id="Topdata\TopdataConnectorSW6\Command\Command_SetReportsPassword" autowire="true">
             <tag name="console.command"/>
         </service>
 
