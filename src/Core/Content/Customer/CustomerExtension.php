@@ -27,8 +27,16 @@ class CustomerExtension extends EntityExtension
         );
     }
 
+    // sw6.6
     public function getDefinitionClass(): string
     {
         return CustomerDefinition::class;
     }
+
+    // sw6.7
+    public function getEntityName(): string
+    {
+        return CustomerDefinition::ENTITY_NAME;
+    }
+
 }

@@ -117,8 +117,16 @@ class ProductExtension extends EntityExtension
         );
     }
 
+    // sw6.6
     public function getDefinitionClass(): string
     {
         return ProductDefinition::class;
     }
+
+    // sw6.7
+    public function getEntityName(): string
+    {
+        return ProductDefinition::ENTITY_NAME;
+    }
+
 }

@@ -26,8 +26,15 @@ class CategoryExtension extends EntityExtension
         );
     }
 
+    // sw6.6
     public function getDefinitionClass(): string
     {
         return CategoryDefinition::class;
+    }
+
+    // sw6.7
+    public function getEntityName(): string
+    {
+        return CategoryDefinition::ENTITY_NAME;
     }
 }

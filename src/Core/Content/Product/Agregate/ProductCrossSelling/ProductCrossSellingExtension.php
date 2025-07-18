@@ -18,8 +18,15 @@ class ProductCrossSellingExtension extends EntityExtension
         );
     }
 
+    // sw6.6
     public function getDefinitionClass(): string
     {
         return ProductCrossSellingDefinition::class;
+    }
+
+    // sw6.7
+    public function getEntityName(): string
+    {
+        return ProductCrossSellingDefinition::ENTITY_NAME;
     }
 }

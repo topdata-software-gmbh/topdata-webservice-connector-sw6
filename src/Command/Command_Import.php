@@ -57,9 +57,9 @@ class Command_Import extends AbstractTopdataCommand
             'counters'  => ImportReport::getCountersSorted(),
             'profiling' => UtilProfiling::getProfiling(),
             'apiConfig' => [
-                'uid'      => $pluginConfig['apiUid'],
-                'baseUrl'  => $importConfig->getBaseUrl() ?? $pluginConfig['apiBaseUrl'],
-                'language' => $pluginConfig['apiLanguage'],
+                'uid'      => $pluginConfig['apiUid'] ?? null,
+                'baseUrl'  => $importConfig->getBaseUrl() ?? ($pluginConfig['apiBaseUrl'] ?? null),
+                'language' => $pluginConfig['apiLanguage'] ?? null,
             ],
         ];
     }
