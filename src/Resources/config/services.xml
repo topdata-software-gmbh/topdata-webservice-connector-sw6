@@ -6,6 +6,9 @@
 
     <services>
         <!-- ENTITIES -->
+        <service id="Topdata\TopdataConnectorSW6\Core\Content\TopdataReport\TopdataReportDefinition">
+            <tag name="shopware.entity.definition" entity="topdata_report" />
+        </service>
         <service id="Topdata\TopdataConnectorSW6\Core\Content\Brand\BrandDefinition">
             <tag name="shopware.entity.definition" entity="topdata_brand" />
         </service>
@@ -80,6 +83,12 @@
         <service id="Topdata\TopdataConnectorSW6\Command\Command_LastReport" autowire="true">
             <tag name="console.command"/>
         </service>
+        <service id="Topdata\TopdataConnectorSW6\Command\CheckCrashedJobsCommand" autowire="true">
+            <tag name="console.command"/>
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Command\SetReportsPasswordCommand" autowire="true">
+            <tag name="console.command"/>
+        </service>
 
 
 
@@ -92,7 +101,9 @@
         <service id="Topdata\TopdataConnectorSW6\Service\Shopware\ShopwareProductPropertyService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\Shopware\BreadcrumbService" autowire="true"/>
 
+
         <!-- Misc Services -->
+        <service id="Topdata\TopdataConnectorSW6\Service\TopdataReportService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ImportService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\EntitiesHelperService" autowire="true" />
@@ -135,13 +146,24 @@
         <service id="Topdata\TopdataConnectorSW6\Service\ProductInformationServiceV1Slow" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\ProductInformationServiceV2" autowire="true" />
 
-        <!-- Controllers -->
+        <!-- CONTROLLERS -->
         <service id="Topdata\TopdataConnectorSW6\Controller\Admin\TopdataWebserviceConnectorAdminApiController" public="true" autowire="true">
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
         </service>
-        
+        <service id="Topdata\TopdataConnectorSW6\Controller\TopdataReportController" public="true" autowire="true">
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+        <service id="Topdata\TopdataConnectorSW6\Controller\TopdataAuthController" public="true" autowire="true">
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+
+
         <!-- CRON JOBS -->
         <service id="Topdata\TopdataConnectorSW6\ScheduledTask\ConnectorImportTask">
             <tag name="shopware.scheduled.task" />

@@ -13,7 +13,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
-use Topdata\TopdataFoundationSW6\Core\Content\TopdataReport\TopdataReportEntity;
+use Topdata\TopdataConnectorSW6\Core\Content\TopdataReport\TopdataReportEntity;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**

@@ -20,7 +20,7 @@ use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
 use Topdata\TopdataFoundationSW6\Constants\TopdataJobTypeConstants;
-use Topdata\TopdataFoundationSW6\Service\TopdataReportService;
+use Topdata\TopdataConnectorSW6\Service\TopdataReportService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use Topdata\TopdataFoundationSW6\Util\UtilThrowable;
 
