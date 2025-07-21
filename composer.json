@@ -1,7 +1,7 @@
 {
     "name": "topdata/topdata-connector-sw6",
     "description": "Imports product data from TopData Webservice into Shopware 6",
-    "version": "7.3.8",
+    "version": "8.0.0",
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "authors": [
@@ -12,8 +12,8 @@
         }
     ],
     "require": {
-        "shopware/core": "6.6.* || 6.7.*",
-        "topdata/topdata-foundation-sw6": ">=1.2.9",
+        "shopware/core": "6.7.*",
+        "topdata/topdata-foundation-sw6": ">=1.3.0",
         "ext-curl": "*"
     },
     "extra": {
@@ -27,7 +27,7 @@
             "en-GB": "Topdata Webservice Connector"
         },
         "description": {
-            "de-DE": "Der Topdata Webservice Connector verbindet Ihren Shopware6 Store mit dem TopData Webservice. Der TopdataWebserviceConnector wird benoetigt um anderer unserer Plugins zu verwenden.",
+            "de-DE": "Der Topdata Webservice Connector verbindet Ihren Shopware6 Store mit dem TopData Webservice. Der TopdataWebserviceConnector wird benoetigt um andere unserer Plugins zu verwenden.",
             "en-GB": "The Topdata Webservice Connector connects your Shopware6 store with the TopData Webservice. The TopdataWebserviceConnector is required to use other of our plugins."
         },
         "manufacturerLink": {
