@@ -43,7 +43,7 @@ class ShopwareProductPropertyService
             ->where('pgt.name = :option')
             ->setParameter(':option', $optionName);
 
-        return $query->execute()->fetchAllAssociative();
+        return $query->executeQuery()->fetchAllAssociative();
     }
 
 

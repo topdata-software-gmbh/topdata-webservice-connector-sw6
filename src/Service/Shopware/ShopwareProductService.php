@@ -40,7 +40,7 @@ class ShopwareProductService
             'p.version_id'
         ])->from('product', 'p');
 
-        $results = $query->execute()->fetchAllAssociative();
+        $results = $query->executeQuery()->fetchAllAssociative();
 
         $ret = [];
         foreach ($results as $res) {
@@ -62,12 +62,12 @@ class ShopwareProductService
      */
     public function getKeysByMpn()
     {
-        $query = $this->connection->createQueryBuilder();
-        $query->select(['p.manufacturer_number', 'p.id', 'p.version_id'])
+        $qb = $this->connection->createQueryBuilder();
+        $qb->select('p.manufacturer_number', 'p.id', 'p.version_id')
             ->from('product', 'p')
             ->where('(p.manufacturer_number != \'\') AND (p.manufacturer_number IS NOT NULL)');
 
-        return $query->execute()->fetchAllAssociative();
+        return $qb->executeQuery()->fetchAllAssociative();
     }
 
     
@@ -78,12 +78,12 @@ class ShopwareProductService
      */
     public function getKeysByEan()
     {
-        $query = $this->connection->createQueryBuilder();
-        $query->select(['p.ean', 'p.id', 'p.version_id'])
+        $qb = $this->connection->createQueryBuilder();
+        $qb->select('p.ean', 'p.id', 'p.version_id')
             ->from('product', 'p')
             ->where('(p.ean != \'\') AND (p.ean IS NOT NULL)');
 
-        return $query->execute()->fetchAllAssociative();
+        return $qb->executeQuery()->fetchAllAssociative();
     }
 
 
@@ -105,7 +105,7 @@ class ShopwareProductService
                  FROM product_translation 
         ');
 
-        $results = $rez->execute()->fetchAllAssociative();
+        $results = $rez->executeQuery()->fetchAllAssociative();
         $returnArray = [];
 
         // ---- Iterate through the results and extract custom field values

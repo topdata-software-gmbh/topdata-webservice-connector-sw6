@@ -14,7 +14,8 @@ class TopdataBrandService
 {
     public function __construct(
         private readonly Connection $connection
-    ) {
+    )
+    {
     }
 
     private ?array $brandsByWsIdCache = null;
@@ -35,15 +36,14 @@ class TopdataBrandService
     {
         $allBrands = [];
         $primaryBrands = [];
-        
+
         // ---- Fetch enabled brands from the database
         $brands = $this->connection->createQueryBuilder()
             ->select('LOWER(HEX(id)) as id, label as name, sort')
             ->from('topdata_brand')
             ->where('is_enabled = 1')
             ->orderBy('label')
-            ->execute()
-            ->fetchAllAssociative();
+            ->executeQuery()->fetchAllAssociative();
 
         // ---- Process the fetched brands
         foreach ($brands as $brand) {
@@ -54,9 +54,9 @@ class TopdataBrandService
         }
 
         return [
-            'brands' => $allBrands,
-            'primary' => $primaryBrands,
-            'brandsCount' => count($allBrands),
+            'brands'       => $allBrands,
+            'primary'      => $primaryBrands,
+            'brandsCount'  => count($allBrands),
             'primaryCount' => count($primaryBrands),
         ];
     }
@@ -94,6 +94,7 @@ class TopdataBrandService
 
         return true;
     }
+
     /**
      * Loads all brands from the database and populates the internal cache, keyed by ws_id.
      */
@@ -103,13 +104,12 @@ class TopdataBrandService
             ->select('LOWER(HEX(id)) as id, ws_id, code, label, is_enabled, sort')
             ->from('topdata_brand')
             ->where('ws_id IS NOT NULL') // Ensure we only get brands with a ws_id
-            ->execute()
-            ->fetchAllAssociative();
+            ->executeQuery()->fetchAllAssociative();
 
         $this->brandsByWsIdCache = [];
         foreach ($brands as $brand) {
             // Ensure ws_id is treated as an integer key
-            $wsId = (int) $brand['ws_id'];
+            $wsId = (int)$brand['ws_id'];
             $this->brandsByWsIdCache[$wsId] = $brand;
         }
     }

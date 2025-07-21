@@ -15,7 +15,8 @@ class TopdataSeriesService
 
     public function __construct(
         private readonly Connection $connection
-    ) {
+    )
+    {
     }
 
     public function getSeriesArray($forceReload = false): array
@@ -28,8 +29,7 @@ class TopdataSeriesService
                 ->select('*')
 //                ->select(['id','code', 'label', 'brand_id', 'ws_id'])
                 ->from('topdata_series')
-                ->execute()
-                ->fetchAllAssociative();
+                ->executeQuery()->fetchAllAssociative();
             foreach ($results as $r) {
                 $this->seriesArray[bin2hex($r['id'])] = $r;
                 $this->seriesArray[bin2hex($r['id'])]['id'] = bin2hex($r['id']);

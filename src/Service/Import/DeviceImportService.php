@@ -27,7 +27,7 @@ use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 class DeviceImportService
 {
 
-    const BATCH_SIZE   = 5000;
+    const BATCH_SIZE = 5000;
 
     private Context $context;
 
@@ -325,8 +325,8 @@ class DeviceImportService
         $created = 0;
         $start = 0;
         $limit = self::BATCH_SIZE;
-        $SQLlogger = $this->connection->getConfiguration()->getSQLLogger();
-        $this->connection->getConfiguration()->setSQLLogger(null);
+        // $SQLlogger = $this->connection->getConfiguration()->getSQLLogger();
+        // $this->connection->getConfiguration()->setSQLLogger(null);
         CliLogger::section('Devices');
         CliLogger::writeln("Devices begin (Chunk size is $limit devices)");
         CliLogger::mem();
@@ -402,8 +402,7 @@ class DeviceImportService
                     ->from('topdata_device')
                     ->where('code="' . $code . '"')
                     ->setMaxResults(1)
-                    ->execute()
-                    ->fetchAllAssociative();
+                    ->executeQuery()->fetchAllAssociative();
 
                 if (isset($rez[0])) {
                     $deviceArr = $rez[0];
@@ -582,12 +581,10 @@ class DeviceImportService
             'total time' => $totalSecs,
         ], 'Devices Report');
 
-        $this->connection->getConfiguration()->setSQLLogger($SQLlogger);
+        // $this->connection->getConfiguration()->setSQLLogger($SQLlogger);
 
         UtilProfiling::stopTimer();
     }
-
-
 
 
     /**

@@ -24,12 +24,12 @@ class TopdataDeviceService
      */
     public function _getEnabledDevices(): array
     {
-        $query = $this->connection->createQueryBuilder();
-        $query->select(['*'])
+        $qb = $this->connection->createQueryBuilder();
+        $qb->select('*')
             ->from('topdata_device')
             ->where('is_enabled = 1');
 
-        return $query->execute()->fetchAllAssociative();
+        return $qb->executeQuery()->fetchAllAssociative();
     }
 
     /**
@@ -52,8 +52,7 @@ class TopdataDeviceService
             ->select('*')
             ->from('topdata_device')
             ->where('ws_id IN (' . implode(',', $wsIds) . ')')
-            ->execute()
-            ->fetchAllAssociative();
+->executeQuery()->fetchAllAssociative();
 
         // ---- Process the query results
         foreach ($queryRez as $device) {

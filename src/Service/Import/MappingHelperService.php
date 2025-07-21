@@ -148,7 +148,7 @@ class MappingHelperService
     //                ->setParameter(':parentID', ($parentID));
     //        }
     //
-    //        $return = $query->execute()->fetchAllAssociative();
+    //        $return = $query->executeQuery()->fetchAllAssociative();
     //        if (isset($return[0])) {
     //            return $return[0];
     //        } else {
@@ -181,7 +181,7 @@ class MappingHelperService
     //            ->where('pgt.name = :option')
     //            ->setParameter(':option', $optionName);
     //        //print_r($query->getSQL());die();
-    //        $returnArray = $query->execute()->fetchAllAssociative();
+    //        $returnArray = $query->executeQuery()->fetchAllAssociative();
     //
     //        //        foreach ($returnArray as $key=>$val) {
     //        //            $returnArray[$key] = [

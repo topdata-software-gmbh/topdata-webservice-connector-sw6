@@ -38,8 +38,7 @@ class TopdataDeviceTypeService
                 ->select('*')
 //                ->select(['id','code', 'label', 'brand_id', 'ws_id'])
                 ->from('topdata_device_type')
-                ->execute()
-                ->fetchAllAssociative();
+->executeQuery()->fetchAllAssociative();
 
             // ---- Process the database results and format the array.
             foreach ($results as $r) {
