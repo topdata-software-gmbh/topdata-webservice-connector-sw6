@@ -28,16 +28,17 @@ class MergedPluginConfigKeyConstants
     const PRODUCT_CAPACITY_VARIANT  = 'productCapacityVariant'; // unused?
 
     // moved from MergedPluginConfigHelperService to here:
-    const OPTION_NAME_productName           = 'productName';
-    const OPTION_NAME_productDescription    = 'productDescription';
-    const OPTION_NAME_productBrand          = 'productBrand';
-    const OPTION_NAME_productEan            = 'productEan';
-    const OPTION_NAME_productOem            = 'productOem';
-    const OPTION_NAME_productImages         = 'productImages';
-    const OPTION_NAME_specReferencePCD      = 'specReferencePCD';
-    const OPTION_NAME_specReferenceOEM      = 'specReferenceOEM';
-    const OPTION_NAME_productSpecifications = 'productSpecifications';
-    const OPTION_NAME_productImagesDelete   = 'productImagesDelete'; // not used?
+    const OPTION_NAME_productName              = 'productName';
+    const OPTION_NAME_productDescription       = 'productDescription';
+    const OPTION_NAME_productBrand             = 'productBrand';
+    const OPTION_NAME_productEan               = 'productEan';
+    const OPTION_NAME_productOem               = 'productOem';
+    const OPTION_NAME_productImages            = 'productImages';
+    const OPTION_NAME_specReferencePCD         = 'specReferencePCD';
+    const OPTION_NAME_specReferenceOEM         = 'specReferenceOEM';
+    const OPTION_NAME_productSpecifications    = 'productSpecifications';
+    const OPTION_NAME_excludedPropertyGroupIds = 'excludedPropertyGroupIds'; // 07/2025 added
+    const OPTION_NAME_productImagesDelete      = 'productImagesDelete'; // not used?
 
     // ---- relationship options from the topfeed plugin config
 

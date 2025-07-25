@@ -7,6 +7,8 @@ use Shopware\Core\Content\Property\PropertyGroupDefinition;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;
+use Topdata\TopdataConnectorSW6\Service\Config\MergedPluginConfigHelperService;
 use Topdata\TopdataFoundationSW6\Service\LocaleHelperService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
@@ -22,6 +24,7 @@ class ShopwarePropertyService
 
     public function __construct(
         private readonly Connection $connection,
+        private readonly MergedPluginConfigHelperService $mergedPluginConfigHelperService,
         private readonly EntityRepository $propertyGroupRepository,
         private readonly LocaleHelperService $localeHelperService,
         private readonly ShopwareLanguageService $shopwareLanguageService,
@@ -54,6 +57,7 @@ class ShopwarePropertyService
      */
     public function getPropertyId(string $propGroupName, string $propValue): string
     {
+        $excludedGroupIds = $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::OPTION_NAME_excludedPropertyGroupIds) ?: [];
         $propGroups = $this->getPropertyGroupsOptionsArray();
 
         $currentGroup = null;
@@ -61,11 +65,20 @@ class ShopwarePropertyService
 
         foreach ($propGroups as $id => $propertyGroup) {
             if ($propertyGroup['name'] == $propGroupName) {
+
+                // ---- Check if the found group is in the exclusion list
+                if (in_array($id, $excludedGroupIds)) {
+                    CliLogger::debug("Skipping excluded property group: {$propGroupName} (ID: {$id})");
+                    return ''; // Return empty string to signal exclusion
+                }
+
                 $currentGroupId = $id;
                 $currentGroup = $propertyGroup;
                 break;
             }
         }
+
+
 
         if ($currentGroup === null) {
             $currentGroupId = Uuid::randomHex();

@@ -335,6 +335,10 @@ class ProductInformationServiceV1Slow
                 }
                 $propertyId = $this->shopwarePropertyService->getPropertyId($propGroupName, $propValue);
 
+                if (empty($propertyId)) {
+                    continue; // Skip this property as it belongs to an excluded group
+                }
+
                 if (!isset($productData['properties'])) {
                     $productData['properties'] = [];
                 }
@@ -356,6 +360,11 @@ class ProductInformationServiceV1Slow
                     continue;
                 }
                 $propertyId = $this->shopwarePropertyService->getPropertyId($propGroupName, $propValue);
+
+                if (empty($propertyId)) {
+                    continue; // Skip this property as it belongs to an excluded group
+                }
+
                 if (!isset($productData['properties'])) {
                     $productData['properties'] = [];
                 }
@@ -370,9 +379,8 @@ class ProductInformationServiceV1Slow
             && isset($remoteProductData->specifications)
             && count($remoteProductData->specifications)
         ) {
-            $ignoreSpecs = GlobalPluginConstants::IGNORE_SPECS;
             foreach ($remoteProductData->specifications as $spec) {
-                if (isset($ignoreSpecs[$spec->specification_id])) {
+                if (isset(GlobalPluginConstants::IGNORE_SPECS[$spec->specification_id])) {
                     continue;
                 }
                 $propGroupName = UtilString::max255(UtilStringFormatting::formatStringNoHTML($spec->specification));
@@ -385,6 +393,11 @@ class ProductInformationServiceV1Slow
                 }
 
                 $propertyId = $this->shopwarePropertyService->getPropertyId($propGroupName, $propValue);
+
+                if (empty($propertyId)) {
+                    continue; // Skip this property as it belongs to an excluded group
+                }
+
                 if (!isset($productData['properties'])) {
                     $productData['properties'] = [];
                 }

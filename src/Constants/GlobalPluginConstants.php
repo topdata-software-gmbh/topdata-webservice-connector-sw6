@@ -10,6 +10,7 @@ class GlobalPluginConstants
 
     /**
      * List of specifications to ignore during import.
+     * format: topId => "the name (unused)"
      */
     const IGNORE_SPECS = [
         21  => 'Hersteller-Nr. (intern)',
