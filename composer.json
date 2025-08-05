@@ -1,7 +1,7 @@
 {
     "name": "topdata/topdata-connector-sw6",
     "description": "Imports product data from TopData Webservice into Shopware 6",
-    "version": "8.0.0",
+    "version": "8.1.0",
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "authors": [
