@@ -30,11 +30,11 @@ class ShopwareProductPropertyService
         $query = $this->connection->createQueryBuilder();
 
         // ---- Building the query to fetch product data
-        $query->select([
+        $query->select(
             "pgot.name {$newColumnName}",
             'p.id',
             'p.version_id'
-        ])
+        )
             ->from('product', 'p')
             ->innerJoin('p', 'product_property', 'pp', '(pp.product_id = p.id) AND (pp.product_version_id = p.version_id)')
             ->innerJoin('pp', 'property_group_option_translation', 'pgot', 'pgot.property_group_option_id = pp.property_group_option_id')

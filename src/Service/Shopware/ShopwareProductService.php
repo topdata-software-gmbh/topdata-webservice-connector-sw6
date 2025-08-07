@@ -34,11 +34,11 @@ class ShopwareProductService
     public function getKeysByProductNumber(): array
     {
         $query = $this->connection->createQueryBuilder();
-        $query->select([
+        $query->select(
             'p.product_number',
             'p.id',
             'p.version_id'
-        ])->from('product', 'p');
+        )->from('product', 'p');
 
         $results = $query->executeQuery()->fetchAllAssociative();
 

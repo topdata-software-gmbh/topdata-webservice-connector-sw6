@@ -27,7 +27,7 @@ class TopdataSeriesService
                 ->connection
                 ->createQueryBuilder()
                 ->select('*')
-//                ->select(['id','code', 'label', 'brand_id', 'ws_id'])
+//                ->select('id','code', 'label', 'brand_id', 'ws_id')
                 ->from('topdata_series')
                 ->executeQuery()->fetchAllAssociative();
             foreach ($results as $r) {

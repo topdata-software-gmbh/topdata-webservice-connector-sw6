@@ -163,7 +163,7 @@ class MappingHelperService
     //    {
     //        $query = $this->connection->createQueryBuilder();
     //
-    //        //        $query->select(['val.value', 'det.id'])
+    //        //        $query->select('val.value', 'det.id')
     //        //            ->from('s_filter_articles', 'art')
     //        //            ->innerJoin('art', 's_articles_details','det', 'det.articleID = art.articleID')
     //        //            ->innerJoin('art', 's_filter_values','val', 'art.valueID = val.id')
@@ -172,7 +172,7 @@ class MappingHelperService
     //        //            ->setParameter(':option', $optionName)
     //        //        ;
     //
-    //        $query->select(['pgot.name ' . $colName, 'p.id', 'p.version_id'])
+    //        $query->select('pgot.name ' . $colName, 'p.id', 'p.version_id')
     //            ->from('product', 'p')
     //            ->innerJoin('p', 'product_property', 'pp', '(pp.product_id = p.id) AND (pp.product_version_id = p.version_id)')
     //            ->innerJoin('pp', 'property_group_option_translation', 'pgot', 'pgot.property_group_option_id = pp.property_group_option_id')
@@ -197,7 +197,7 @@ class MappingHelperService
     private function getTopdataCategory()
     {
         $query = $this->connection->createQueryBuilder();
-        $query->select(['categoryID', 'top_data_ws_id'])
+        $query->select('categoryID', 'top_data_ws_id')
             ->from('s_categories_attributes')
             ->where('top_data_ws_id != \'0\'')
             ->andWhere('top_data_ws_id != \'\'')
