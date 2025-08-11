@@ -233,6 +233,10 @@ class ProductInformationServiceV1Slow
     /**
      * Prepares product data for update.
      *
+     * This method takes remote product data and prepares it for updating the local product entity.
+     * It handles various aspects such as product name, description, manufacturer, EAN, OEM, images,
+     * and specifications based on the plugin configuration.
+     *
      * @param array $productId_versionId Array containing the product ID and version ID.
      * @param object $remoteProductData Remote product data object.
      * @param bool $onlyMedia If true, only media information is prepared; otherwise, all product information is prepared.
@@ -437,7 +441,17 @@ class ProductInformationServiceV1Slow
 
 
     /**
+     * Renders the product description based on the specified import type.
+     *
+     * This method retrieves the original description from the database and combines it with the
+     * description from the webservice according to the specified import type (replace, append, prepend, inject).
+     *
      * 03/2025 created
+     *
+     * @param string|null $descriptionImportType The type of description import (e.g., 'replace', 'append', 'prepend', 'inject').
+     * @param string $productId The ID of the product.
+     * @param string $descriptionFromWebservice The description from the webservice.
+     * @return string|null The rendered description, or null if no description is available.
      */
     private function _renderDescription(?string $descriptionImportType, string $productId, $descriptionFromWebservice): ?string
     {
@@ -445,6 +459,7 @@ class ProductInformationServiceV1Slow
             return null;
         }
 
+        // ---- Replace the original description with the webservice description
         if ($descriptionImportType === DescriptionImportTypeConstant::REPLACE) {
             return $descriptionFromWebservice;
         }
@@ -482,6 +497,11 @@ class ProductInformationServiceV1Slow
         return $descriptionFromWebservice;
     }
 
+    /**
+     * Unlinks images from products based on configuration settings.
+     *
+     * @param array $productIds Array of product IDs to unlink images from.
+     */
     private function _unlinkImages(array $productIds)
     {
         // --- filter by config
@@ -492,6 +512,11 @@ class ProductInformationServiceV1Slow
         $this->mediaHelperService->unlinkImages($productIds);
     }
 
+    /**
+     * Unlinks properties from products based on configuration settings.
+     *
+     * @param array $productIds Array of product IDs to unlink properties from.
+     */
     private function _unlinkProperties(array $productIds)
     {
         // --- filter by config
