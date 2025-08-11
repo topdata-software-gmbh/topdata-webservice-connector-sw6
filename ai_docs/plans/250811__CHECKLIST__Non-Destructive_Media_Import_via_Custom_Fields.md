@@ -4,12 +4,12 @@ This checklist guides the implementation of tagging imported media with custom f
 
 ## Phase 1: Database Schema Setup
 
--   [ ] **Create Migration File:**
-    -   [ ] Create a new file in `src/Migration/`.
-    -   [ ] Name it `Migration[TIMESTAMP]AddCustomFieldsForTagging.php`, using the current Unix timestamp.
--   [ ] **Populate Migration File:**
-    -   [ ] Copy the complete PHP code for the `Migration...AddCustomFieldsForTagging` class from the implementation plan into the newly created file.
-    -   [ ] Ensure the `getCreationTimestamp()` method returns the correct timestamp matching the filename.
+-   [x] **Create Migration File:**
+    -   [x] Create a new file in `src/Migration/`.
+    -   [x] Name it `Migration[TIMESTAMP]AddCustomFieldsForTagging.php`, using the current Unix timestamp.
+-   [x] **Populate Migration File:**
+    -   [x] Copy the complete PHP code for the `Migration...AddCustomFieldsForTagging` class from the implementation plan into the newly created file.
+    -   [x] Ensure the `getCreationTimestamp()` method returns the correct timestamp matching the filename.
 
 ## Phase 2: Tagging Imported Media
 
