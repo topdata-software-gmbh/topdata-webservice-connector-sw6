@@ -1,25 +1,32 @@
-<?php
+<?php declare(strict_types=1);
 
-declare(strict_types=1);
-
-namespace Topdata\TopdataWebserviceConnectorSW6\Migration;
+namespace Topdata\TopdataConnectorSW6\Migration;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Migration\MigrationStep;
 use Shopware\Core\Framework\Uuid\Uuid;
 
-class Migration1765000000AddCustomFieldsForTagging extends MigrationStep
+/**
+ * @internal
+ */
+class Migration1754987352AddCustomFieldsForTagging extends MigrationStep
 {
+    // This is the UUID for the Custom Field SET. Use it everywhere.
+    const UUID_1 = 'b69b29a950334caebb465025cff30a7f';
+
+    // This is the UUID for the Custom FIELD itself.
+    const UUID_2 = '79c2648ef4d84fa3849cdc1a4868afe6';
+
     public function getCreationTimestamp(): int
     {
-        return 1765000000;
+        return 1754987352;
     }
 
     public function update(Connection $connection): void
     {
-        $this->createCustomFieldSet($connection);
-        $this->createCustomField($connection);
-        $this->createFieldRelations($connection);
+        $this->_createCustomFieldSet($connection);
+        $this->_createCustomField($connection);
+        $this->_createFieldRelations($connection);
     }
 
     public function updateDestructive(Connection $connection): void
@@ -27,13 +34,13 @@ class Migration1765000000AddCustomFieldsForTagging extends MigrationStep
         // implement update destructive
     }
 
-    private function createCustomFieldSet(Connection $connection): void
+    private function _createCustomFieldSet(Connection $connection): void
     {
-        $setId = Uuid::fromHexToBytes('a1b2c3d4e5f640a1b2c3d4e5f6a1b2c3');
+        $setId = Uuid::fromHexToBytes(self::UUID_1);
         $config = json_encode([
             'label' => [
-                'en-GB' => 'Media Import Tagging',
-                'de-DE' => 'Medienimport-Kennzeichnung'
+                'en-GB' => 'Topdata Connector',
+                'de-DE' => 'Topdata Connector'
             ]
         ]);
 
@@ -41,14 +48,16 @@ class Migration1765000000AddCustomFieldsForTagging extends MigrationStep
             INSERT INTO `custom_field_set` 
                 (`id`, `name`, `config`, `active`, `global`, `position`, `created_at`) 
             VALUES 
-                (?, 'topdata_media_import_tagging', ?, 1, 1, 0, NOW())
+                (?, 'topdata_connector', ?, 1, 1, 0, NOW())
+            ON DUPLICATE KEY UPDATE `name` = `name`
         ", [$setId, $config]);
     }
 
-    private function createCustomField(Connection $connection): void
+    private function _createCustomField(Connection $connection): void
     {
-        $fieldId = Uuid::fromHexToBytes('f1e2d3c4b5a640f1e2d3c4b5a6f1e2d3');
-        $setId = Uuid::fromHexToBytes('a1b2c3d4e5f640a1b2c3d4e5f6a1b2c3');
+        $fieldId = Uuid::fromHexToBytes(self::UUID_2);
+        // --- Use UUID_1 here to reference the set created above. ---
+        $setId = Uuid::fromHexToBytes(self::UUID_1);
         $config = json_encode([
             'label'               => [
                 'en-GB' => 'Imported Media',
@@ -63,13 +72,15 @@ class Migration1765000000AddCustomFieldsForTagging extends MigrationStep
             INSERT INTO `custom_field` 
                 (`id`, `name`, `type`, `config`, `active`, `set_id`, `created_at`) 
             VALUES 
-                (?, 'topdata_imported_media', 'checkbox', ?, 1, ?, NOW())
+                (?, 'topdata_connector_is_imported_media', 'checkbox', ?, 1, ?, NOW())
+            ON DUPLICATE KEY UPDATE `name` = `name`
         ", [$fieldId, $config, $setId]);
     }
 
-    private function createFieldRelations(Connection $connection): void
+    private function _createFieldRelations(Connection $connection): void
     {
-        $setId = Uuid::fromHexToBytes('a1b2c3d4e5f640a1b2c3d4e5f6a1b2c3');
+        // --- Use UUID_1 here to reference the set created above. ---
+        $setId = Uuid::fromHexToBytes(self::UUID_1);
         $relationId = Uuid::randomBytes();
 
         $connection->executeStatement("
@@ -77,6 +88,8 @@ class Migration1765000000AddCustomFieldsForTagging extends MigrationStep
                 (`id`, `set_id`, `entity_name`, `created_at`) 
             VALUES 
                 (?, ?, 'media', NOW())
+            ON DUPLICATE KEY UPDATE `entity_name` = `entity_name`
         ", [$relationId, $setId]);
     }
 }
+
