@@ -13,29 +13,29 @@ This checklist guides the implementation of tagging imported media with custom f
 
 ## Phase 2: Tagging Imported Media
 
--   [ ] **Modify `MediaHelperService`:**
-    -   [ ] Open the file `src/Service/MediaHelperService.php`.
-    -   [ ] Locate the `createMediaInFolder()` method.
-    -   [ ] Add the `customFields` array to the `$this->mediaRepository->create()` call as specified in the plan.
+-   [x] **Modify `MediaHelperService`:**
+    -   [x] Open the file `src/Service/MediaHelperService.php`.
+    -   [x] Locate the `createMediaInFolder()` method.
+    -   [x] Add the `customFields` array to the `$this->mediaRepository->create()` call as specified in the plan.
 
 ## Phase 3: Implementing Selective Media Deletion
 
--   [ ] **Update `MediaHelperService` Deletion Logic:**
-    -   [ ] Open the file `src/Service/MediaHelperService.php`.
-    -   [ ] Locate the `unlinkImages()` method.
-    -   [ ] Replace the entire body of the `unlinkImages()` method with the new implementation that uses the selective `DELETE` query.
+-   [x] **Update `MediaHelperService` Deletion Logic:**
+    -   [x] Open the file `src/Service/MediaHelperService.php`.
+    -   [x] Locate the `unlinkImages()` method.
+    -   [x] Replace the entire body of the `unlinkImages()` method with the new implementation that uses the selective `DELETE` query.
 
 ## Phase 4: Documentation and Versioning
 
--   [ ] **Update `composer.json`:**
-    -   [ ] Open the `composer.json` file.
-    -   [ ] Change the `"version"` from `"8.1.1"` to `"8.2.0"`.
--   [ ] **Update `CHANGELOG.md`:**
-    -   [ ] Open the `CHANGELOG.md` file.
-    -   [ ] Add the new `## [8.2.0]` release notes to the top of the file.
--   [ ] **Update `README.md`:**
-    -   [ ] Open the `README.md` file.
-    -   [ ] Add the new "Non-Destructive Image Updates" section under "Advices and examples".
+-   [x] **Update `composer.json`:**
+    -   [x] Open the `composer.json` file.
+    -   [x] Change the `"version"` from `"8.1.1"` to `"8.2.0"`.
+-   [x] **Update `CHANGELOG.md`:**
+    -   [x] Open the `CHANGELOG.md` file.
+    -   [x] Add the new `## [8.2.0]` release notes to the top of the file.
+-   [x] **Update `README.md`:**
+    -   [x] Open the `README.md` file.
+    -   [x] Add the new "Non-Destructive Image Updates" section under "Advices and examples".
 
 ## Final Verification
 

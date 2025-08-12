@@ -96,6 +96,10 @@ Command order is important, for example --device-media (4) downloads images only
 
 ## Advices and examples
 
+### Non-Destructive Image Updates
+
+Starting from version 8.2.0, the plugin will no longer delete manually uploaded product images during an import (`--product-info` or `--all`). Only images previously imported by the Topdata Connector will be managed (added, updated, or removed). This ensures that your manually curated content is safe.
+
 If you download product or device images from TopData Webservice to yours shop locale storage, don't forget to change permissions for files if command and server user are not the same user, e.g.
 <!-- TODO: fix the path "." in the command -->
 ```bash
