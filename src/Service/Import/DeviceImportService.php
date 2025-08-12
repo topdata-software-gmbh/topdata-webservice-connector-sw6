@@ -173,17 +173,11 @@ class DeviceImportService
         // Clear the fetched types data
         $types = null;
 
-        // Log summary
+        // Log summary using table format
         CliLogger::writeln('');
         CliLogger::writeln('=== DeviceTypes Summary ===');
-        CliLogger::writeln('Total processed: ' . ImportReport::getCounter('DeviceTypes Total Processed'));
-        CliLogger::writeln('Brand lookups: ' . ImportReport::getCounter('DeviceTypes Brand Lookups'));
-        CliLogger::writeln('Brand not found: ' . ImportReport::getCounter('DeviceTypes Brand Not Found'));
-        CliLogger::writeln('Created: ' . ImportReport::getCounter('DeviceTypes Created'));
-        CliLogger::writeln('Updated: ' . ImportReport::getCounter('DeviceTypes Updated'));
-        CliLogger::writeln('Unchanged: ' . ImportReport::getCounter('DeviceTypes Unchanged'));
-        CliLogger::writeln('Create batches: ' . ImportReport::getCounter('DeviceTypes Create Batches'));
-        CliLogger::writeln('Update batches: ' . ImportReport::getCounter('DeviceTypes Update Batches'));
+        $summaryData = $this->_prepareSummaryData('DeviceTypes');
+        CliLogger::getCliStyle()->table(['Metric', 'Count'], $summaryData);
 
         // Log the completion of the device type processing
         CliLogger::writeln("\nDeviceType done " . CliLogger::lap() . 'sec');
@@ -289,17 +283,11 @@ class DeviceImportService
             CliLogger::activity();
         }
 
-        // Log summary
+        // Log summary using table format
         CliLogger::writeln('');
         CliLogger::writeln('=== Series Summary ===');
-        CliLogger::writeln('Total processed: ' . ImportReport::getCounter('Series Total Processed'));
-        CliLogger::writeln('Brand lookups: ' . ImportReport::getCounter('Series Brand Lookups'));
-        CliLogger::writeln('Brand not found: ' . ImportReport::getCounter('Series Brand Not Found'));
-        CliLogger::writeln('Created: ' . ImportReport::getCounter('Series Created'));
-        CliLogger::writeln('Updated: ' . ImportReport::getCounter('Series Updated'));
-        CliLogger::writeln('Unchanged: ' . ImportReport::getCounter('Series Unchanged'));
-        CliLogger::writeln('Create batches: ' . ImportReport::getCounter('Series Create Batches'));
-        CliLogger::writeln('Update batches: ' . ImportReport::getCounter('Series Update Batches'));
+        $summaryData = $this->_prepareSummaryData('Series');
+        CliLogger::getCliStyle()->table(['Metric', 'Count'], $summaryData);
 
         CliLogger::writeln("\nSeries done " . CliLogger::lap() . 'sec');
         $series = null;
@@ -601,6 +589,24 @@ class DeviceImportService
         }
 
         return mb_substr(implode(' ', array_unique($result)), 0, 250);
+    }
+
+    /**
+     * @param string $prefix Prefix for counter keys
+     * @return array Formatted summary data
+     */
+    private function _prepareSummaryData(string $prefix): array
+    {
+        return [
+            ['Total processed', ImportReport::getCounter($prefix . ' Total Processed') ?? 0],
+            ['Brand lookups',   ImportReport::getCounter($prefix . ' Brand Lookups') ?? 0],
+            ['Brand not found', ImportReport::getCounter($prefix . ' Brand Not Found') ?? 0],
+            ['Created',         ImportReport::getCounter($prefix . ' Created') ?? 0],
+            ['Updated',         ImportReport::getCounter($prefix . ' Updated') ?? 0],
+            ['Unchanged',       ImportReport::getCounter($prefix . ' Unchanged') ?? 0],
+            ['DB Create batches',  ImportReport::getCounter($prefix . ' Create Batches') ?? 0],
+            ['DB Update batches',  ImportReport::getCounter($prefix . ' Update Batches') ?? 0],
+        ];
     }
 
 
