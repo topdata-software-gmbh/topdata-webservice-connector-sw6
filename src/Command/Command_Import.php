@@ -16,11 +16,13 @@ use Topdata\TopdataConnectorSW6\DTO\ImportConfig;
 use Topdata\TopdataConnectorSW6\Exception\MissingPluginConfigurationException;
 use Topdata\TopdataConnectorSW6\Service\ImportService;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\TopdataConnectorSW6;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Command\AbstractTopdataCommand;
 use Topdata\TopdataFoundationSW6\Constants\TopdataJobTypeConstants;
 use Topdata\TopdataConnectorSW6\Service\TopdataReportService;
+use Topdata\TopdataFoundationSW6\Service\PluginHelperService;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use Topdata\TopdataFoundationSW6\Util\UtilThrowable;
 
@@ -39,6 +41,7 @@ class Command_Import extends AbstractTopdataCommand
         private readonly SystemConfigService     $systemConfigService,
         private readonly LockFactory             $lockFactory,
         private readonly TopdataWebserviceClient $topdataWebserviceClient,
+        private readonly PluginHelperService     $pluginHelperService,
     )
     {
         parent::__construct();
@@ -108,6 +111,11 @@ class Command_Import extends AbstractTopdataCommand
 
             return Command::SUCCESS; // Exit gracefully
         }
+
+        // ---- Print the plugin version ----
+        $pluginVersion = $this->pluginHelperService->getPluginVersion(TopdataConnectorSW6::class);
+        CliLogger::info("Running TopdataConnectorSW6 version: $pluginVersion");
+        // ---------------------------------
 
         try {
             // ---- Get the command line (for the report)
