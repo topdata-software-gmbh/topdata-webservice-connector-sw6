@@ -7,7 +7,8 @@ use Shopware\Core\Framework\Migration\MigrationStep;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 /**
- * @internal
+ * This migration adds custom fields for tagging media entities, specifically to indicate if a media item has been imported.
+ * It creates a custom field set and a custom field within that set, then relates the set to the 'media' entity.
  */
 class Migration1754987352AddCustomFieldsForTagging extends MigrationStep
 {
@@ -22,6 +23,12 @@ class Migration1754987352AddCustomFieldsForTagging extends MigrationStep
         return 1754987352;
     }
 
+    /**
+     * Executes the update logic of the migration.
+     * This method creates the custom field set, the custom field, and the field relations.
+     *
+     * @param Connection $connection The database connection.
+     */
     public function update(Connection $connection): void
     {
         $this->_createCustomFieldSet($connection);
@@ -34,6 +41,11 @@ class Migration1754987352AddCustomFieldsForTagging extends MigrationStep
         // implement update destructive
     }
 
+    /**
+     * Creates the custom field set in the database.
+     *
+     * @param Connection $connection The database connection.
+     */
     private function _createCustomFieldSet(Connection $connection): void
     {
         $setId = Uuid::fromHexToBytes(self::UUID_1);
@@ -44,6 +56,7 @@ class Migration1754987352AddCustomFieldsForTagging extends MigrationStep
             ]
         ]);
 
+        // ---- Insert or update the custom field set in the database. ----
         $connection->executeStatement("
             INSERT INTO `custom_field_set` 
                 (`id`, `name`, `config`, `active`, `global`, `position`, `created_at`) 
@@ -53,6 +66,11 @@ class Migration1754987352AddCustomFieldsForTagging extends MigrationStep
         ", [$setId, $config]);
     }
 
+    /**
+     * Creates the custom field in the database.
+     *
+     * @param Connection $connection The database connection.
+     */
     private function _createCustomField(Connection $connection): void
     {
         $fieldId = Uuid::fromHexToBytes(self::UUID_2);
@@ -60,14 +78,15 @@ class Migration1754987352AddCustomFieldsForTagging extends MigrationStep
         $setId = Uuid::fromHexToBytes(self::UUID_1);
         $config = json_encode([
             'label'               => [
-                'en-GB' => 'Imported Media',
-                'de-DE' => 'Importierte Medien'
+                'en-GB' => 'Is Imported Media',
+                'de-DE' => 'Ist Importiertes Medium'
             ],
             'componentName'       => 'sw-field',
             'customFieldType'     => 'checkbox',
             'customFieldPosition' => 1
         ]);
 
+        // ---- Insert or update the custom field in the database. ----
         $connection->executeStatement("
             INSERT INTO `custom_field` 
                 (`id`, `name`, `type`, `config`, `active`, `set_id`, `created_at`) 
@@ -77,12 +96,18 @@ class Migration1754987352AddCustomFieldsForTagging extends MigrationStep
         ", [$fieldId, $config, $setId]);
     }
 
+    /**
+     * Creates the relation between the custom field set and the media entity.
+     *
+     * @param Connection $connection The database connection.
+     */
     private function _createFieldRelations(Connection $connection): void
     {
         // --- Use UUID_1 here to reference the set created above. ---
         $setId = Uuid::fromHexToBytes(self::UUID_1);
         $relationId = Uuid::randomBytes();
 
+        // ---- Insert or update the custom field set relation in the database. ----
         $connection->executeStatement("
             INSERT INTO `custom_field_set_relation` 
                 (`id`, `set_id`, `entity_name`, `created_at`) 
@@ -92,4 +117,3 @@ class Migration1754987352AddCustomFieldsForTagging extends MigrationStep
         ", [$relationId, $setId]);
     }
 }
-
