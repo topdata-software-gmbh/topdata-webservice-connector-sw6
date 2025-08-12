@@ -193,21 +193,25 @@ class DeviceMediaImportService
             }
         }
 
-        // ---- Final summary with all counters
-        CliLogger::writeln('');
-        CliLogger::writeln('=== Device Media Import Summary ===');
-        CliLogger::writeln('Chunks processed: ' . ImportReport::getCounter('Device Media Chunks'));
-        CliLogger::writeln('Total records fetched: ' . ImportReport::getCounter('Device Media Records Fetched'));
-        CliLogger::writeln('Total records processed: ' . ImportReport::getCounter('Device Media Total Processed'));
-        CliLogger::writeln('Devices found: ' . ImportReport::getCounter('Device Media Devices Found'));
-        CliLogger::writeln('Devices skipped (not available): ' . ImportReport::getCounter('Device Media Devices Skipped - Not Available'));
-        CliLogger::writeln('Devices skipped (no brand): ' . ImportReport::getCounter('Device Media Devices Skipped - No Brand'));
-        CliLogger::writeln('Devices skipped (device not found): ' . ImportReport::getCounter('Device Media Devices Skipped - Device Not Found'));
-        CliLogger::writeln('Images updated: ' . ImportReport::getCounter('Device Media Images Updated'));
-        CliLogger::writeln('Images deleted: ' . ImportReport::getCounter('Device Media Images Deleted'));
-        CliLogger::writeln('Images skipped (no image): ' . ImportReport::getCounter('Device Media Images Skipped - No Image'));
-        CliLogger::writeln('Images skipped (current newer): ' . ImportReport::getCounter('Device Media Images Skipped - Current Newer'));
-        CliLogger::writeln('Errors encountered: ' . ImportReport::getCounter('Device Media Errors'));
+        // START MODIFICATION
+        $summaryData = [
+            ['Chunks processed', ImportReport::getCounter('Device Media Chunks') ?? 0],
+            ['Total records fetched', ImportReport::getCounter('Device Media Records Fetched') ?? 0],
+            ['Total records processed', ImportReport::getCounter('Device Media Total Processed') ?? 0],
+            ['Devices found', ImportReport::getCounter('Device Media Devices Found') ?? 0],
+            ['Devices skipped (not available)', ImportReport::getCounter('Device Media Devices Skipped - Not Available') ?? 0],
+            ['Devices skipped (no brand)', ImportReport::getCounter('Device Media Devices Skipped - No Brand') ?? 0],
+            ['Devices skipped (device not found)', ImportReport::getCounter('Device Media Devices Skipped - Device Not Found') ?? 0],
+            ['Images updated', ImportReport::getCounter('Device Media Images Updated') ?? 0],
+            ['Images deleted', ImportReport::getCounter('Device Media Images Deleted') ?? 0],
+            ['Images skipped (no image)', ImportReport::getCounter('Device Media Images Skipped - No Image') ?? 0],
+            ['Images skipped (current newer)', ImportReport::getCounter('Device Media Images Skipped - Current Newer') ?? 0],
+            ['Errors encountered', ImportReport::getCounter('Device Media Errors') ?? 0],
+        ];
+
+        CliLogger::getCliStyle()->table(['Metric', 'Count'], $summaryData, 'Device Media Import Summary');
+        // END MODIFICATION
+
         CliLogger::writeln('Devices Media done');
 
         UtilProfiling::stopTimer();

@@ -261,6 +261,7 @@ class MappingHelperService
                     'sort'    => (int)$b->top,
                     'wsId'    => (int)$b->id,
                 ];
+                ImportReport::incCounter('Brands Created');
                 // If the brand exists but has different data, prepare data for update
             } elseif (
                 $brand->getName() != $b->val ||
@@ -273,6 +274,9 @@ class MappingHelperService
                     // 'sort' => (int)$b->top,
                     'wsId' => (int)$b->id,
                 ];
+                ImportReport::incCounter('Brands Updated');
+            } else {
+                ImportReport::incCounter('Brands Unchanged');
             }
 
             // Create new brands in batches of 100
@@ -302,8 +306,15 @@ class MappingHelperService
             CliLogger::activity();
         }
 
-        // Log the completion of the brands process
-        CliLogger::writeln("\nBrands done " . CliLogger::lap() . 'sec');
+        // Set final counters
+        ImportReport::setCounter('Brands Total Processed', count($brands->data));
+        ImportReport::setCounter('Brands Create Batches', (int)ceil(count($dataCreate) / 100));
+        ImportReport::setCounter('Brands Update Batches', (int)ceil(count($dataUpdate) / 100));
+
+        // Prepare and render summary table
+        $summaryData = $this->_prepareSummaryData('Brands');
+        CliLogger::getCliStyle()->table($summaryData['headers'], $summaryData['rows']);
+
         $duplicates = null;
         $brands = null;
 
@@ -725,6 +736,29 @@ SQL;
                 ');
             }
         }
+    }
+
+
+    /**
+     * Prepares a summary dictionary for a specific import type.
+     * This ensures that all counters are present and default to 0 if not set.
+     *
+     * @param string $prefix The prefix for the counter keys (e.g., "Brands").
+     * @return array An associative array of summary statistics.
+     */
+    private function _prepareSummaryData(string $prefix): array
+    {
+        return [
+            'headers' => ['Metric', 'Count'],
+            'rows'    => [
+                ['Total processed', ImportReport::getCounter($prefix . ' Total Processed') ?? 0],
+                ['Created', ImportReport::getCounter($prefix . ' Created') ?? 0],
+                ['Updated', ImportReport::getCounter($prefix . ' Updated') ?? 0],
+                ['Unchanged', ImportReport::getCounter($prefix . ' Unchanged') ?? 0],
+                ['DB Create batches', ImportReport::getCounter($prefix . ' Create Batches') ?? 0],
+                ['DB Update batches', ImportReport::getCounter($prefix . ' Update Batches') ?? 0],
+            ]
+        ];
     }
 
 

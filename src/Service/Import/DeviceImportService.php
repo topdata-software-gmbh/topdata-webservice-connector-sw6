@@ -537,36 +537,30 @@ class DeviceImportService
         CliLogger::writeln('');
         $totalSecs = microtime(true) - $functionTimeStart;
 
-        // Enhanced reporting with all counters
-        CliLogger::writeln('');
-        CliLogger::writeln('=== Devices Import Summary ===');
-        CliLogger::writeln('Chunks processed: ' . ImportReport::getCounter('Device Chunks'));
-        CliLogger::writeln('Total records fetched: ' . ImportReport::getCounter('Devices Records Fetched'));
-        CliLogger::writeln('Total records processed: ' . ImportReport::getCounter('Devices Total Processed'));
-        CliLogger::writeln('Brand not found: ' . ImportReport::getCounter('Devices Brand Not Found'));
-        CliLogger::writeln('Duplicates skipped: ' . ImportReport::getCounter('Devices Duplicates Skipped'));
-        CliLogger::writeln('Database lookups: ' . ImportReport::getCounter('Devices Database Lookups'));
-        CliLogger::writeln('With brand ID: ' . ImportReport::getCounter('Devices With Brand Id'));
-        CliLogger::writeln('Without brand ID: ' . ImportReport::getCounter('Devices Without Brand Id'));
-        CliLogger::writeln('With type ID: ' . ImportReport::getCounter('Devices With Type Id'));
-        CliLogger::writeln('Without type ID: ' . ImportReport::getCounter('Devices Without Type Id'));
-        CliLogger::writeln('With series ID: ' . ImportReport::getCounter('Devices With Series Id'));
-        CliLogger::writeln('Without series ID: ' . ImportReport::getCounter('Devices Without Series Id'));
-        CliLogger::writeln('Series lookups: ' . ImportReport::getCounter('Devices Series Lookups'));
-        CliLogger::writeln('Series found: ' . ImportReport::getCounter('Devices Series Found'));
-        CliLogger::writeln('Type lookups: ' . ImportReport::getCounter('Devices Type Lookups'));
-        CliLogger::writeln('Type found: ' . ImportReport::getCounter('Devices Type Found'));
-        CliLogger::writeln('Created: ' . ImportReport::getCounter('Devices Created'));
-        CliLogger::writeln('Updated: ' . ImportReport::getCounter('Devices Updated'));
-        CliLogger::writeln('Unchanged: ' . ImportReport::getCounter('Devices Unchanged'));
-        CliLogger::writeln('Create batches: ' . ImportReport::getCounter('Devices Create Batches'));
-        CliLogger::writeln('Update batches: ' . ImportReport::getCounter('Devices Update Batches'));
-        CliLogger::writeln('Total time: ' . $totalSecs . ' seconds');
+        $summaryData = [
+            ['Chunks processed', ImportReport::getCounter('Device Chunks') ?? 0],
+            ['Total records fetched', ImportReport::getCounter('Devices Records Fetched') ?? 0],
+            ['Total records processed', ImportReport::getCounter('Devices Total Processed') ?? 0],
+            ['Brand not found', ImportReport::getCounter('Devices Brand Not Found') ?? 0],
+            ['Duplicates skipped', ImportReport::getCounter('Devices Duplicates Skipped') ?? 0],
+            ['Database lookups', ImportReport::getCounter('Devices Database Lookups') ?? 0],
+            ['Series lookups', ImportReport::getCounter('Devices Series Lookups') ?? 0],
+            ['Series found', ImportReport::getCounter('Devices Series Found') ?? 0],
+            ['Type lookups', ImportReport::getCounter('Devices Type Lookups') ?? 0],
+            ['Type found', ImportReport::getCounter('Devices Type Found') ?? 0],
+            ['Created', ImportReport::getCounter('Devices Created') ?? 0],
+            ['Updated', ImportReport::getCounter('Devices Updated') ?? 0],
+            ['Unchanged', ImportReport::getCounter('Devices Unchanged') ?? 0],
+            ['DB Create batches', ImportReport::getCounter('Devices Create Batches') ?? 0],
+            ['DB Update batches', ImportReport::getCounter('Devices Update Batches') ?? 0],
+        ];
+
+        CliLogger::getCliStyle()->table(['Metric', 'Count'], $summaryData, 'Devices Import Summary');
 
         CliLogger::getCliStyle()->dumpDict([
             'created'    => $created,
             'updated'    => $updated,
-            'total time' => $totalSecs,
+            'total time' => number_format($totalSecs, 3) . ' sec',
         ], 'Devices Report');
 
         // $this->connection->getConfiguration()->setSQLLogger($SQLlogger);
