@@ -213,14 +213,14 @@ class MediaHelperService
         // This is a safe operation and prevents broken cover image links.
         $ids = '0x' . implode(',0x', $productIds);
         $this->connection->executeStatement("UPDATE product SET product_media_id = NULL, product_media_version_id = NULL WHERE id IN ($ids)");
-        
+
         // Now, selectively delete product_media entries.
-        // This query joins product_media with media to check our custom field.
+        // This query joins product_media with media_translation to check our custom field.
         $sql = '
             DELETE pm FROM product_media AS pm
-            INNER JOIN media AS m ON pm.media_id = m.id
+            INNER JOIN media_translation AS mt ON pm.media_id = mt.media_id
             WHERE pm.product_id IN (:productIds)
-              AND JSON_EXTRACT(m.custom_fields, "$.topdata_connector_is_imported_media") = TRUE
+              AND JSON_EXTRACT(mt.custom_fields, "$.topdata_connector_is_imported_media") = TRUE
         ';
 
         $this->connection->executeStatement($sql,
