@@ -77,12 +77,12 @@ class DeviceMediaImportService
         // ---- Main loop to process devices in chunks
         while (true) {
             $chunkNumber++;
-            CliLogger::activity("\nFetching media chunk $chunkNumber from remote server...");
+//            CliLogger::activity("\nFetching device media chunk $chunkNumber from remote server...");
             ImportReport::incCounter('Device Media Chunks');
             $models = $this->topdataWebserviceClient->getModels($chunkSize, $start);
-            CliLogger::activity(CliLogger::lap() . 'sec. ');
-            CliLogger::mem();
-            CliLogger::writeln('');
+//            CliLogger::activity(CliLogger::lap() . 'sec. ');
+//            CliLogger::mem();
+//            CliLogger::writeln('');
 
             // ---- Check if there is no data, break the loop
             if (!isset($models->data) || count($models->data) == 0) {
@@ -91,7 +91,7 @@ class DeviceMediaImportService
 
             $recordsInChunk = count($models->data);
             ImportReport::incCounter('Device Media Records Fetched', $recordsInChunk);
-            CliLogger::activity("Processing data chunk $chunkNumber ($recordsInChunk records)");
+            //  CliLogger::activity("Processing data chunk $chunkNumber ($recordsInChunk records)");
 
             // ---- Iterate through each device model in the chunk
             foreach ($models->data as $s) {
@@ -103,8 +103,8 @@ class DeviceMediaImportService
                     continue;
                 }
 
-                if ($numDevicesProcessed++ % 4 == 0) {
-                    CliLogger::progress($numDevicesProcessed, $numDevicesTotal);
+                if ($numDevicesProcessed++ % 100 == 0) {
+                    CliLogger::progressBar($numDevicesProcessed, $numDevicesTotal, 'device_media');
                 }
 
                 // ---- Get the brand by its Webservice ID
@@ -186,7 +186,7 @@ class DeviceMediaImportService
                     CliLogger::writeln('Exception: ' . $e->getMessage());
                 }
             }
-            CliLogger::writeln("processed $numDevicesProcessed of $numDevicesTotal devices " . CliLogger::lap() . 'sec. ');
+            // CliLogger::writeln("processed $numDevicesProcessed of $numDevicesTotal devices " . CliLogger::lap() . 'sec. ');
             $start += $chunkSize;
             if (count($models->data) < $chunkSize) {
                 break;

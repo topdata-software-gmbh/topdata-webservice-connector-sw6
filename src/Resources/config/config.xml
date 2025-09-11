@@ -67,7 +67,7 @@
         </component>
     </card>
     <card>
-        <title>mapping options</title>
+        <title>Mapping Options</title>
         <title lang="de-DE">Mapping Einstellungen</title>
         <input-field type="single-select">
             <name>mappingType</name>
