@@ -96,7 +96,7 @@ class CurlHttpClient
                 throw $e;
             }
             $delayMs = $this->initialDelayMs * pow($this->backoffMultiplier, $attempt - 1);
-            CliLogger::warning("Request failed ... attempt " . ($attempt + 1) . "/{$this->maxRetries} in {$delayMs}ms ...");
+            CliLogger::warning("Request failed: {$e->getMessage()} ... attempt " . ($attempt + 1) . "/{$this->maxRetries} in {$delayMs}ms ...");
             usleep($delayMs * 1000);
 
             return $this->get($url, $xml_data, $attempt + 1);
