@@ -22,6 +22,12 @@ use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use Topdata\TopdataFoundationSW6\Util\UtilFormatter;
 
 /**
+ * Service class responsible for importing device-related data from a remote source into the Shopware 6 database.
+ *
+ * This class handles the import of device types, series, and devices, utilizing the Topdata webservice client
+ * to fetch data and the Shopware entity repositories to manage database operations. It includes methods for
+ * setting device types, series, and devices, ensuring data consistency and integrity.
+ *
  * 04/2025 created (extracted from MappingHelperService)
  */
 class DeviceImportService
@@ -53,7 +59,6 @@ class DeviceImportService
      * by creating new entries or updating existing ones. It uses the `TopdataWebserviceClient` to fetch the data and
      * the `EntityRepository` to perform database operations.
      *
-     *
      * 04/2025 moved from MappingHelperService::setDeviceTypes() to DeviceImportService::setDeviceTypes()
      */
     public function setDeviceTypes(): void
@@ -61,43 +66,37 @@ class DeviceImportService
         UtilProfiling::startTimer();
         CliLogger::section("Device type");
 
-
-        // Log the activity of getting data from the remote server
+        // ---- Fetch data from remote server
         CliLogger::writeln('Fetching data from remote server [DeviceType]...');
         CliLogger::lap(true);
 
-        // Fetch device types from the remote server
         $types = $this->topdataWebserviceClient->getModelTypes();
 
-        // Log the number of fetched device types
         ImportReport::setCounter('Fetched DeviceTypes', count($types->data));
         CliLogger::writeln('Fetched ' . count($types->data) . ' device types from remote server');
 
-        // Initialize the repository and data arrays
         $topdataDeviceTypeRepository = $this->topdataDeviceTypeRepository;
         $dataCreate = [];
         $dataUpdate = [];
 
-        // Log the activity of processing data
+        // ---- Process data
         CliLogger::activity('Processing data...');
 
-        // Get all existing types from the local database
         $allTypes = $this->topdataDeviceTypeService->getTypesArray(true);
 
-        // Process each fetched device type
         foreach ($types->data as $s) {
             foreach ($s->brandIds as $brandWsId) {
                 ImportReport::incCounter('DeviceTypes Total Processed');
                 ImportReport::incCounter('DeviceTypes Brand Lookups');
 
-                // Get the brand by its web service ID
+                // ---- Get brand by web service ID
                 $brand = $this->topdataBrandService->getBrandByWsId($brandWsId);
                 if (!$brand) {
                     ImportReport::incCounter('DeviceTypes Brand Not Found');
                     continue;
                 }
 
-                // Check if the type already exists in the local database
+                // ---- Check if type already exists
                 $type = false;
                 foreach ($allTypes as $typeItem) {
                     if ($typeItem['ws_id'] == $s->id && $typeItem['brand_id'] == $brand['id']) {
@@ -106,10 +105,10 @@ class DeviceImportService
                     }
                 }
 
-                // Generate a unique code for the type
+                // ---- Generate code
                 $code = $brand['code'] . '_' . $s->id . '_' . UtilStringFormatting::formCode($s->val);
 
-                // Prepare data for creating or updating the type
+                // ---- Prepare data for create/update
                 if (!$type) {
                     $dataCreate[] = [
                         'code'    => $code,
@@ -138,7 +137,7 @@ class DeviceImportService
                     ImportReport::incCounter('DeviceTypes Unchanged');
                 }
 
-                // Create new types in batches of 100
+                // ---- Batch create
                 if (count($dataCreate) > 100) {
                     $topdataDeviceTypeRepository->create($dataCreate, $this->context);
                     ImportReport::incCounter('DeviceTypes Create Batches');
@@ -146,7 +145,7 @@ class DeviceImportService
                     CliLogger::activity();
                 }
 
-                // Update existing types in batches of 100
+                // ---- Batch update
                 if (count($dataUpdate) > 100) {
                     $topdataDeviceTypeRepository->update($dataUpdate, $this->context);
                     ImportReport::incCounter('DeviceTypes Update Batches');
@@ -156,30 +155,28 @@ class DeviceImportService
             }
         }
 
-        // Create any remaining new types
+        // ---- Create remaining
         if (count($dataCreate)) {
             $topdataDeviceTypeRepository->create($dataCreate, $this->context);
             ImportReport::incCounter('DeviceTypes Create Batches');
             CliLogger::activity();
         }
 
-        // Update any remaining existing types
+        // ---- Update remaining
         if (count($dataUpdate)) {
             $topdataDeviceTypeRepository->update($dataUpdate, $this->context);
             ImportReport::incCounter('DeviceTypes Update Batches');
             CliLogger::activity();
         }
 
-        // Clear the fetched types data
         $types = null;
 
-        // Log summary using table format
+        // ---- Log summary
         CliLogger::writeln('');
         CliLogger::writeln('=== DeviceTypes Summary ===');
         $summaryData = $this->_prepareSummaryData('DeviceTypes');
         CliLogger::getCliStyle()->table(['Metric', 'Count'], $summaryData);
 
-        // Log the completion of the device type processing
         CliLogger::writeln("\nDeviceType done " . CliLogger::lap() . 'sec');
 
         UtilProfiling::stopTimer();
@@ -187,6 +184,12 @@ class DeviceImportService
 
 
     /**
+     * Sets the series data by fetching it from the remote server and updating the local database.
+     *
+     * This method retrieves series data from the remote server, processes the data, and updates the local database
+     * by creating new entries or updating existing ones. It uses the `TopdataWebserviceClient` to fetch the data and
+     * the `EntityRepository` to perform database operations.
+     *
      * 04/2025 moved from MappingHelperService::setSeries() to DeviceImportService::setSeries()
      */
     public function setSeries(): void
@@ -194,6 +197,7 @@ class DeviceImportService
         UtilProfiling::startTimer();
         CliLogger::section("Series");
 
+        // ---- Fetch data from remote server
         CliLogger::writeln('Fetching data from remote server [Series]...');
         CliLogger::lap(true);
         $series = $this->topdataWebserviceClient->getModelSeries();
@@ -203,6 +207,8 @@ class DeviceImportService
         $topdataSeriesRepository = $this->topdataSeriesRepository;
         $dataCreate = [];
         $dataUpdate = [];
+
+        // ---- Process data
         CliLogger::activity('Processing data');
         $allSeries = $this->topdataSeriesService->getSeriesArray(true);
 
@@ -211,12 +217,14 @@ class DeviceImportService
                 ImportReport::incCounter('Series Total Processed');
                 ImportReport::incCounter('Series Brand Lookups');
 
+                // ---- Get brand by web service ID
                 $brand = $this->topdataBrandService->getBrandByWsId((int)$brandWsId);
                 if (!$brand) {
                     ImportReport::incCounter('Series Brand Not Found');
                     continue;
                 }
 
+                // ---- Check if series already exists
                 $serie = false;
                 foreach ($allSeries as $seriesItem) {
                     if ($seriesItem['ws_id'] == $s->id && $seriesItem['brand_id'] == $brand['id']) {
@@ -224,8 +232,11 @@ class DeviceImportService
                         break;
                     }
                 }
+
+                // ---- Generate code
                 $code = $brand['code'] . '_' . $s->id . '_' . UtilStringFormatting::formCode($s->val);
 
+                // ---- Prepare data for create/update
                 if (!$serie) {
                     $dataCreate[] = [
                         'code'    => $code,
@@ -255,6 +266,7 @@ class DeviceImportService
                     ImportReport::incCounter('Series Unchanged');
                 }
 
+                // ---- Batch create
                 if (count($dataCreate) > 100) {
                     $topdataSeriesRepository->create($dataCreate, $this->context);
                     ImportReport::incCounter('Series Create Batches');
@@ -262,6 +274,7 @@ class DeviceImportService
                     CliLogger::activity();
                 }
 
+                // ---- Batch update
                 if (count($dataUpdate) > 100) {
                     $topdataSeriesRepository->update($dataUpdate, $this->context);
                     ImportReport::incCounter('Series Update Batches');
@@ -271,19 +284,21 @@ class DeviceImportService
             }
         }
 
+        // ---- Create remaining
         if (count($dataCreate)) {
             $topdataSeriesRepository->create($dataCreate, $this->context);
             ImportReport::incCounter('Series Create Batches');
             CliLogger::activity();
         }
 
+        // ---- Update remaining
         if (count($dataUpdate)) {
             $topdataSeriesRepository->update($dataUpdate, $this->context);
             ImportReport::incCounter('Series Update Batches');
             CliLogger::activity();
         }
 
-        // Log summary using table format
+        // ---- Log summary
         CliLogger::writeln('');
         CliLogger::writeln('=== Series Summary ===');
         $summaryData = $this->_prepareSummaryData('Series');
@@ -298,6 +313,12 @@ class DeviceImportService
 
 
     /**
+     * Sets the devices data by fetching it from the remote server and updating the local database.
+     *
+     * This method retrieves devices data from the remote server, processes the data, and updates the local database
+     * by creating new entries or updating existing ones. It uses the `TopdataWebserviceClient` to fetch the data and
+     * the `EntityRepository` to perform database operations.
+     *
      * this is called when --device or --device-only CLI options are set.
      *
      * 04/2025 moved from MappingHelperService::setDevices() to DeviceImportService::setDevices()
@@ -332,6 +353,8 @@ class DeviceImportService
                 CliLogger::activity(CliLogger::lap() . 'sec');
             }
             $chunkNumber++;
+
+            // ---- Get device chunk from remote server
             CliLogger::activity("\nGetting device chunk $chunkNumber from remote server...");
 
             ImportReport::incCounter('Device Chunks');
@@ -345,11 +368,14 @@ class DeviceImportService
 
             $recordsInChunk = count($response->data);
             ImportReport::incCounter('Devices Records Fetched', $recordsInChunk);
+
+            // ---- Process device chunk
             CliLogger::activity("Processing Device Chunk $chunkNumber ($recordsInChunk records)");
 
             foreach ($response->data as $s) {
                 ImportReport::incCounter('Devices Total Processed');
 
+                // ---- Get brand
                 $brandArr = $this->topdataBrandService->getBrandByWsId((int)$s->bId);
 
                 if (!$brandArr) {
@@ -359,6 +385,7 @@ class DeviceImportService
 
                 $code = $brandArr['code'] . '_' . UtilStringFormatting::formCode($s->val);
 
+                // ---- Skip duplicates
                 if (isset($duplicates[$code])) {
                     ImportReport::incCounter('Devices Duplicates Skipped');
                     continue;
@@ -382,6 +409,8 @@ class DeviceImportService
                 }
 
                 $deviceArr = [];
+
+                // ---- Database lookup
                 ImportReport::incCounter('Devices Database Lookups');
                 $rez = $this
                     ->connection
@@ -423,6 +452,8 @@ class DeviceImportService
 
                 $serieId = null;
                 $serie = [];
+
+                // ---- Series lookup
                 if ($s->mId) {
                     ImportReport::incCounter('Devices Series Lookups');
                     foreach ($seriesArray as $serieItem) {
@@ -440,6 +471,8 @@ class DeviceImportService
 
                 $typeId = null;
                 $type = [];
+
+                // ---- Type lookup
                 if ($s->dId) {
                     ImportReport::incCounter('Devices Type Lookups');
                     foreach ($typesArray as $typeItem) {
@@ -458,6 +491,7 @@ class DeviceImportService
 
                 $keywords = $this->_formSearchKeywords($search_keywords);
 
+                // ---- Prepare data for create/update
                 if (!$deviceArr) {
                     $dataCreate[] = [
                         'brandId'  => $brandArr['id'],
@@ -494,6 +528,7 @@ class DeviceImportService
                     ImportReport::incCounter('Devices Unchanged');
                 }
 
+                // ---- Batch create
                 if (count($dataCreate) > 50) {
                     $created += count($dataCreate);
                     $this->topdataDeviceRepository->create($dataCreate, $this->context);
@@ -502,6 +537,7 @@ class DeviceImportService
                     CliLogger::activity('+');
                 }
 
+                // ---- Batch update
                 if (count($dataUpdate) > 50) {
                     $updated += count($dataUpdate);
                     $this->topdataDeviceRepository->update($dataUpdate, $this->context);
@@ -510,6 +546,8 @@ class DeviceImportService
                     CliLogger::activity('*');
                 }
             }
+
+            // ---- Create remaining
             if (count($dataCreate)) {
                 $created += count($dataCreate);
                 $this->topdataDeviceRepository->create($dataCreate, $this->context);
@@ -517,6 +555,8 @@ class DeviceImportService
                 $dataCreate = [];
                 CliLogger::activity('+');
             }
+
+            // ---- Update remaining
             if (count($dataUpdate)) {
                 $updated += count($dataUpdate);
                 $this->topdataDeviceRepository->update($dataUpdate, $this->context);
@@ -570,6 +610,11 @@ class DeviceImportService
 
 
     /**
+     * Forms search keywords from an array of keywords by processing and combining them.
+     *
+     * This method takes an array of keywords, processes each keyword to generate variations,
+     * and combines them into a single string suitable for search indexing.
+     *
      * 04/2025 moved from MappingHelperService::formSearchKeywords() to DeviceImportService::formSearchKeywords()
      */
     private function _formSearchKeywords(array $keywords): string
@@ -586,6 +631,11 @@ class DeviceImportService
     }
 
     /**
+     * Prepares summary data for logging, based on the provided prefix.
+     *
+     * This method retrieves counter values from the ImportReport class using the provided prefix
+     * and formats them into an array suitable for display in a summary table.
+     *
      * @param string $prefix Prefix for counter keys
      * @return array Formatted summary data
      */
