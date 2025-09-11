@@ -39,7 +39,7 @@ class TopdataDeviceSynonymsService
         UtilProfiling::startTimer();
         CliLogger::section("Device synonyms");
         $enabledDevices = [];
-        foreach ($this->topdataDeviceService->_getEnabledDevices() as $pr) {
+        foreach ($this->topdataDeviceService->getEnabledDevices() as $pr) {
             $enabledDevices[$pr['ws_id']] = bin2hex($pr['id']);
         }
         CliLogger::info(UtilFormatter::formatInteger(count($enabledDevices)) . " enabled devices found.");

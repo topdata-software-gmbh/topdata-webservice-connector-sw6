@@ -76,4 +76,7 @@ class MergedPluginConfigKeyConstants
     const LIST_OPTION_listBundles                 = 'listBundles';
     const LIST_OPTION_listRelatedProducts         = 'listRelatedProducts';
     const LIST_OPTION_listVariantProducts         = 'listVariantProducts';
+
+    // ---- from TopFinder plugin
+    const DEVICE_AVAILABILITY_STRATEGY = 'deviceAvailabilityStrategy';
 }

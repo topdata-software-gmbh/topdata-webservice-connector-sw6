@@ -62,7 +62,7 @@ class DeviceMediaImportService
 
         // ---- Fetch enabled devices
         $available_Printers = [];
-        foreach ($this->topdataDeviceService->_getEnabledDevices() as $pr) {
+        foreach ($this->topdataDeviceService->getEnabledDevices() as $pr) {
             $available_Printers[$pr['ws_id']] = true;
         }
         $numDevicesTotal = count($available_Printers);

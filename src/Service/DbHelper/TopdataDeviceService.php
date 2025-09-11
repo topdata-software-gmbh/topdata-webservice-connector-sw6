@@ -22,7 +22,7 @@ class TopdataDeviceService
      *
      * @return array An array of associative arrays representing the enabled devices.
      */
-    public function _getEnabledDevices(): array
+    public function getEnabledDevices(): array
     {
         $qb = $this->connection->createQueryBuilder();
         $qb->select('*')

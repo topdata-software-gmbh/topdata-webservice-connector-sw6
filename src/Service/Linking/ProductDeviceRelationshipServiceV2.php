@@ -6,10 +6,12 @@ use Doctrine\DBAL\Connection;
 use Exception;
 use Psr\Log\LoggerInterface;
 use Topdata\TopdataConnectorSW6\Constants\BatchSizeConstants;
+use Topdata\TopdataConnectorSW6\Constants\MergedPluginConfigKeyConstants;
 use Topdata\TopdataConnectorSW6\Constants\WebserviceFilterTypeConstants;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataDeviceService;
 use Topdata\TopdataConnectorSW6\Service\DbHelper\TopdataToProductService;
 use Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient;
+use Topdata\TopdataConnectorSW6\Service\Config\MergedPluginConfigHelperService;
 use Topdata\TopdataConnectorSW6\Util\UtilProfiling;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 use Topdata\TopdataConnectorSW6\Util\ImportReport;
@@ -23,10 +25,11 @@ class ProductDeviceRelationshipServiceV2
     const CHUNK_SIZE = 100;
 
     public function __construct(
-        private readonly Connection              $connection,
-        private readonly TopdataToProductService $topdataToProductHelperService,
-        private readonly TopdataDeviceService    $topdataDeviceService,
-        private readonly TopdataWebserviceClient $topdataWebserviceClient,
+        private readonly Connection                      $connection,
+        private readonly TopdataToProductService         $topdataToProductHelperService,
+        private readonly TopdataDeviceService            $topdataDeviceService,
+        private readonly TopdataWebserviceClient         $topdataWebserviceClient,
+        private readonly MergedPluginConfigHelperService $mergedPluginConfigHelperService,
     )
     {
     }
@@ -255,6 +258,13 @@ class ProductDeviceRelationshipServiceV2
         
         // After processing all chunks, enable/disable entities based on the active sets
         CliLogger::getCliStyle()->yellow('Updating entity status (enable/disable)...');
+        $strategy = $this->mergedPluginConfigHelperService->getOption(MergedPluginConfigKeyConstants::DEVICE_AVAILABILITY_STRATEGY);
+        $bSkipDisable = ($strategy === 'keepAllEnabled');
+        if ($bSkipDisable) {
+            CliLogger::info('Strategy "keepAllEnabled" is active. Skipping disable logic. Only enabling active entities.');
+        } else {
+            CliLogger::info('Strategy "disableUnlinked" (default) is active. Disabling entities without active links.');
+        }
         
         // Enable active devices
         if (!empty($activeDeviceDbIds)) {
@@ -273,22 +283,30 @@ class ProductDeviceRelationshipServiceV2
                 CliLogger::getCliStyle()->info(sprintf('Enabled %d devices', $enableCount));
             }
             
-            // Disable inactive devices
-            $disableCount = $this->connection->executeStatement(
-                "UPDATE topdata_device SET is_enabled = 0 WHERE id NOT IN (?" . str_repeat(",?", count($activeDeviceDbIds) - 1) . ")",
-                array_map(function($id) {
-                    return hex2bin($id);
-                }, array_values($activeDeviceDbIds))
-            );
-            ImportReport::setCounter('linking_v2.status.devices.disabled', $disableCount);
-            ImportReport::setCounter('linking_v2.active.devices', count($activeDeviceDbIds));
-            CliLogger::getCliStyle()->info(sprintf('Disabled %d devices', $disableCount));
+            // Disable inactive devices (skip if strategy is keepAllEnabled)
+            if (!$bSkipDisable) {
+                $disableCount = $this->connection->executeStatement(
+                    "UPDATE topdata_device SET is_enabled = 0 WHERE id NOT IN (?" . str_repeat(",?", count($activeDeviceDbIds) - 1) . ")",
+                    array_map(function($id) {
+                        return hex2bin($id);
+                    }, array_values($activeDeviceDbIds))
+                );
+                ImportReport::setCounter('linking_v2.status.devices.disabled', $disableCount);
+                ImportReport::setCounter('linking_v2.active.devices', count($activeDeviceDbIds));
+                CliLogger::getCliStyle()->info(sprintf('Disabled %d devices', $disableCount));
+            } else {
+                CliLogger::getCliStyle()->info('Skipping device disable step (keepAllEnabled).');
+            }
         } else {
-            // If no active devices, disable all
-            $disableCount = $this->connection->executeStatement(
-                "UPDATE topdata_device SET is_enabled = 0 WHERE 1=1"
-            );
-            CliLogger::getCliStyle()->info(sprintf('Disabled all %d devices (no active devices found)', $disableCount));
+            // If no active devices
+            if (!$bSkipDisable) {
+                $disableCount = $this->connection->executeStatement(
+                    "UPDATE topdata_device SET is_enabled = 0 WHERE 1=1"
+                );
+                CliLogger::getCliStyle()->info(sprintf('Disabled all %d devices (no active devices found)', $disableCount));
+            } else {
+                CliLogger::getCliStyle()->info('No active devices found. Skipping disable all (keepAllEnabled).');
+            }
         }
         
         // Enable active brands
@@ -308,22 +326,30 @@ class ProductDeviceRelationshipServiceV2
                 CliLogger::getCliStyle()->info(sprintf('Enabled %d brands', $enableCount));
             }
             
-            // Disable inactive brands
-            $disableCount = $this->connection->executeStatement(
-                "UPDATE topdata_brand SET is_enabled = 0 WHERE id NOT IN (?" . str_repeat(",?", count($activeBrandDbIds) - 1) . ")",
-                array_map(function($id) {
-                    return hex2bin($id);
-                }, array_values($activeBrandDbIds))
-            );
-            ImportReport::setCounter('linking_v2.status.brands.disabled', $disableCount);
-            ImportReport::setCounter('linking_v2.active.brands', count($activeBrandDbIds));
-            CliLogger::getCliStyle()->info(sprintf('Disabled %d brands', $disableCount));
+            // Disable inactive brands (skip if strategy is keepAllEnabled)
+            if (!$bSkipDisable) {
+                $disableCount = $this->connection->executeStatement(
+                    "UPDATE topdata_brand SET is_enabled = 0 WHERE id NOT IN (?" . str_repeat(",?", count($activeBrandDbIds) - 1) . ")",
+                    array_map(function($id) {
+                        return hex2bin($id);
+                    }, array_values($activeBrandDbIds))
+                );
+                ImportReport::setCounter('linking_v2.status.brands.disabled', $disableCount);
+                ImportReport::setCounter('linking_v2.active.brands', count($activeBrandDbIds));
+                CliLogger::getCliStyle()->info(sprintf('Disabled %d brands', $disableCount));
+            } else {
+                CliLogger::getCliStyle()->info('Skipping brand disable step (keepAllEnabled).');
+            }
         } else {
-            // If no active brands, disable all
-            $disableCount = $this->connection->executeStatement(
-                "UPDATE topdata_brand SET is_enabled = 0 WHERE 1=1"
-            );
-            CliLogger::getCliStyle()->info(sprintf('Disabled all %d brands (no active brands found)', $disableCount));
+            // If no active brands
+            if (!$bSkipDisable) {
+                $disableCount = $this->connection->executeStatement(
+                    "UPDATE topdata_brand SET is_enabled = 0 WHERE 1=1"
+                );
+                CliLogger::getCliStyle()->info(sprintf('Disabled all %d brands (no active brands found)', $disableCount));
+            } else {
+                CliLogger::getCliStyle()->info('No active brands found. Skipping disable all (keepAllEnabled).');
+            }
         }
         
         // Enable active series
@@ -343,22 +369,30 @@ class ProductDeviceRelationshipServiceV2
                 CliLogger::getCliStyle()->info(sprintf('Enabled %d series', $enableCount));
             }
             
-            // Disable inactive series
-            $disableCount = $this->connection->executeStatement(
-                "UPDATE topdata_series SET is_enabled = 0 WHERE id NOT IN (?" . str_repeat(",?", count($activeSeriesDbIds) - 1) . ")",
-                array_map(function($id) {
-                    return hex2bin($id);
-                }, array_values($activeSeriesDbIds))
-            );
-            ImportReport::setCounter('linking_v2.status.series.disabled', $disableCount);
-            ImportReport::setCounter('linking_v2.active.series', count($activeSeriesDbIds));
-            CliLogger::getCliStyle()->info(sprintf('Disabled %d series', $disableCount));
+            // Disable inactive series (skip if strategy is keepAllEnabled)
+            if (!$bSkipDisable) {
+                $disableCount = $this->connection->executeStatement(
+                    "UPDATE topdata_series SET is_enabled = 0 WHERE id NOT IN (?" . str_repeat(",?", count($activeSeriesDbIds) - 1) . ")",
+                    array_map(function($id) {
+                        return hex2bin($id);
+                    }, array_values($activeSeriesDbIds))
+                );
+                ImportReport::setCounter('linking_v2.status.series.disabled', $disableCount);
+                ImportReport::setCounter('linking_v2.active.series', count($activeSeriesDbIds));
+                CliLogger::getCliStyle()->info(sprintf('Disabled %d series', $disableCount));
+            } else {
+                CliLogger::getCliStyle()->info('Skipping series disable step (keepAllEnabled).');
+            }
         } else {
-            // If no active series, disable all
-            $disableCount = $this->connection->executeStatement(
-                "UPDATE topdata_series SET is_enabled = 0 WHERE 1=1"
-            );
-            CliLogger::getCliStyle()->info(sprintf('Disabled all %d series (no active series found)', $disableCount));
+            // If no active series
+            if (!$bSkipDisable) {
+                $disableCount = $this->connection->executeStatement(
+                    "UPDATE topdata_series SET is_enabled = 0 WHERE 1=1"
+                );
+                CliLogger::getCliStyle()->info(sprintf('Disabled all %d series (no active series found)', $disableCount));
+            } else {
+                CliLogger::getCliStyle()->info('No active series found. Skipping disable all (keepAllEnabled).');
+            }
         }
         
         // Enable active device types
@@ -378,22 +412,30 @@ class ProductDeviceRelationshipServiceV2
                 CliLogger::getCliStyle()->info(sprintf('Enabled %d device types', $enableCount));
             }
             
-            // Disable inactive device types
-            $disableCount = $this->connection->executeStatement(
-                "UPDATE topdata_device_type SET is_enabled = 0 WHERE id NOT IN (?" . str_repeat(",?", count($activeTypeDbIds) - 1) . ")",
-                array_map(function($id) {
-                    return hex2bin($id);
-                }, array_values($activeTypeDbIds))
-            );
-            ImportReport::setCounter('linking_v2.status.types.disabled', $disableCount);
-            ImportReport::setCounter('linking_v2.active.types', count($activeTypeDbIds));
-            CliLogger::getCliStyle()->info(sprintf('Disabled %d device types', $disableCount));
+            // Disable inactive device types (skip if strategy is keepAllEnabled)
+            if (!$bSkipDisable) {
+                $disableCount = $this->connection->executeStatement(
+                    "UPDATE topdata_device_type SET is_enabled = 0 WHERE id NOT IN (?" . str_repeat(",?", count($activeTypeDbIds) - 1) . ")",
+                    array_map(function($id) {
+                        return hex2bin($id);
+                    }, array_values($activeTypeDbIds))
+                );
+                ImportReport::setCounter('linking_v2.status.types.disabled', $disableCount);
+                ImportReport::setCounter('linking_v2.active.types', count($activeTypeDbIds));
+                CliLogger::getCliStyle()->info(sprintf('Disabled %d device types', $disableCount));
+            } else {
+                CliLogger::getCliStyle()->info('Skipping device type disable step (keepAllEnabled).');
+            }
         } else {
-            // If no active device types, disable all
-            $disableCount = $this->connection->executeStatement(
-                "UPDATE topdata_device_type SET is_enabled = 0 WHERE 1=1"
-            );
-            CliLogger::getCliStyle()->info(sprintf('Disabled all %d device types (no active types found)', $disableCount));
+            // If no active device types
+            if (!$bSkipDisable) {
+                $disableCount = $this->connection->executeStatement(
+                    "UPDATE topdata_device_type SET is_enabled = 0 WHERE 1=1"
+                );
+                CliLogger::getCliStyle()->info(sprintf('Disabled all %d device types (no active types found)', $disableCount));
+            } else {
+                CliLogger::getCliStyle()->info('No active device types found. Skipping disable all (keepAllEnabled).');
+            }
         }
         
         CliLogger::getCliStyle()->success('Devices to products linking completed (V2 differential approach)');

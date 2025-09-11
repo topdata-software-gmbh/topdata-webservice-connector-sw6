@@ -107,12 +107,31 @@ class MergedPluginConfigHelperService
     }
 
     /**
+     * NEW: Load Topdata TopFinder Pro plugin configuration.
+     *
+     * This loads settings from the TopFinder plugin (TopdataTopFinderProSW6)
+     * into our merged options array so other services can access them
+     * via getOption().
+     */
+    private function _loadOptionsFromTopFinderProPluginConfig(): void
+    {
+        $topfinderPluginConfig = $this->systemConfigService->get('TopdataTopFinderProSW6.config');
+        if (!$topfinderPluginConfig) {
+            CliLogger::warning('TopdataTopFinderProSW6.config not found in system config. Using defaults where applicable.');
+            return;
+        }
+
+        $this->_setOptions($topfinderPluginConfig ?? []);
+    }
+
+    /**
      * 04/2025 created
      */
     public function init(): void
     {
         $this->_loadOptionsFromConnectorPluginConfig();
         $this->_loadOptionsFromTopFeedPluginConfig();
+        $this->_loadOptionsFromTopFinderProPluginConfig();
         CliLogger::dump($this->options, "OPTIONS");
     }
 
