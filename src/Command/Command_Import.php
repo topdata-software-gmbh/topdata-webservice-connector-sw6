@@ -31,6 +31,7 @@ use Topdata\TopdataFoundationSW6\Util\UtilThrowable;
  */
 class Command_Import extends AbstractTopdataCommand
 {
+    const int LOCK_TTL = 3600;
     private ?LockInterface $lock = null;
 
     public function __construct(
@@ -100,7 +101,7 @@ class Command_Import extends AbstractTopdataCommand
     public function execute(InputInterface $input, OutputInterface $output): int
     {
         // ---- Create lock
-        $this->lock = $this->lockFactory->createLock('topdata-connector-import', 3600); // 1 hour TTL
+        $this->lock = $this->lockFactory->createLock('topdata-connector-import', self::LOCK_TTL); // 1 hour TTL
 
         // ---- Attempt to acquire the lock
         if (!$this->lock->acquire()) {
@@ -135,6 +136,11 @@ class Command_Import extends AbstractTopdataCommand
                 $this->importService->execute($importConfig);
                 // ---- Mark as succeeded or failed based on the result
                 $this->topdataReportService->markAsSucceeded($this->_getBasicReportData($importConfig));
+
+                $this->done();
+
+                return Command::SUCCESS;
+
             } catch (\Throwable $e) {
                 // ---- Handle exception and mark as failed
                 if ($e instanceof MissingPluginConfigurationException) {
@@ -153,11 +159,6 @@ class Command_Import extends AbstractTopdataCommand
                 $this->lock = null;
             }
         }
-
-
-        $this->done();
-
-        return Command::SUCCESS;
     }
 
 }
