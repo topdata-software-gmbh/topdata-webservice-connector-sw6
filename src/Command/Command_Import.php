@@ -135,8 +135,6 @@ class Command_Import extends AbstractTopdataCommand
                 $this->importService->execute($importConfig);
                 // ---- Mark as succeeded or failed based on the result
                 $this->topdataReportService->markAsSucceeded($this->_getBasicReportData($importConfig));
-
-                return Command::SUCCESS;
             } catch (\Throwable $e) {
                 // ---- Handle exception and mark as failed
                 if ($e instanceof MissingPluginConfigurationException) {
@@ -155,6 +153,11 @@ class Command_Import extends AbstractTopdataCommand
                 $this->lock = null;
             }
         }
+
+
+        $this->done();
+
+        return Command::SUCCESS;
     }
 
 }
