@@ -15,6 +15,7 @@ use Topdata\TopdataConnectorSW6\Util\ImportReport;
 use Topdata\TopdataFoundationSW6\Util\CliLogger;
 
 /**
+ * Service class for handling media-related operations, such as finding, creating, and unlinking media files.
  * 11/2024 created (extracted from EntitiesHelperService)
  */
 class MediaHelperService
@@ -46,14 +47,15 @@ class MediaHelperService
      * @param int $imageTimestamp The timestamp to append to the image name. Default is 0.
      * @param string $imagePrefix The prefix to prepend to the image name. Default is an empty string.
      * @param string $echoDownload The message to echo if the image needs to be downloaded. Default is an empty string.
+     * @param string|null $altText The alt text for the image.
      * @return string The media ID of the image.
      */
-    public function getMediaId(string $imagePath, int $imageTimestamp = 0, string $imagePrefix = '', $echoDownload = ''): string
+    public function findOrCreateMediaId(string $imagePath, int $imageTimestamp = 0, string $imagePrefix = '', $echoDownload = '', ?string $altText = null): string
     {
-        // Generate the image name using the provided path, timestamp, and prefix.
+        // ---- Generate the image name using the provided path, timestamp, and prefix.
         $imageName = $imagePrefix . $this->generateMediaName($imagePath, $imageTimestamp);
 
-        // Search for existing media with the generated image name.
+        // ---- Search for existing media with the generated image name.
         $existingMedia = $this->mediaRepository
             ->search(
                 (new Criteria())
@@ -64,25 +66,25 @@ class MediaHelperService
             ->getEntities()
             ->first();
 
-        // If the media exists, return its ID.
+        // ---- If the media exists, return its ID.
         if ($existingMedia) {
             $mediaId = $existingMedia->getId();
         } else {
-            // If the media does not exist, echo the download message.
+            // ---- If the media does not exist, echo the download message.
             echo $echoDownload;
 
-            // Read the file content from the provided image path.
+            // ---- Read the file content from the provided image path.
             $fileContent = file_get_contents($imagePath);
 
-            // If the file content could not be read, return an empty string.
+            // ---- If the file content could not be read, return an empty string.
             if ($fileContent === false) {
                 return '';
             }
 
-            // Create a new media entry in the upload folder.
+            // ---- Create a new media entry in the upload folder.
             $mediaId = $this->createMediaInFolder();
 
-            // Save the file content as a new media entry and get its ID.
+            // ---- Save the file content as a new media entry and get its ID.
             $mediaId = $this->mediaService->saveFile(
                 $fileContent,
                 'jpg',
@@ -95,7 +97,17 @@ class MediaHelperService
             );
         }
 
-        // Return the media ID.
+        // ---- If alt text is provided, update the media entity with it.
+        if ($mediaId && $altText) {
+            $this->mediaRepository->update([
+                [
+                    'id'  => $mediaId,
+                    'alt' => $altText,
+                ],
+            ], $this->context);
+        }
+
+        // ---- Return the media ID.
         return $mediaId;
     }
 
@@ -125,11 +137,15 @@ class MediaHelperService
      */
     private function createMediaInFolder(): string
     {
+        // ---- Check if the upload folder ID is set. If not, create the upload folder.
         if (!$this->uploadFolderId) {
             $this->createUploadFolder();
         }
 
+        // ---- Generate a new media ID.
         $mediaId = Uuid::randomHex();
+
+        // ---- Create a new media entry in the repository with the upload folder ID.
         $this->mediaRepository->create(
             [
                 [
@@ -157,12 +173,14 @@ class MediaHelperService
      */
     private function createUploadFolder(): void
     {
+        // ---- Search for the default folder.
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('media_folder.defaultFolder.entity', self::DEFAULT_MAIN_FOLDER));
         $criteria->addAssociation('defaultFolder');
         $criteria->setLimit(1);
         $defaultFolder = $this->mediaFolderRepository->search($criteria, $this->context)->first();
 
+        // ---- Search for the upload folder within the default folder.
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('name', self::UPLOAD_FOLDER_NAME));
         $criteria->addFilter(new EqualsFilter('parentId', $defaultFolder->getId()));
@@ -175,12 +193,14 @@ class MediaHelperService
             )
             ->first();
 
+        // ---- If the upload folder exists, set the upload folder ID and return.
         if ($uploadFolder) {
             $this->uploadFolderId = $uploadFolder->getId();
 
             return;
         }
 
+        // ---- If the upload folder does not exist, create a new one.
         $this->uploadFolderId = Uuid::randomHex();
         $this->mediaFolderRepository->create(
             [
@@ -205,13 +225,15 @@ class MediaHelperService
      */
     public function unlinkImages(array $productIds): void
     {
-        if (empty($productIds)) {
+        // ---- If the product IDs array is empty, return.
+        if (!count($productIds)) {
             return;
         }
 
-        // First, nullify the cover image for all affected products.
-        // This is a safe operation and prevents broken cover image links.
+        // ---- Prepare the product IDs for the SQL query.
         $ids = '0x' . implode(',0x', $productIds);
+
+        // ---- Execute the SQL statements to unlink images from products.
         $this->connection->executeStatement("UPDATE product SET product_media_id = NULL, product_media_version_id = NULL WHERE id IN ($ids)");
 
         // Now, selectively delete product_media entries.
@@ -231,24 +253,33 @@ class MediaHelperService
 
 
     /**
+     * Deletes duplicate media entries associated with products.
      * 05/2025 extracted from ProductInformationServiceV1Slow::setProductInformationV1Slow()
+     *
+     * @param array $productDataDeleteDuplicateMedia An array of product data containing product IDs, media IDs, and product media IDs.
      */
     public function deleteDuplicateMedia(array $productDataDeleteDuplicateMedia): void
     {
+        // ---- Chunk the product data to process in batches.
         $chunks = array_chunk($productDataDeleteDuplicateMedia, 100);
         foreach ($chunks as $chunk) {
             $productIds = [];
             $mediaIds = [];
             $pmIds = [];
+
+            // ---- Extract product IDs, media IDs, and product media IDs from the chunk.
             foreach ($chunk as $el) {
                 $productIds[] = $el['productId'];
                 $mediaIds[] = $el['mediaId'];
                 $pmIds[] = $el['id'];
             }
+
+            // ---- Prepare the IDs for the SQL query.
             $productIds = '0x' . implode(', 0x', $productIds);
             $mediaIds = '0x' . implode(', 0x', $mediaIds);
             $pmIds = '0x' . implode(', 0x', $pmIds);
 
+            // ---- Execute the SQL statement to delete duplicate media entries.
             $numDeleted = $this->connection->executeStatement("
                     DELETE FROM product_media 
                     WHERE (product_id IN ($productIds)) 
@@ -256,6 +287,7 @@ class MediaHelperService
                         AND(id NOT IN ($pmIds))
             ");
 
+            // ---- Increment the counter for deleted duplicate media.
             ImportReport::incCounter('Deleted Duplicate Media', $numDeleted);
 
             CliLogger::activity();
