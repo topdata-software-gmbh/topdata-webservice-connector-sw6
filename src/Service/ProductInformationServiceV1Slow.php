@@ -276,6 +276,7 @@ class ProductInformationServiceV1Slow
         if ($this->productImportSettingsService->isProductOptionEnabled(MergedPluginConfigKeyConstants::OPTION_NAME_productImages, $productId)) {
             if (isset($remoteProductData->images) && count($remoteProductData->images)) {
                 $media = [];
+                $altText = UtilStringFormatting::formatStringNoHTML($remoteProductData->short_description);
                 foreach ($remoteProductData->images as $k => $img) {
                     if (isset($img->big->url)) {
                         $imageUrl = $img->big->url;
@@ -295,11 +296,12 @@ class ProductInformationServiceV1Slow
 
                     try {
                         $echoMediaDownload = 'd';
-                        $mediaId = $this->mediaHelperService->getMediaId(
+                        $mediaId = $this->mediaHelperService->findOrCreateMediaId(
                             $imageUrl,
                             $imageDate,
                             $k . '-' . $remoteProductData->products_id . '-',
-                            $echoMediaDownload
+                            $echoMediaDownload,
+                            $altText
                         );
                         if ($mediaId) {
                             $media[] = [

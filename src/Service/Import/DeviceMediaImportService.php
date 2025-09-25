@@ -170,7 +170,8 @@ class DeviceMediaImportService
 
                 // ---- Try to update the media
                 try {
-                    $mediaId = $this->mediaHelperService->getMediaId($s->img, $imageDate, self::IMAGE_PREFIX);
+                    $altText = UtilStringFormatting::formatStringNoHTML($brand['label'] . ' ' . $s->val);
+                    $mediaId = $this->mediaHelperService->findOrCreateMediaId($s->img, $imageDate, self::IMAGE_PREFIX, '', $altText);
                     if ($mediaId) {
                         $this->topdataDeviceRepository->update([
                             [
