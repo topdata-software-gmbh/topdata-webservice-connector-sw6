@@ -19,6 +19,26 @@ class Migration1754373899TopdataDeviceToCustomer extends MigrationStep
 
     public function update(Connection $connection): void
     {
+        // Check if migration was already run (indicated by _old table existing)
+        $oldTableExists = $connection->fetchOne(
+            "SHOW TABLES LIKE 'topdata_device_to_customer_old'"
+        );
+
+        if ($oldTableExists) {
+            // Migration already executed, skip
+            return;
+        }
+
+        // Check if source table exists before attempting rename
+        $sourceTableExists = $connection->fetchOne(
+            "SHOW TABLES LIKE 'topdata_device_to_customer'"
+        );
+
+        if (!$sourceTableExists) {
+            // No source table to migrate, skip
+            return;
+        }
+
         $query = <<<'SQL'
 
 -- It's highly recommended to wrap these operations in a transaction
