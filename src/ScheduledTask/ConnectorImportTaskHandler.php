@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Topdata\TopdataConnectorSW6\ScheduledTask;
 
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
@@ -15,10 +16,10 @@ class ConnectorImportTaskHandler extends ScheduledTaskHandler
      */
     protected $projectPath;
 
-    public function __construct(EntityRepository $scheduledTaskRepository, ContainerBagInterface $ContainerBag)
+    public function __construct(EntityRepository $scheduledTaskRepository, LoggerInterface $exceptionLogger, ContainerBagInterface $ContainerBag)
     {
         $this->projectPath = $ContainerBag->get('kernel.project_dir');
-        parent::__construct($scheduledTaskRepository);
+        parent::__construct($scheduledTaskRepository, $exceptionLogger);
     }
 
     public static function getHandledMessages(): iterable
