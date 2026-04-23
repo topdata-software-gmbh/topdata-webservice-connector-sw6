@@ -57,6 +57,27 @@ class ImportConfig
         return $ret;
     }
 
+    public static function createForScheduledTaskAll(): self
+    {
+        $ret = new self();
+        $ret->optionAll = true;
+        $ret->optionMapping = false;
+        $ret->optionDevice = false;
+        $ret->optionDeviceOnly = false;
+        $ret->optionDeviceMedia = false;
+        $ret->optionDeviceSynonyms = false;
+        $ret->optionProduct = false;
+        $ret->optionProductInformation = false;
+        $ret->optionProductMediaOnly = false;
+        $ret->optionProductVariations = false;
+        $ret->optionExperimentalV2 = false;
+        $ret->optionProductDevice = false;
+        $ret->optionPurgeCache = false;
+        $ret->baseUrl = null;
+
+        return $ret;
+    }
+
     public function getOptionAll(): bool
     {
         return $this->optionAll;

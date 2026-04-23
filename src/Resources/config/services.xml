@@ -106,6 +106,7 @@
         <service id="Topdata\TopdataConnectorSW6\Service\TopdataReportService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\TopdataWebserviceClient" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\ImportService" autowire="true"/>
+        <service id="Topdata\TopdataConnectorSW6\Service\ScheduledImportRunnerService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\EntitiesHelperService" autowire="true" />
         <service id="Topdata\TopdataConnectorSW6\Service\ProgressLoggingService" autowire="true"/>
         <service id="Topdata\TopdataConnectorSW6\Service\MediaHelperService" autowire="true" />
@@ -172,7 +173,8 @@
         <service id="Topdata\TopdataConnectorSW6\ScheduledTask\ConnectorImportTaskHandler">
             <argument type="service" id="scheduled_task.repository" />
             <argument type="service" id="logger" />
-            <argument type="service" id="parameter_bag" />
+            <argument type="service" id="Topdata\TopdataConnectorSW6\Service\ScheduledImportRunnerService" />
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
             <tag name="messenger.message_handler" />
         </service>
         

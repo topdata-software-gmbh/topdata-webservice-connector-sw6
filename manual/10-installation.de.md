@@ -62,3 +62,23 @@ Wenn Sie das Plugin mit Demo-Zugangsdaten testen möchten, können Sie folgende 
 - API Benutzer-ID: 6
 - API Passwort: nTI9kbsniVWT13Ns
 - API Security Key: oateouq974fpby5t6ldf8glzo85mr9t6aebozrox
+
+## Automatischer Import per Scheduled Task
+
+Das Plugin stellt einen Scheduled Task (`topdata.connector_import_task`) für den täglichen automatischen Import bereit. **Standardmäßig ist dieser deaktiviert, um unerwartete Serverauslastungen zu vermeiden.**
+
+### Aktivierung des automatischen Imports
+Um den täglichen Import zu aktivieren:
+1. Loggen Sie sich in die Shopware Administration ein.
+2. Navigieren Sie zu **Erweiterungen > Meine Erweiterungen**.
+3. Öffnen Sie die Konfiguration für das Topdata Connector Plugin.
+4. Setzen Sie **Automatischen Import aktivieren** auf aktiv und speichern Sie.
+
+### Erforderliche Prozesse zur Laufzeit
+Shopware benötigt Hintergrundprozesse (Worker), damit Scheduled Tasks ausgeführt werden:
+1. Scheduler-Prozess (stößt fällige Tasks an):
+   `bin/console scheduled-task:run`
+2. Messenger-Consumer (führt Task-Handler aus):
+   `bin/console messenger:consume async`
+
+Für einen manuellen Start verwenden Sie: `bin/console topdata:connector:import --all`

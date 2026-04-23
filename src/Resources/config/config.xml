@@ -136,4 +136,18 @@
             <helpText lang="de-DE">Geben Sie den technischen Namen des von Ihnen festgelegten Lieferanten Artikelnummer Eigenschaften-/Zusatzfeldes an</helpText>
         </input-field>
     </card>
+
+    <card>
+        <title>Scheduled Import Settings</title>
+        <title lang="de-DE">Einstellungen für geplanten Import</title>
+
+        <input-field type="bool">
+            <name>enableScheduledImport</name>
+            <label>Enable Automatic Scheduled Import</label>
+            <label lang="de-DE">Automatischen Import aktivieren</label>
+            <helpText>If enabled, the import runs automatically via the Shopware Scheduled Task every 24 hours.</helpText>
+            <helpText lang="de-DE">Wenn aktiviert, läuft der Import automatisch über den Shopware Scheduled Task alle 24 Stunden.</helpText>
+            <defaultValue>false</defaultValue>
+        </input-field>
+    </card>
 </config>
