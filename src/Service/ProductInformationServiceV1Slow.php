@@ -8,7 +8,9 @@ use Psr\Log\LoggerInterface;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Struct\ArrayEntity;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Topdata\TopdataConnectorSW6\Constants\DescriptionImportTypeConstant;
 use Topdata\TopdataConnectorSW6\Constants\GlobalPluginConstants;
@@ -81,6 +83,14 @@ class ProductInformationServiceV1Slow
         } else {
             CliLogger::section('Product information');
         }
+
+        // ---- Suppress SEO URL generation during bulk updates to avoid
+        // duplicate key errors in SeoUrlPersister (lowercase SEO URLs can
+        // cause case-insensitive path collisions between products)
+        $this->context->addExtension(
+            EntityIndexerRegistry::EXTENSION_INDEXER_SKIP,
+            new ArrayEntity(['skips' => ['product.seo-url']])
+        );
 
         // ---- Fetch the topid products
         $topid_products = $this->topdataToProductHelperService->getTopdataProductMappings(true);
@@ -206,6 +216,9 @@ class ProductInformationServiceV1Slow
         }
 
         CliLogger::writeln("\nProduct information done!");
+
+        // ---- Restore SEO URL generation
+        $this->context->removeExtension(EntityIndexerRegistry::EXTENSION_INDEXER_SKIP);
 
         UtilProfiling::stopTimer();
     }
