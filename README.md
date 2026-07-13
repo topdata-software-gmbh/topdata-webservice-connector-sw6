@@ -1,5 +1,8 @@
 # TopData Webservice Connector for Shopware 6
 
+> **⚠️ End of Life (EOL) — July 2026**  
+> This plugin is no longer under active development and will reach its end of life on July 2026.
+
 ## About
 This plugin is the base for most of the functionality in other TopData plugins for Shopware 6.
 It gives possibility to import devices from TopData Webservice.
