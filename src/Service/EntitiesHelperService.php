@@ -259,22 +259,36 @@ class EntitiesHelperService
 
     protected function loadManufacturers(): void
     {
-        $manufacturers = $this->productManufacturerRepository->search(new Criteria(), $this->context)->getEntities();
+        $criteria = new Criteria();
+        $criteria->addAssociation('translations');
+        $manufacturers = $this->productManufacturerRepository->search($criteria, $this->context)->getEntities();
         $ret = [];
         foreach ($manufacturers as $manufacturer) {
-            $ret[$manufacturer->getName()] = $manufacturer->getId();
+            $translations = $manufacturer->getTranslations();
+            if ($translations === null) {
+                continue;
+            }
+            foreach ($translations as $translation) {
+                $name = $translation->getName();
+                if ($name === null) {
+                    continue;
+                }
+                $ret[$this->_normalizeManufacturerName($name)] = $manufacturer->getId();
+            }
         }
         $this->manufacturers = $ret;
     }
 
     public function getManufacturerId(string $manufacturerName): string
     {
+        $normalizedName = $this->_normalizeManufacturerName($manufacturerName);
+
         if ($this->manufacturers === null) {
             $this->loadManufacturers();
         }
 
-        if (isset($this->manufacturers[$manufacturerName])) {
-            $manufacturerId = $this->manufacturers[$manufacturerName];
+        if (isset($this->manufacturers[$normalizedName])) {
+            $manufacturerId = $this->manufacturers[$normalizedName];
         } else {
             $manufacturerId = Uuid::randomHex();
             $this->productManufacturerRepository->create([
@@ -285,10 +299,15 @@ class EntitiesHelperService
                     ],
                 ],
             ], $this->context);
-            $this->manufacturers[$manufacturerName] = $manufacturerId;
+            $this->manufacturers[$normalizedName] = $manufacturerId;
         }
 
         return $manufacturerId;
+    }
+
+    private function _normalizeManufacturerName(string $name): string
+    {
+        return mb_strtolower(trim($name));
     }
 
 //    /**
