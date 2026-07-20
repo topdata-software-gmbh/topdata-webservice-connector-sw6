@@ -297,6 +297,9 @@ class EntitiesHelperService
                     'name' => [
                         $this->systemDefaultLocaleCode => $manufacturerName,
                     ],
+                    'customFields' => [
+                        'topdata_connector_imported' => true,
+                    ],
                 ],
             ], $this->context);
             $this->manufacturers[$normalizedName] = $manufacturerId;
