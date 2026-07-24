@@ -233,6 +233,9 @@ class MappingHelperService
         CliLogger::activity('Processing data');
 
         // Process each brand fetched from the remote server
+        // NOTE: Only brands with main=1 are imported. Brands with main=0 are aliases/synonyms
+        // and are filtered out here. This is the ONLY entity type that filters aliases.
+        // Device types, series, and models are imported WITH their aliases (main=0 included).
         foreach ($brands->data as $b) {
             if ($b->main == 0) {
                 continue;

@@ -59,6 +59,10 @@ class DeviceImportService
      * by creating new entries or updating existing ones. It uses the `TopdataWebserviceClient` to fetch the data and
      * the `EntityRepository` to perform database operations.
      *
+     * NOTE: Unlike brands (which filter out main=0 aliases in MappingHelperService::setBrands()),
+     * device types are imported WITH their aliases (main=0 included). The webservice returns all records
+     * from finder_ink_toner_att_3 including synonyms.
+     *
      * 04/2025 moved from MappingHelperService::setDeviceTypes() to DeviceImportService::setDeviceTypes()
      */
     public function setDeviceTypes(): void
@@ -190,6 +194,10 @@ class DeviceImportService
      * by creating new entries or updating existing ones. It uses the `TopdataWebserviceClient` to fetch the data and
      * the `EntityRepository` to perform database operations.
      *
+     * NOTE: Unlike brands (which filter out main=0 aliases in MappingHelperService::setBrands()),
+     * series are imported WITH their aliases (main=0 included). The webservice returns all records
+     * from finder_ink_toner_att_2 including synonyms.
+     *
      * 04/2025 moved from MappingHelperService::setSeries() to DeviceImportService::setSeries()
      */
     public function setSeries(): void
@@ -319,7 +327,11 @@ class DeviceImportService
      * by creating new entries or updating existing ones. It uses the `TopdataWebserviceClient` to fetch the data and
      * the `EntityRepository` to perform database operations.
      *
-     * this is called when --device or --device-only CLI options are set.
+     * NOTE: Unlike brands (which filter out main=0 aliases in MappingHelperService::setBrands()),
+     * devices are imported WITH their aliases (main=0 included). The webservice returns all records
+     * from finder_ink_toner_att_final including synonyms.
+     *
+     * This is called when --device or --device-only CLI options are set.
      *
      * 04/2025 moved from MappingHelperService::setDevices() to DeviceImportService::setDevices()
      */

@@ -132,6 +132,9 @@ class TopdataWebserviceClient
     /**
      * - not paginated
      * - the 'data' array contains the data
+     *
+     * NOTE: Returns ALL brands including aliases (main=0). The caller
+     * (MappingHelperService::setBrands()) filters out main=0 aliases.
      */
     public function getBrands(): mixed
     {
@@ -141,6 +144,9 @@ class TopdataWebserviceClient
     /**
      * not paginated
      * 06/2025 renamed from getModelTypeByBrandId to getModelTypes and removed brandId parameter (was unused)
+     *
+     * NOTE: Returns ALL device types including aliases (main=0). Unlike brands,
+     * these are NOT filtered - all records from finder_ink_toner_att_3 are returned.
      */
     public function getModelTypes(): mixed
     {
@@ -150,6 +156,9 @@ class TopdataWebserviceClient
     /**
      * not paginated
      * 06/2025 renamed from getModelSeriesByBrandId to getModelSeries and removed brandId parameter (was unused)
+     *
+     * NOTE: Returns ALL model series including aliases (main=0). All records
+     * from finder_ink_toner_att_2 are returned (synonyms included).
      */
     public function getModelSeries(): mixed
     {
@@ -159,6 +168,9 @@ class TopdataWebserviceClient
     /**
      * paginated (limit and start)
      * 06/2025 created
+     *
+     * NOTE: Returns ALL models including aliases (main=0). All records from
+     * finder_ink_toner_att_final are returned.
      */
     public function getModels(int $limit, int $start): mixed
     {
