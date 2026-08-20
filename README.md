@@ -1,11 +1,14 @@
 # TopData Webservice Connector for Shopware 6
 
-> **⚠️ End of Life (EOL) — July 2026**  
-> This plugin is no longer under active development and will reach its end of life on July 2026.
+> **⚠️ DEPRECATED — End of Life (EOL) July 2026**  
+> This plugin is deprecated, no longer under active development, and will reach its end of life on July 2026.
 
 ## About
 This plugin is the base for most of the functionality in other TopData plugins for Shopware 6.
 It gives possibility to import devices from TopData Webservice.
+
+> **ℹ️ Legacy Webservice V1 API only**  
+> This plugin uses the **legacy TopData Webservice V1 API** (`https://ws.topdata.de`) exclusively. It does **not** support the Webservice V2 API. The `V2` terminology found in the code refers only to the plugin's internal (experimental) linking logic, not to the webservice API version.
 
 ## Minimal Requirements
 - Shopware 6.6.0 or higher
